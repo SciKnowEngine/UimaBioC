@@ -1,0 +1,8 @@
+.classpath
+.project
+.settings/
+.DS_Store
+.history
+target/
+journalAbbrLookup.jObj
+NeuroScholar.DTD
