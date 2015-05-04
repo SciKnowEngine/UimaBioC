@@ -6,7 +6,11 @@ import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
 import org.apache.uima.jcas.JCas;
 import org.apache.uima.jcas.cas.FSArray;
 import org.uimafit.component.JCasAnnotator_ImplBase;
+import org.uimafit.descriptor.ConfigurationParameter;
+import org.uimafit.factory.ConfigurationParameterFactory;
 import org.uimafit.util.JCasUtil;
+
+import edu.isi.bmkeg.uimaBioC.uima.out.SaveAsBioCDocuments;
 
 import bioc.type.UimaBioCAnnotation;
 import bioc.type.UimaBioCDocument;

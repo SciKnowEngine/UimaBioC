@@ -29,6 +29,7 @@ import bioc.type.UimaBioCDocument;
 import bioc.type.UimaBioCLocation;
 import bioc.type.UimaBioCPassage;
 import edu.isi.bmkeg.uimaBioC.UimaBioCUtils;
+import edu.isi.bmkeg.uimaBioC.uima.ae.core.AddAnnotationsFromNxmlFormatting;
 
 /**
  * We want to optimize this interaction for speed, so we run a
@@ -46,7 +47,7 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 	private int count = 0;
 	
 	private static Logger logger = Logger.getLogger(Nxml2TxtFilesCollectionReader.class);
-
+	
 	public static final String INPUT_DIRECTORY = ConfigurationParameterFactory
 			.createConfigurationParameterName(Nxml2TxtFilesCollectionReader.class,
 					"inputDirectory");
@@ -212,6 +213,7 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 					infons = UimaBioCUtils.convertInfons(uiDoc.getInfons());
 					String[] keyValue = codes.split("=");
 					infons.put(keyValue[1], str);
+					infons.put("type", "article-id");
 					uiDoc.setInfons(
 							UimaBioCUtils.convertInfons(infons, jcas)
 							);
