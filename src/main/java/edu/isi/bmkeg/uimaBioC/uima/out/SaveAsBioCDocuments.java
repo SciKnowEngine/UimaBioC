@@ -1,4 +1,4 @@
-package edu.isi.bmkeg.uimaBioC.annotators;
+package edu.isi.bmkeg.uimaBioC.uima.out;
 
 import java.io.BufferedWriter;
 import java.io.File;

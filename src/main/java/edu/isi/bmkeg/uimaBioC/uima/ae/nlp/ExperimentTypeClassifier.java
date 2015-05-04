@@ -21,7 +21,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE. 
  */
-package edu.isi.bmkeg.uimaBioC.annotators;
+package edu.isi.bmkeg.uimaBioC.uima.ae.nlp;
 
 import java.io.BufferedWriter;
 import java.io.File;

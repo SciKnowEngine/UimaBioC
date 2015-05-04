@@ -17,9 +17,9 @@ import org.uimafit.factory.CollectionReaderFactory;
 import org.uimafit.factory.TypeSystemDescriptionFactory;
 import org.uimafit.pipeline.SimplePipeline;
 
-import edu.isi.bmkeg.uimaBioC.annotators.AddBioCPassagesAndAnnotationsToDocuments;
-import edu.isi.bmkeg.uimaBioC.annotators.ExperimentTypeClassifier;
-import edu.isi.bmkeg.uimaBioC.readers.Nxml2TxtFilesCollectionReader;
+import edu.isi.bmkeg.uimaBioC.uima.ae.core.AddAnnotationsFromNxmlFormatting;
+import edu.isi.bmkeg.uimaBioC.uima.ae.nlp.ExperimentTypeClassifier;
+import edu.isi.bmkeg.uimaBioC.uima.readers.Nxml2TxtFilesCollectionReader;
 
 
 
@@ -90,11 +90,11 @@ public class S03_SearchForWordsInPassages {
 	    builder.add(DefaultSnowballStemmer.getDescription("English"));
 
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
-				AddBioCPassagesAndAnnotationsToDocuments.class));
+				AddAnnotationsFromNxmlFormatting.class));
 
 		
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
-				AddBioCPassagesAndAnnotationsToDocuments.class));
+				AddAnnotationsFromNxmlFormatting.class));
 		
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
 				ExperimentTypeClassifier.class,

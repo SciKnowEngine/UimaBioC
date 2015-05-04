@@ -1,4 +1,4 @@
-package edu.isi.bmkeg.uimaBioC.annotators;
+package edu.isi.bmkeg.uimaBioC.uima.ae.core;
 
 import java.util.List;
 
@@ -12,7 +12,7 @@ import bioc.type.UimaBioCAnnotation;
 import bioc.type.UimaBioCDocument;
 import bioc.type.UimaBioCPassage;
 
-public class AddBioCPassagesAndAnnotationsToDocuments extends JCasAnnotator_ImplBase {
+public class AddAnnotationsFromNxmlFormatting extends JCasAnnotator_ImplBase {
 
 	public void process(JCas jCas) throws AnalysisEngineProcessException {
 

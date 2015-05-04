@@ -16,13 +16,14 @@ import org.uimafit.factory.CollectionReaderFactory;
 import org.uimafit.factory.TypeSystemDescriptionFactory;
 import org.uimafit.pipeline.SimplePipeline;
 
-import edu.isi.bmkeg.uimaBioC.annotators.AddBioCPassagesAndAnnotationsToDocuments;
-import edu.isi.bmkeg.uimaBioC.annotators.SaveAsBioCDocuments;
-import edu.isi.bmkeg.uimaBioC.readers.Nxml2TxtFilesCollectionReader;
+import edu.isi.bmkeg.uimaBioC.uima.ae.core.AddAnnotationsFromNxmlFormatting;
+import edu.isi.bmkeg.uimaBioC.uima.out.SaveAsBioCDocuments;
+import edu.isi.bmkeg.uimaBioC.uima.readers.Nxml2TxtFilesCollectionReader;
 
 /**
- * This script runs through serialized JSON files from the model and converts
- * them to VPDMf KEfED models, including the data.
+ * This script provides a simple demonstration of loading BioC data from 
+ * text derived from NXML files with the added annotations on top of them.
+ * It then dumps the output as BioC files in the specified output directory. 
  * 
  * @author Gully
  * 
@@ -33,9 +34,6 @@ public class S02_BuildBioCFromNxml2Txt {
 
 		@Option(name = "-inDir", usage = "Input Directory", required = true, metaVar = "IN-DIRECTORY")
 		public File inDir;
-
-		@Option(name = "-corpus", usage = "Name of the collection", required = true, metaVar = "CORPUS")
-		public String corpus;
 
 		@Option(name = "-outDir", usage = "Output Directory", required = true, metaVar = "OUT-DIRECTORY")
 		public File outDir;
@@ -95,7 +93,7 @@ public class S02_BuildBioCFromNxml2Txt {
 			outFormat = SaveAsBioCDocuments.XML;
 
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
-				AddBioCPassagesAndAnnotationsToDocuments.class));
+				AddAnnotationsFromNxmlFormatting.class));
 
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
 				SaveAsBioCDocuments.class, 

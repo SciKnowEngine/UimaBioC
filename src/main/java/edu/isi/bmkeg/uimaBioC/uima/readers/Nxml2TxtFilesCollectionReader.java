@@ -1,4 +1,4 @@
-package edu.isi.bmkeg.uimaBioC.readers;
+package edu.isi.bmkeg.uimaBioC.uima.readers;
 
 import java.io.BufferedReader;
 import java.io.File;
