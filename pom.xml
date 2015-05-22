@@ -16,6 +16,30 @@
 
 	<name>UIMA BioC Integrated NLP</name>
 
+	<repositories>
+
+		<!-- BMKEG local repository at hugin.isi.edu -->
+		<repository>
+			<id>hugin-3rd-party</id>
+			<name>Hugin Third Party Nexus Repository</name>
+			<url>http://hugin.isi.edu:8180/nexus/content/repositories/thirdparty/</url>
+		</repository>
+
+		<repository>
+			<id>hugin-3rd-party-snapshot</id>
+			<name>Hugin Third Party Nexus Repository</name>
+			<url>http://hugin.isi.edu:8180/nexus/content/repositories/thirdpartysnapshots/</url>
+		</repository>
+
+		<!-- Maven Central -->
+		<repository>
+			<id>maven-central</id>
+			<name>maven</name>
+			<url>http://central.maven.org/maven2/</url>
+		</repository>
+
+	</repositories>
+
 	<build>
 		<plugins>
 
@@ -298,7 +322,7 @@
 		<dependency>
 			<groupId>au.com.nicta.csp</groupId>
 			<artifactId>BRATEval</artifactId>
-			<version>0.1.0-SNAPSHOT</version>
+			<version>0.1.0</version>
 		</dependency>
 
 		<dependency>
