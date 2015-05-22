@@ -191,16 +191,6 @@
 			<groupId>org.cleartk</groupId>
 			<artifactId>cleartk-type-system</artifactId>
 			<version>${cleartk.version}</version>
-			<exclusions>
-				<exclusion>
-					<artifactId>spring-beans</artifactId>
-					<groupId>org.springframework</groupId>
-				</exclusion>
-				<exclusion>
-					<artifactId>spring-context</artifactId>
-					<groupId>org.springframework</groupId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 		<!-- <dependency> <groupId>org.cleartk</groupId> <artifactId>cleartk-feature</artifactId> 
 			<version>${cleartk.version}</version> </dependency> <dependency> <groupId>org.cleartk</groupId> 
@@ -270,12 +260,6 @@
 			<groupId>bioc</groupId>
 			<artifactId>BioC_Java</artifactId>
 			<version>1.0</version>
-			<exclusions>
-				<exclusion>
-					<artifactId>spring-context</artifactId>
-					<groupId>org.springframework</groupId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 
 		<dependency>
