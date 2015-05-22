@@ -79,10 +79,6 @@ public class S03_TxtCollection_to_1LinePerDocTextFile {
 
 		AggregateBuilder builder = new AggregateBuilder();
 
-		builder.add(SentenceAnnotator.getDescription()); // Sentence
-													    // segmentation
-		builder.add(TokenAnnotator.getDescription());  // Tokenization
-
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
 				SimpleOneLinePerDocWriter.class, 
 				SimpleOneLinePerDocWriter.PARAM_OUT_FILE_PATH,

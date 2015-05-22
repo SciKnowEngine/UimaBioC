@@ -5,10 +5,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.apache.uima.UimaContext;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
@@ -21,58 +20,52 @@ import org.uimafit.descriptor.ConfigurationParameter;
 import org.uimafit.factory.ConfigurationParameterFactory;
 import org.uimafit.util.JCasUtil;
 
-import edu.isi.bmkeg.uimaBioC.UimaBioCUtils;
-
 import bioc.type.UimaBioCDocument;
+import edu.isi.bmkeg.uimaBioC.UimaBioCUtils;
 
 public class SimpleOneLinePerDocWriter extends JCasAnnotator_ImplBase {
 
 	public final static String PARAM_OUT_FILE_PATH = ConfigurationParameterFactory
-			.createConfigurationParameterName( SimpleOneLinePerDocWriter.class, "filePath" );
+			.createConfigurationParameterName(SimpleOneLinePerDocWriter.class,
+					"filePath");
 	@ConfigurationParameter(mandatory = true, description = "Output file.")
 	String filePath;
-	
+
 	File file;
-	
-	private File outFile;
-	
+
+	private PrintWriter out;
+
+	Pattern patt = Pattern.compile("\\s+");
+
 	public void initialize(UimaContext context)
 			throws ResourceInitializationException {
 
 		super.initialize(context);
-		
-		this.outFile = new File(this.filePath);
-				
+
+		try {
+			out = new PrintWriter(new BufferedWriter(new FileWriter(new File(
+					this.filePath), true)));
+		} catch (IOException e) {
+			throw new ResourceInitializationException(e);
+		}
+
 	}
 
 	public void process(JCas jCas) throws AnalysisEngineProcessException {
-				
-		try {
-			
-			PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(outFile, true)));
 
-			UimaBioCDocument uiD = JCasUtil.selectSingle(jCas, UimaBioCDocument.class);
-			
-			Map<String, String> inf = UimaBioCUtils.convertInfons(uiD.getInfons());
+		UimaBioCDocument uiD = JCasUtil.selectSingle(jCas,
+				UimaBioCDocument.class);
 
-			for (Sentence sentence : JCasUtil.select(jCas, Sentence.class)) {
-				List<Token> tokens = JCasUtil.selectCovered(jCas, Token.class, sentence);	
-				if (tokens.size() <= 0) { continue; }
-				
-				List<String> tokenStrings = JCasUtil.toText(tokens);						
-				for (int i = 0; i < tokens.size(); i++) {
-					out.print(tokenStrings.get(i) + " ");
-				}
-			}
+		String txt = uiD.getCoveredText().replaceAll("\\s+", " ");
+		out.println(txt);
 
-			out.print("\n");
-			out.close();
+	}
+	
+	public void collectionProcessComplete()
+			throws AnalysisEngineProcessException {
 		
-		} catch (IOException e) {
-			
-			throw new AnalysisEngineProcessException(e);
-			 
-		}
+		super.collectionProcessComplete();			
+		out.close();
 
 	}
 
