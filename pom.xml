@@ -205,8 +205,12 @@
 		<!-- <dependency> <groupId>org.cleartk</groupId> <artifactId>cleartk-eval</artifactId> 
 			<version>${cleartk.version}</version> </dependency> <dependency> <groupId>org.cleartk</groupId> 
 			<artifactId>cleartk-ml</artifactId> <version>${cleartk.version}</version> 
-			</dependency> <dependency> <groupId>org.cleartk</groupId> <artifactId>cleartk-ml-opennlp-maxent</artifactId> 
-			<version>${cleartk.version}</version> </dependency> <dependency> <groupId>org.cleartk</groupId> 
+			</dependency> -->
+			
+			<dependency> <groupId>org.cleartk</groupId> <artifactId>cleartk-ml-opennlp-maxent</artifactId> 
+			<version>${cleartk.version}</version> </dependency> 
+			
+			<!--<dependency> <groupId>org.cleartk</groupId> 
 			<artifactId>cleartk-ml-svmlight</artifactId> <version>${cleartk.version}</version> 
 			</dependency> <dependency> <groupId>org.cleartk</groupId> <artifactId>cleartk-ml-tksvmlight</artifactId> 
 			<version>${cleartk.version}</version> </dependency> <dependency> <groupId>org.cleartk</groupId> 
