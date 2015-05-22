@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
@@ -23,13 +24,13 @@ import org.apache.uima.util.ProgressImpl;
 import org.uimafit.component.JCasCollectionReader_ImplBase;
 import org.uimafit.descriptor.ConfigurationParameter;
 import org.uimafit.factory.ConfigurationParameterFactory;
+import org.uimafit.util.JCasUtil;
 
 import bioc.type.UimaBioCAnnotation;
 import bioc.type.UimaBioCDocument;
 import bioc.type.UimaBioCLocation;
 import bioc.type.UimaBioCPassage;
 import edu.isi.bmkeg.uimaBioC.UimaBioCUtils;
-import edu.isi.bmkeg.uimaBioC.uima.ae.core.AddAnnotationsFromNxmlFormatting;
 
 /**
  * We want to optimize this interaction for speed, so we run a
@@ -48,12 +49,12 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 	
 	private static Logger logger = Logger.getLogger(Nxml2TxtFilesCollectionReader.class);
 	
-	public static final String INPUT_DIRECTORY = ConfigurationParameterFactory
+	public static final String PARAM_INPUT_DIRECTORY = ConfigurationParameterFactory
 			.createConfigurationParameterName(Nxml2TxtFilesCollectionReader.class,
 					"inputDirectory");
 	@ConfigurationParameter(mandatory = true, description = "Input Directory for Nxml2Txt Files")
 	protected String inputDirectory;
-
+	
 	@Override
 	public void initialize(UimaContext context) throws ResourceInitializationException {
 
@@ -99,16 +100,16 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 			jcas.setDocumentText( txt );
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			UimaBioCDocument uiDoc = new UimaBioCDocument(jcas);
+			UimaBioCDocument uiD = new UimaBioCDocument(jcas);
 			
 			Map<String,String> infons = new HashMap<String,String>();
 			infons.put("relative-source-path", txtFile.getPath().replaceAll(inputDirectory + "/", ""));
-			uiDoc.setInfons(UimaBioCUtils.convertInfons(infons, jcas));
+			uiD.setInfons(UimaBioCUtils.convertInfons(infons, jcas));
 			
-			uiDoc.setBegin(0);
-			uiDoc.setEnd(txt.length());
+			uiD.setBegin(0);
+			uiD.setEnd(txt.length());
 						
-			uiDoc.addToIndexes();
+			uiD.addToIndexes();
 			int passageCount = 0;
 			int nSkip = 0;
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -210,30 +211,30 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 				// Id values for the BioCDocument.
 				if( type.equals("article-id") ){					
 					
-					infons = UimaBioCUtils.convertInfons(uiDoc.getInfons());
+					infons = UimaBioCUtils.convertInfons(uiD.getInfons());
 					String[] keyValue = codes.split("=");
 					infons.put(keyValue[1], str);
 					infons.put("type", "article-id");
-					uiDoc.setInfons(
+					uiD.setInfons(
 							UimaBioCUtils.convertInfons(infons, jcas)
 							);
 					if( keyValue[1].contains("pmid")){
-						uiDoc.setId(str);
+						uiD.setId(str);
 					}
 					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 				
 				}
 				
 			}
-
-		    pos++;
+		
+			pos++;
 		    if( (pos % 1000) == 0) {
 		    	System.out.println("Processing " + pos + "th document.");
 		    }
 		    
 		} catch (Exception e) {
 			
-			System.err.print(this.count);
+			System.err.print(this.pos + "/" + this.count);
 			throw new CollectionException(e);
 
 		}

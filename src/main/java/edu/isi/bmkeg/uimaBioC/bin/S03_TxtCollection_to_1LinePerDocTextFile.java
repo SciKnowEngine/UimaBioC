@@ -16,9 +16,8 @@ import org.uimafit.factory.CollectionReaderFactory;
 import org.uimafit.factory.TypeSystemDescriptionFactory;
 import org.uimafit.pipeline.SimplePipeline;
 
-import edu.isi.bmkeg.uimaBioC.uima.ae.core.AddAnnotationsFromNxmlFormatting;
-import edu.isi.bmkeg.uimaBioC.uima.out.SaveAsBioCDocuments;
-import edu.isi.bmkeg.uimaBioC.uima.readers.Nxml2TxtFilesCollectionReader;
+import edu.isi.bmkeg.uimaBioC.uima.out.SimpleOneLinePerDocWriter;
+import edu.isi.bmkeg.uimaBioC.uima.readers.TxtFilesCollectionReader;
 
 /**
  * This script provides a simple demonstration of loading BioC data from 
@@ -28,23 +27,20 @@ import edu.isi.bmkeg.uimaBioC.uima.readers.Nxml2TxtFilesCollectionReader;
  * @author Gully
  * 
  */
-public class S02_BuildBioCFromNxml2Txt {
+public class S03_TxtCollection_to_1LinePerDocTextFile {
 
 	public static class Options {
 
 		@Option(name = "-inDir", usage = "Input Directory", required = true, metaVar = "IN-DIRECTORY")
 		public File inDir;
 
-		@Option(name = "-outDir", usage = "Output Directory", required = true, metaVar = "OUT-DIRECTORY")
-		public File outDir;
-
-		@Option(name = "-outFormat", usage = "Output Format", required = true, metaVar = "XML/JSON")
-		public String outFormat;
+		@Option(name = "-outFile", usage = "Output File", required = true, metaVar = "OUT-DIRECTORY")
+		public File outFile;
 
 	}
 
 	private static Logger logger = Logger
-			.getLogger(S02_BuildBioCFromNxml2Txt.class);
+			.getLogger(S03_TxtCollection_to_1LinePerDocTextFile.class);
 
 	/**
 	 * @param args
@@ -71,36 +67,27 @@ public class S02_BuildBioCFromNxml2Txt {
 
 		}
 
-		if (!options.outDir.getParentFile().exists())
-			options.outDir.getParentFile().mkdirs();
+		if (!options.outFile.getParentFile().exists())
+			options.outFile.getParentFile().mkdirs();
 
 		TypeSystemDescription typeSystem = TypeSystemDescriptionFactory
 				.createTypeSystemDescription("bioc.TypeSystem");
 
 		CollectionReader cr = CollectionReaderFactory.createCollectionReader(
-				Nxml2TxtFilesCollectionReader.class, typeSystem,
-				Nxml2TxtFilesCollectionReader.INPUT_DIRECTORY, options.inDir);
+				TxtFilesCollectionReader.class, typeSystem,
+				TxtFilesCollectionReader.PARAM_INPUT_DIRECTORY, options.inDir);
 
 		AggregateBuilder builder = new AggregateBuilder();
 
 		builder.add(SentenceAnnotator.getDescription()); // Sentence
 													    // segmentation
-		
-		builder.add(TokenAnnotator.getDescription()); // Tokenization
-
-		String outFormat = SaveAsBioCDocuments.JSON;
-		if( options.outFormat.equals("XML") ) 
-			outFormat = SaveAsBioCDocuments.XML;
+		builder.add(TokenAnnotator.getDescription());  // Tokenization
 
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
-				AddAnnotationsFromNxmlFormatting.class));
-
-		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
-				SaveAsBioCDocuments.class, 
-				SaveAsBioCDocuments.PARAM_FILE_PATH,
-				options.outDir.getPath(),
-				SaveAsBioCDocuments.PARAM_FORMAT,
-				outFormat));
+				SimpleOneLinePerDocWriter.class, 
+				SimpleOneLinePerDocWriter.PARAM_OUT_FILE_PATH,
+				options.outFile.getPath() 
+				));
 
 		SimplePipeline.runPipeline(cr, builder.createAggregateDescription());
 

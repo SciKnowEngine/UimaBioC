@@ -6,7 +6,6 @@ import org.apache.log4j.Logger;
 import org.apache.uima.collection.CollectionReader;
 import org.apache.uima.resource.metadata.TypeSystemDescription;
 import org.cleartk.opennlp.tools.SentenceAnnotator;
-import org.cleartk.snowball.DefaultSnowballStemmer;
 import org.cleartk.token.tokenizer.TokenAnnotator;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -18,38 +17,34 @@ import org.uimafit.factory.TypeSystemDescriptionFactory;
 import org.uimafit.pipeline.SimplePipeline;
 
 import edu.isi.bmkeg.uimaBioC.uima.ae.core.AddAnnotationsFromNxmlFormatting;
-import edu.isi.bmkeg.uimaBioC.uima.ae.nlp.ExperimentTypeClassifier;
+import edu.isi.bmkeg.uimaBioC.uima.out.SaveAsBioCDocuments;
 import edu.isi.bmkeg.uimaBioC.uima.readers.Nxml2TxtFilesCollectionReader;
 
-
-
 /**
- * This script runs through serialized JSON files from the model and converts
- * them to VPDMf KEfED models, including the data.
+ * This script provides a simple demonstration of loading BioC data from 
+ * text derived from NXML files with the added annotations on top of them.
+ * It then dumps the output as BioC files in the specified output directory. 
  * 
  * @author Gully
  * 
  */
-public class S03_SearchForWordsInPassages {
+public class S02_Nxml2txt_to_BioC {
 
 	public static class Options {
 
 		@Option(name = "-inDir", usage = "Input Directory", required = true, metaVar = "IN-DIRECTORY")
 		public File inDir;
 
-		@Option(name = "-outFile", usage = "Output File", required = true, metaVar = "IN-DIRECTORY")
-		public File outFile;
+		@Option(name = "-outDir", usage = "Output Directory", required = true, metaVar = "OUT-DIRECTORY")
+		public File outDir;
 
-		@Option(name = "-words", usage = "Words to search for", required = true, metaVar = "SEARCH")
-		public String wordList;
-
-		@Option(name = "-passage", usage = "Passages to search in", required = true, metaVar = "SECTION")
-		public String passage;
+		@Option(name = "-outFormat", usage = "Output Format", required = true, metaVar = "XML/JSON")
+		public String outFormat;
 
 	}
 
 	private static Logger logger = Logger
-			.getLogger(S03_SearchForWordsInPassages.class);
+			.getLogger(S02_Nxml2txt_to_BioC.class);
 
 	/**
 	 * @param args
@@ -76,6 +71,9 @@ public class S03_SearchForWordsInPassages {
 
 		}
 
+		if (!options.outDir.getParentFile().exists())
+			options.outDir.getParentFile().mkdirs();
+
 		TypeSystemDescription typeSystem = TypeSystemDescriptionFactory
 				.createTypeSystemDescription("bioc.TypeSystem");
 
@@ -86,41 +84,20 @@ public class S03_SearchForWordsInPassages {
 		AggregateBuilder builder = new AggregateBuilder();
 
 		builder.add(SentenceAnnotator.getDescription()); // Sentence
+													    // segmentation
+		
 		builder.add(TokenAnnotator.getDescription()); // Tokenization
-	    builder.add(DefaultSnowballStemmer.getDescription("English"));
+
+		String outFormat = SaveAsBioCDocuments.JSON;
+		if( options.outFormat.equals("XML") ) 
+			outFormat = SaveAsBioCDocuments.XML;
 
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
-				AddAnnotationsFromNxmlFormatting.class));
-
-		
-		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
-				AddAnnotationsFromNxmlFormatting.class));
-		
-		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
-				ExperimentTypeClassifier.class,
-				ExperimentTypeClassifier.PARAM_OUTPUT_FILE, options.outFile));
-
-		/*
-		 * builder.add(AnalysisEngineFactory.createPrimitiveDescription(
-		 * AddFragmentsAndCodes.class, AddFragmentsAndCodes.LOGIN,
-		 * options.login, AddFragmentsAndCodes.PASSWORD, options.password,
-		 * AddFragmentsAndCodes.DB_URL, options.dbName,
-		 * AddFragmentsAndCodes.WORKING_DIRECTORY, options.workingDirectory,
-		 * AddFragmentsAndCodes.FRAGMENT_TYPE, options.frgType ));
-		 */
-
-		/*
-		 * builder.add(AnalysisEngineFactory.createPrimitiveDescription(
-		 * AddBratAnnotations.class, AddBratAnnotations.BRAT_DATA_DIRECTORY,
-		 * options.inBrat ));
-		 */
-	
-		/*builder.add(AnalysisEngineFactory.createPrimitiveDescription(
 				SaveAsBioCDocuments.class, 
 				SaveAsBioCDocuments.PARAM_FILE_PATH,
 				options.outDir.getPath(),
 				SaveAsBioCDocuments.PARAM_FORMAT,
-				outFormat));*/
+				outFormat));
 
 		SimplePipeline.runPipeline(cr, builder.createAggregateDescription());
 

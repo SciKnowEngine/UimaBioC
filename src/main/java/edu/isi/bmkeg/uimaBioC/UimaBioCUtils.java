@@ -1,10 +1,12 @@
 package edu.isi.bmkeg.uimaBioC;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.uima.jcas.JCas;
 import org.apache.uima.jcas.cas.FSArray;
+import org.uimafit.util.JCasUtil;
 
 import bioc.BioCAnnotation;
 import bioc.BioCDocument;
@@ -116,7 +118,52 @@ public class UimaBioCUtils {
 		return d;
 
 	}
+	
+	public static UimaBioCDocument convertBioCDocument(BioCDocument d,
+			JCas jcas) {
 
+		UimaBioCDocument uiD = new UimaBioCDocument(jcas);
+		
+		Map<String,String> infons = new HashMap<String,String>();
+		uiD.setInfons(UimaBioCUtils.convertInfons(d.getInfons(), jcas));
+		uiD.setId(d.getID());
+		
+		if (d.getPassages() != null) {
+			FSArray passages = new FSArray(jcas, d.getPassages().size());
+			int count = 0;
+			for (BioCPassage p : d.getPassages()) {
+				UimaBioCPassage uiP = convertBioCPassage(p, jcas);
+				passages.set(count, uiP);
+				count++;
+			}
+		}
+
+		return uiD;
+
+	}
+
+	public static UimaBioCPassage convertBioCPassage(BioCPassage p,
+			JCas jcas) {
+
+		UimaBioCPassage uiP = new UimaBioCPassage(jcas);
+
+		uiP.setInfons(convertInfons(p.getInfons(), jcas));
+		uiP.setText(p.getText());
+		
+		if (p.getAnnotations() != null) {
+			FSArray annotations = new FSArray(jcas, p.getAnnotations().size());
+			int count = 0;
+			for (BioCAnnotation a : p.getAnnotations()) {
+				UimaBioCAnnotation uiA = convertBioCAnnotation(a, jcas);
+				annotations.set(count, uiA);
+				count++;
+			}
+		}
+
+		return uiP;
+
+	}
+	
 	public static UimaBioCAnnotation convertBioCAnnotation(BioCAnnotation a,
 			JCas jcas) {
 
