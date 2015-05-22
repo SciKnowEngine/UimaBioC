@@ -56,12 +56,15 @@ public class SimpleOneLinePerDocWriter extends JCasAnnotator_ImplBase {
 		UimaBioCDocument uiD = JCasUtil.selectSingle(jCas,
 				UimaBioCDocument.class);
 
+		Map<String,String> infons = UimaBioCUtils.convertInfons(uiD.getInfons());
+		String p = infons.get("relative-source-path");
+		
 		String txt = uiD.getCoveredText().replaceAll("\\r+", " ");
 		txt = txt.replaceAll("\\n+", " ");
-		txt = txt.replaceAll(" - ", "");
+		txt = txt.replaceAll(" \\- ", "");
 		txt = txt.replaceAll("\\s+", " ");
 		
-		out.println(txt);
+		out.println(p.substring(p.lastIndexOf("/"),p.length()) + "\t" + txt);
 
 	}
 	
