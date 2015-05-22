@@ -34,12 +34,6 @@ public class SimpleOneLinePerDocWriter extends JCasAnnotator_ImplBase {
 	
 	File file;
 	
-	public final static String PARAM_ANNOTATION_TYPE = ConfigurationParameterFactory
-			.createConfigurationParameterName(
-					TabulateNestedBioCAnnotations.class, "annType");
-	@ConfigurationParameter(mandatory = false, description = "Annotations to be included in file description.")
-	String annType;
-	
 	private File outFile;
 	
 	public void initialize(UimaContext context)
