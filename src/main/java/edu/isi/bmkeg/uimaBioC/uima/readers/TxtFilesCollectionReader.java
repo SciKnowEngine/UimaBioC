@@ -94,6 +94,7 @@ public class TxtFilesCollectionReader extends JCasCollectionReader_ImplBase {
 			
 			Map<String,String> infons = new HashMap<String,String>();
 			infons.put("relative-source-path", txtFile.getPath().replaceAll(inputDirectory + "/", ""));
+			infons.put("pos", pos + "");
 			uiD.setInfons(UimaBioCUtils.convertInfons(infons, jcas));
 			
 			uiD.setBegin(0);
