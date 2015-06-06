@@ -67,11 +67,14 @@ public class SaveAsBioCDocuments extends JCasAnnotator_ImplBase {
 			try {
 
 				BioCDocument d = UimaBioCUtils.convertUimaBioCDocument(uiD);
-				String relPath = d.getInfon("relative-source-path").replaceAll("\\.txt", outFileFormat);
+				String relPath = d.getInfon("pmid") + outFileFormat;
 				File outFile = new File(outDirPath + "/" + relPath);
 				if( !outFile.getParentFile().exists() ) {
 					outFile.getParentFile().mkdirs();
 				}
+				
+				if( outFile.exists() )
+					outFile.delete();
 				
 				if (outFileFormat.equals(XML)) {
 					

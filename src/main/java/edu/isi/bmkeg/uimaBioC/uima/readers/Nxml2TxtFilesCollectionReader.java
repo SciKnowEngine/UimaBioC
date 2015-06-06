@@ -109,11 +109,29 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 			uiD.setBegin(0);
 			uiD.setEnd(txt.length());
 						
-			uiD.addToIndexes();
 			int passageCount = 0;
 			int nSkip = 0;
+			
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
+			// Note that in these systems, we will create a single passage of the
+			// entire document and then create general annotations for formatting 
+			// on top of that, other sections such as introduction, abstract, etc.
+			// will be placed into other passages but no annotations directly 
+			// placed on them except for purposes of delineating the sections. 
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			UimaBioCPassage uiP = new UimaBioCPassage(jcas);
+			int annotationCount = 0;
+			uiP.setBegin(0);
+			uiP.setEnd(txt.length());
+			uiP.setOffset(0);
+			passageCount++;
+			
+			infons = new HashMap<String, String>();
+			infons.put("type", "document");
+			uiP.setInfons(UimaBioCUtils.convertInfons(infons, jcas));
+			uiP.addToIndexes();
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			
 			BufferedReader in = new BufferedReader(new InputStreamReader(
 					new FileInputStream(soFile)));
 			String line;
@@ -149,17 +167,20 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 						type.equals("body") ||  
 						type.equals("ref-list")){					
 					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-					UimaBioCPassage uiP = new UimaBioCPassage(jcas);
-					int annotationCount = 0;
-					uiP.setBegin(begin);
-					uiP.setEnd(end);
-					uiP.setOffset(begin);
-					passageCount++;
+					UimaBioCAnnotation uiA = new UimaBioCAnnotation(jcas);
+					uiA.setBegin(begin);
+					uiA.setEnd(end);
+					Map<String,String> infons2 = new HashMap<String, String>();
+					infons2.put("type", type);
+					uiA.setInfons(UimaBioCUtils.convertInfons(infons2, jcas));
+					uiA.addToIndexes();
 					
-					infons = new HashMap<String, String>();
-					infons.put("type", type);
-					uiP.setInfons(UimaBioCUtils.convertInfons(infons, jcas));
-					uiP.addToIndexes();
+					FSArray locations = new FSArray(jcas, 1);
+					uiA.setLocations(locations);
+					UimaBioCLocation uiL = new UimaBioCLocation(jcas);
+					locations.set(0, uiL);
+					uiL.setOffset(begin);
+					uiL.setLength(end - begin);
 					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 				}
 				
@@ -171,17 +192,20 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 						type.equals("caption") ||  
 						type.equals("fig")){					
 					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-					UimaBioCPassage uiP = new UimaBioCPassage(jcas);
-					int annotationCount = 0;
-					uiP.setBegin(begin);
-					uiP.setEnd(end);
-					uiP.setOffset(begin);
-					passageCount++;
-
-					infons = new HashMap<String, String>();
-					infons.put("type", type);
-					uiP.setInfons(UimaBioCUtils.convertInfons(infons, jcas));
-					uiP.addToIndexes();
+					UimaBioCAnnotation uiA = new UimaBioCAnnotation(jcas);
+					uiA.setBegin(begin);
+					uiA.setEnd(end);
+					Map<String,String> infons2 = new HashMap<String, String>();
+					infons2.put("type", type);
+					uiA.setInfons(UimaBioCUtils.convertInfons(infons2, jcas));
+					uiA.addToIndexes();
+					
+					FSArray locations = new FSArray(jcas, 1);
+					uiA.setLocations(locations);
+					UimaBioCLocation uiL = new UimaBioCLocation(jcas);
+					locations.set(0, uiL);
+					uiL.setOffset(begin);
+					uiL.setLength(end - begin);
 					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 				}
 				
@@ -212,6 +236,10 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 				if( type.equals("article-id") ){					
 					
 					infons = UimaBioCUtils.convertInfons(uiD.getInfons());
+		
+					// strip all 'quotes' from id values.
+					codes = codes.replaceAll("\"", "");
+		
 					String[] keyValue = codes.split("=");
 					infons.put(keyValue[1], str);
 					infons.put("type", "article-id");
@@ -227,6 +255,8 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 				
 			}
 		
+			uiD.addToIndexes();
+			
 			pos++;
 		    if( (pos % 1000) == 0) {
 		    	System.out.println("Processing " + pos + "th document.");

@@ -27,20 +27,20 @@ import edu.isi.bmkeg.uimaBioC.uima.readers.TxtFilesCollectionReader;
  * @author Gully
  * 
  */
-public class S03_TxtCollection_to_1LinePerDocTextFile {
+public class S03_TxtDocDir_to_LinePerDocTxtFile {
 
 	public static class Options {
 
 		@Option(name = "-inDir", usage = "Input Directory", required = true, metaVar = "IN-DIRECTORY")
 		public File inDir;
 
-		@Option(name = "-outFile", usage = "Output File", required = true, metaVar = "OUT-DIRECTORY")
+		@Option(name = "-outFile", usage = "Output File", required = true, metaVar = "OUT-FILE")
 		public File outFile;
-
+		
 	}
 
 	private static Logger logger = Logger
-			.getLogger(S03_TxtCollection_to_1LinePerDocTextFile.class);
+			.getLogger(S03_TxtDocDir_to_LinePerDocTxtFile.class);
 
 	/**
 	 * @param args

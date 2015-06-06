@@ -16,35 +16,36 @@ import org.uimafit.factory.CollectionReaderFactory;
 import org.uimafit.factory.TypeSystemDescriptionFactory;
 import org.uimafit.pipeline.SimplePipeline;
 
-import edu.isi.bmkeg.uimaBioC.uima.ae.core.AddAnnotationsFromNxmlFormatting;
+import edu.isi.bmkeg.uimaBioC.uima.ae.core.MatchPdfBlocksAndSentencesToNxmlText;
 import edu.isi.bmkeg.uimaBioC.uima.out.SaveAsBioCDocuments;
-import edu.isi.bmkeg.uimaBioC.uima.readers.Nxml2TxtFilesCollectionReader;
+import edu.isi.bmkeg.uimaBioC.uima.readers.BioCCollectionReader;
+
+
 
 /**
- * This script provides a simple demonstration of loading BioC data from 
- * text derived from NXML files with the added annotations on top of them.
- * It then dumps the output as BioC files in the specified output directory. 
+ * This script runs through serialized JSON files from the model and converts
+ * them to VPDMf KEfED models, including the data.
  * 
  * @author Gully
  * 
  */
-public class S02_Nxml2txt_to_BioC {
+public class S04_AddPdfBlocksToBioC {
 
 	public static class Options {
 
 		@Option(name = "-inDir", usage = "Input Directory", required = true, metaVar = "IN-DIRECTORY")
 		public File inDir;
 
+		@Option(name = "-lapdfDir", usage = "Layout Aware PDF Directory", required = true, metaVar = "LAPDF-FILE")
+		public File lapdfDir;
+
 		@Option(name = "-outDir", usage = "Output Directory", required = true, metaVar = "OUT-DIRECTORY")
 		public File outDir;
-
-		@Option(name = "-outFormat", usage = "Output Format", required = true, metaVar = "XML/JSON")
-		public String outFormat;
 
 	}
 
 	private static Logger logger = Logger
-			.getLogger(S02_Nxml2txt_to_BioC.class);
+			.getLogger(S04_AddPdfBlocksToBioC.class);
 
 	/**
 	 * @param args
@@ -71,36 +72,30 @@ public class S02_Nxml2txt_to_BioC {
 
 		}
 
-		if (!options.outDir.getParentFile().exists())
-			options.outDir.getParentFile().mkdirs();
-
 		TypeSystemDescription typeSystem = TypeSystemDescriptionFactory
 				.createTypeSystemDescription("bioc.TypeSystem");
 
 		CollectionReader cr = CollectionReaderFactory.createCollectionReader(
-				Nxml2TxtFilesCollectionReader.class, typeSystem,
-				Nxml2TxtFilesCollectionReader.PARAM_INPUT_DIRECTORY, options.inDir);
+				BioCCollectionReader.class, typeSystem,
+				BioCCollectionReader.INPUT_DIRECTORY, options.inDir,
+				BioCCollectionReader.PARAM_FORMAT, BioCCollectionReader.JSON);
 
 		AggregateBuilder builder = new AggregateBuilder();
 
-		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
-				AddAnnotationsFromNxmlFormatting.class));		
-		
 		builder.add(SentenceAnnotator.getDescription()); // Sentence
-													    // segmentation
-		
-		builder.add(TokenAnnotator.getDescription()); // Tokenization
+		builder.add(TokenAnnotator.getDescription());   // Tokenization
 
-		String outFormat = SaveAsBioCDocuments.JSON;
-		if( options.outFormat.toLowerCase().equals("xml") ) 
-			outFormat = SaveAsBioCDocuments.XML;
-
+		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
+				MatchPdfBlocksAndSentencesToNxmlText.class, 
+				MatchPdfBlocksAndSentencesToNxmlText.LAPDF_DIR,
+				options.lapdfDir));
+	
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
 				SaveAsBioCDocuments.class, 
 				SaveAsBioCDocuments.PARAM_FILE_PATH,
 				options.outDir.getPath(),
 				SaveAsBioCDocuments.PARAM_FORMAT,
-				outFormat));
+				SaveAsBioCDocuments.JSON));
 
 		SimplePipeline.runPipeline(cr, builder.createAggregateDescription());
 

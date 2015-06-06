@@ -66,7 +66,7 @@ public class BioCCollectionReader extends JCasCollectionReader_ImplBase {
 	public static String XML = "xml";
 	public static String JSON = "json";
 	public final static String PARAM_FORMAT = ConfigurationParameterFactory
-			.createConfigurationParameterName(SaveAsBioCDocuments.class,
+			.createConfigurationParameterName(BioCCollectionReader.class,
 					"inFileFormat");
 	@ConfigurationParameter(mandatory = true, description = "The format of the BioC input files.")
 	String inFileFormat;
@@ -131,9 +131,6 @@ public class BioCCollectionReader extends JCasCollectionReader_ImplBase {
 			
 			}
 			
-			String txt = FileUtils.readFileToString(bioCFile);
-			jcas.setDocumentText( txt );
-
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			UimaBioCDocument uiD = UimaBioCUtils.convertBioCDocument(bioD, jcas);
 			
@@ -141,29 +138,16 @@ public class BioCCollectionReader extends JCasCollectionReader_ImplBase {
 			if (passages != null) {
 				for (int i = 0; i < passages.size(); i++) {
 					UimaBioCPassage uiP = (UimaBioCPassage) passages.get(i);
-					uiP.addToIndexes();
 					
-					FSArray annotations = uiP.getAnnotations();
-					if (annotations != null) {
-						for (int j = 0; j < annotations.size(); j++) {
-							UimaBioCAnnotation uiA = (UimaBioCAnnotation) annotations
-									.get(j);
-
-							uiA.addToIndexes();
-							
-							FSArray locations = uiA.getLocations();
-							if (locations != null) {
-								for (int k = 0; k < locations.size(); k++) {
-									UimaBioCLocation uiL = (UimaBioCLocation) locations
-											.get(k);
-									uiL.addToIndexes();
-								}
-							}
-						}
+					Map<String, String> infons = UimaBioCUtils.convertInfons(uiP.getInfons());
+					if( infons.containsKey("type") && 
+							infons.get("type").equals("document") ) {
+						jcas.setDocumentText( uiP.getText() );
 					}
+				
 				}
 			}
-
+						
 		    pos++;
 		    if( (pos % 1000) == 0) {
 		    	System.out.println("Processing " + pos + "th document.");

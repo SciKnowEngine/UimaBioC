@@ -206,26 +206,28 @@
 			<version>${cleartk.version}</version> </dependency> <dependency> <groupId>org.cleartk</groupId> 
 			<artifactId>cleartk-ml</artifactId> <version>${cleartk.version}</version> 
 			</dependency> -->
-			
-			<dependency> <groupId>org.cleartk</groupId> <artifactId>cleartk-ml-opennlp-maxent</artifactId> 
-			<version>${cleartk.version}</version> </dependency> 
-			
-			<!--<dependency> <groupId>org.cleartk</groupId> 
-			<artifactId>cleartk-ml-svmlight</artifactId> <version>${cleartk.version}</version> 
-			</dependency> <dependency> <groupId>org.cleartk</groupId> <artifactId>cleartk-ml-tksvmlight</artifactId> 
+
+		<dependency>
+			<groupId>org.cleartk</groupId>
+			<artifactId>cleartk-ml-opennlp-maxent</artifactId>
+			<version>${cleartk.version}</version>
+		</dependency>
+
+		<!--<dependency> <groupId>org.cleartk</groupId> <artifactId>cleartk-ml-svmlight</artifactId> 
 			<version>${cleartk.version}</version> </dependency> <dependency> <groupId>org.cleartk</groupId> 
-			<artifactId>cleartk-corpus</artifactId> <version>${cleartk.version}</version> 
-			</dependency> <dependency> <groupId>org.cleartk</groupId> <artifactId>cleartk-ml-libsvm</artifactId> 
+			<artifactId>cleartk-ml-tksvmlight</artifactId> <version>${cleartk.version}</version> 
+			</dependency> <dependency> <groupId>org.cleartk</groupId> <artifactId>cleartk-corpus</artifactId> 
 			<version>${cleartk.version}</version> </dependency> <dependency> <groupId>org.cleartk</groupId> 
-			<artifactId>cleartk-ml-liblinear</artifactId> <version>${cleartk.version}</version> 
-			</dependency> <dependency> <groupId>org.cleartk</groupId> <artifactId>cleartk-ml-tksvmlight</artifactId> 
+			<artifactId>cleartk-ml-libsvm</artifactId> <version>${cleartk.version}</version> 
+			</dependency> <dependency> <groupId>org.cleartk</groupId> <artifactId>cleartk-ml-liblinear</artifactId> 
 			<version>${cleartk.version}</version> </dependency> <dependency> <groupId>org.cleartk</groupId> 
-			<artifactId>cleartk-ml-mallet</artifactId> <version>${cleartk.version}</version> 
-			</dependency> <dependency> <groupId>org.cleartk</groupId> <artifactId>cleartk-ml-crfsuite</artifactId> 
+			<artifactId>cleartk-ml-tksvmlight</artifactId> <version>${cleartk.version}</version> 
+			</dependency> <dependency> <groupId>org.cleartk</groupId> <artifactId>cleartk-ml-mallet</artifactId> 
 			<version>${cleartk.version}</version> </dependency> <dependency> <groupId>org.cleartk</groupId> 
-			<artifactId>cleartk-ml-weka</artifactId> <version>${cleartk.version}</version> 
-			</dependency> -->
-			
+			<artifactId>cleartk-ml-crfsuite</artifactId> <version>${cleartk.version}</version> 
+			</dependency> <dependency> <groupId>org.cleartk</groupId> <artifactId>cleartk-ml-weka</artifactId> 
+			<version>${cleartk.version}</version> </dependency> -->
+
 		<dependency>
 			<groupId>org.cleartk</groupId>
 			<artifactId>cleartk-token</artifactId>
@@ -241,8 +243,8 @@
 					<groupId>org.apache.opennlp</groupId>
 				</exclusion>
 			</exclusions>
-		</dependency> 
-		
+		</dependency>
+
 		<!-- <dependency> <groupId>org.cleartk</groupId> <artifactId>cleartk-berkeleyparser</artifactId> 
 			<version>${cleartk.version}</version> </dependency> <dependency> <groupId>org.cleartk</groupId> 
 			<artifactId>cleartk-clearnlp</artifactId> <version>${cleartk.version}</version> 
@@ -312,6 +314,12 @@
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>4.12</version>
+		</dependency>
+
+		<dependency>
+			<artifactId>lapdftext</artifactId>
+			<version>1.7.4-SNAPSHOT</version>
+			<groupId>edu.isi.bmkeg</groupId>
 		</dependency>
 
 	</dependencies>
