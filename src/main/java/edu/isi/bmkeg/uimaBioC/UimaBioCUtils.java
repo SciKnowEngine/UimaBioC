@@ -125,12 +125,19 @@ public class UimaBioCUtils {
 
 	}
 
-	public static UimaBioCDocument convertBioCDocument(BioCDocument d, JCas jcas) {
+	public static void addBioCDocumentToUimaCas(BioCDocument d, JCas jcas) {
 
-		UimaBioCDocument uiD = new UimaBioCDocument(jcas);
+		UimaBioCDocument uiD = new UimaBioCDocument(jcas);		
+		for( BioCPassage bioP : d.getPassages() ) {
+			if( bioP.getInfons().get("type").equals("document") ) {
+				uiD.setBegin(0);
+				uiD.setEnd(bioP.getText().length());
+				jcas.setDocumentText(bioP.getText());
+			}
+		}
 
 		uiD.setInfons(UimaBioCUtils.convertInfons(d.getInfons(), jcas));
-		uiD.setId(d.getID());
+		uiD.setId(d.getID());		
 
 		if (d.getPassages() != null) {
 			FSArray passages = new FSArray(jcas, d.getPassages().size());
@@ -144,8 +151,6 @@ public class UimaBioCUtils {
 		}
 
 		uiD.addToIndexes();
-
-		return uiD;
 
 	}
 
@@ -240,7 +245,17 @@ public class UimaBioCUtils {
 		}
 		return fsArray;
 	}
-
+	
+	
+	public static String readInfons(FSArray fsArray, String key) {
+		
+		Map<String, String> infons = UimaBioCUtils.convertInfons(fsArray);
+		if( infons.containsKey(key) )
+			return infons.get(key);
+		else 
+			return null;
+	}	
+	
 	public static UimaBioCPassage readDocumentUimaBioCPassage(JCas jCas) {
 
 		UimaBioCDocument uiD = JCasUtil.selectSingle(jCas,

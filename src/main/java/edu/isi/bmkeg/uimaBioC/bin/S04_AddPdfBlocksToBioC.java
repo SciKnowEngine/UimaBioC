@@ -78,6 +78,7 @@ public class S04_AddPdfBlocksToBioC {
 		CollectionReader cr = CollectionReaderFactory.createCollectionReader(
 				BioCCollectionReader.class, typeSystem,
 				BioCCollectionReader.INPUT_DIRECTORY, options.inDir,
+				BioCCollectionReader.OUTPUT_DIRECTORY, options.outDir,
 				BioCCollectionReader.PARAM_FORMAT, BioCCollectionReader.JSON);
 
 		AggregateBuilder builder = new AggregateBuilder();

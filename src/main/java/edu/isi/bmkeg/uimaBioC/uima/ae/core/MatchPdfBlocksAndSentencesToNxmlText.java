@@ -79,9 +79,10 @@ public class MatchPdfBlocksAndSentencesToNxmlText extends
 
 	private List<Sentence> sentences = new ArrayList<Sentence>();
 	private Map<LapdftextXMLChunk, Integer> pgLookup = new HashMap<LapdftextXMLChunk, Integer>();
-	
-	private Pattern wbDetect = Pattern.compile("\\b");
-	
+
+	private Pattern wbDetect = Pattern.compile("(\\w\\W|\\W\\w)");
+	private Pattern wsDetect = Pattern.compile("\\s");
+
 	public void initialize(UimaContext context)
 			throws ResourceInitializationException {
 
@@ -103,11 +104,13 @@ public class MatchPdfBlocksAndSentencesToNxmlText extends
 	public void process(JCas jCas) throws AnalysisEngineProcessException {
 
 		try {
-
+			
 			UimaBioCDocument uiD = JCasUtil.selectSingle(jCas,
 					UimaBioCDocument.class);
 			UimaBioCPassage docP = UimaBioCUtils
 					.readDocumentUimaBioCPassage(jCas);
+
+			logger.info(uiD.getId());
 
 			// Want to locate the 'body' section.
 			int bodyBegin = -1;
@@ -125,35 +128,54 @@ public class MatchPdfBlocksAndSentencesToNxmlText extends
 			}
 
 			if (bodyBegin == -1) {
-				throw new Exception("Can't find body section of paper.");
+				logger.error("Can't find body section of paper.");
+				return;
 			}
 
 			File lapdfFile = new File(this.lapdfDir.getPath() + "/"
 					+ uiD.getId() + "_lapdf.xml");
 
+			if (!lapdfFile.exists()) {
+				logger.error("Can't find " + lapdfFile.getPath());
+				return;
+			}
+			
 			FileReader reader = new FileReader(lapdfFile);
 			LapdftextXMLDocument xmlDoc = XmlBindingTools.parseXML(reader,
 					LapdftextXMLDocument.class);
 
-			String txt = jCas.getDocumentText();
+			//
+			// Since we use single spaces for all whitespace
+			// in the fragments, use that here too.
+			//
+			String txt = jCas.getDocumentText().replaceAll("\\s", " ");
 
 			pgLookup = new HashMap<LapdftextXMLChunk, Integer>();
-			List<UimaBioCAnnotation> annotationsToAdd = 
-					new ArrayList<UimaBioCAnnotation>();
+			List<UimaBioCAnnotation> annotationsToAdd = new ArrayList<UimaBioCAnnotation>();
+			List<LapdftextXMLChunk> unassignedChunks = new ArrayList<LapdftextXMLChunk>();
 
 			for (LapdftextXMLPage xmlPage : xmlDoc.getPages()) {
 				for (LapdftextXMLChunk xmlChunk : xmlPage.getChunks()) {
 					if (xmlChunk.getWords().size() > 0) {
-					
-						Map<LapdftextXMLWord,UimaBioCAnnotation> lookup = 
-								new HashMap<LapdftextXMLWord,UimaBioCAnnotation>();
-						
+
+						Map<LapdftextXMLWord, UimaBioCAnnotation> lookup = new HashMap<LapdftextXMLWord, UimaBioCAnnotation>();
+
 						int p = xmlPage.getPageNumber();
-						WordAnchorPosition anchor = readAnchorForChunk(jCas,
+
+						WordAnchorPosition anchor = readAnchorForChunk(txt,
 								xmlChunk);
 						
-						if (anchor.docPos == -1 
-								|| anchor.docPos < bodyBegin
+						if (anchor == null) {
+							unassignedChunks.add(xmlChunk);
+							continue;
+						}
+
+						List<LapdftextXMLWord> chunkWords = 
+								new ArrayList<LapdftextXMLWord>(xmlChunk.getWords());
+						if( anchor.wordPos > 0)
+							chunkWords.removeAll(chunkWords.subList(0, anchor.wordPos-1));
+						
+						if (anchor.docPos == -1 || anchor.docPos < bodyBegin
 								|| anchor.docPos > bodyEnd) {
 							continue;
 						}
@@ -163,68 +185,155 @@ public class MatchPdfBlocksAndSentencesToNxmlText extends
 						// the anchor should all be a fairly good
 						// match (assuming that the chunk is contiguous)
 						//
-						List<LapdftextXMLWord> wordList = anchor.chunk
-								.getWords();
+						List<LapdftextXMLWord> wordList = anchor.chunk.getWords();
 						int offset = 0;
+						Sentence thisSentence = null, nextSentence = null;
+						float checkForNextSentence = -1f;
 						for (int i = anchor.wordPos; i < wordList.size(); i++) {
 							LapdftextXMLWord w = wordList.get(i);
 
-							int begin = tweakWordLocation(txt, anchor.docPos, offset, w);
-							int end = begin + w.getT().length();
+							float[] tweak;
+							try {
+								tweak = tweakWordLocationAndLength(txt,
+										anchor.docPos, offset, w);
+							} catch (Exception e) {
 
-							UimaBioCAnnotation a = createWordAnnotation(jCas, p, w, begin, end);
+								//System.out.println("\t\t" + w.getT());
+
+								offset += w.getT().length() + 1;
+								continue;
+							}
+
+							int begin = anchor.docPos + offset + (int) tweak[0];
+							int end = begin + w.getT().length() + (int) tweak[1];
+
+							//System.out.println((int)tweak[0] + "," + (int)tweak[1] + ":"
+							//		+ w.getT() + "/"
+							//		+ txt.substring(begin, end) + tweak[2]);
+
+							UimaBioCAnnotation a = createWordAnnotation(jCas,
+									p, w, begin, end);
 							annotationsToAdd.add(a);
 							lookup.put(w, a);
-
-							offset += w.getT().length() + 1;							
-
+							
+							chunkWords.remove(w);
+							String chunkText = "";
+							for(LapdftextXMLWord cw : chunkWords) {
+								if( chunkText.length() > 0 )
+									chunkText += " ";
+								chunkText += cw.getT();
+							}
+							
+							//
+							// Check if the next sentence in the block is present in the 
+							// text. There can be differences in paragraph placement
+							// between the PDF and the XML.
+							// 
+							// 1. Read the next sentence from the jCas and compare
+							//
+							List<Sentence> sList = JCasUtil.selectCovering(jCas, 
+									Sentence.class, begin, end);
+							if( sList.size() > 0 && sList.get(0) != thisSentence ) {
+								thisSentence = sList.get(0);	
+							}
+							// 2. If the next word places us in the next sentence and 
+							//    there are following sentences is not present in the block then
+							//    add a modified offset to start looking for the next word.
+							int nextWordBegin = anchor.docPos + offset + (int)tweak[0] 
+									+ w.getT().length() + (int)tweak[1] + 1;
+							if( nextWordBegin >= thisSentence.getEnd() ) {
+								
+								// We read over a whole bunch of following sentences in the document
+								// if we find one that matches, we then skip ahead to that sentence 
+								// in this read.
+								int skip = 0;
+								sList = JCasUtil.selectFollowing(jCas, Sentence.class, thisSentence, 12);
+								for( Sentence s : sList ) {
+									int tempEnd = (s.getEnd()-s.getBegin())>chunkText.length()?
+											chunkText.length():s.getEnd()-s.getBegin();
+									checkForNextSentence = cosineSimilarityMetric.compare(
+											s.getCoveredText().substring(0,tempEnd), 
+											chunkText.substring(0,tempEnd) );
+									if( checkForNextSentence < 0.8 ) {
+										skip += tempEnd + 1;
+									} else {
+										offset += skip;
+										break;
+									}
+								}
+								
+							}
+							offset += tweak[0] + w.getT().length() + tweak[1] + 1;
+							
 						}
-						
+
 						//
-						// Go back in the block from the anchor and 
+						// Go back in the block from the anchor and
 						// try to match words as needed.
 						//
 						offset = 0;
-						for (int i=anchor.wordPos-1; i>=0; i--) {
+						for (int i = anchor.wordPos - 1; i >= 0; i--) {
 							LapdftextXMLWord w = wordList.get(i);
-							offset = offset - w.getT().length() - 1;  
-									
-							int begin = tweakWordLocation(txt, anchor.docPos, offset, w);
-							int end = begin + w.getT().length();
+							offset = offset - w.getT().length() - 1;
 
-							UimaBioCAnnotation a = createWordAnnotation(jCas, p, w, begin, end);
+							float[] tweak;
+							try {
+								tweak = tweakWordLocationAndLength(txt,
+										anchor.docPos, offset, w);
+							} catch (Exception e) {
+								continue;
+							}
+							offset += tweak[0];
+							int begin = anchor.docPos + offset;
+							int end = begin + w.getT().length() + (int) tweak[1];
+
+							//System.out.println(tweak[0] + "," + tweak[1] + ":"
+							//		+ w.getT() + "/"
+							//		+ txt.substring(begin, end) + ": " + tweak[2]);
+
+							UimaBioCAnnotation a = createWordAnnotation(jCas,
+									p, w, begin, end);
 							annotationsToAdd.add(a);
 							lookup.put(w, a);
 
 						}
-						
-						LapdftextXMLWord first = wordList.get(0);
-						UimaBioCAnnotation firstAnnotation = lookup.get(first);
-						LapdftextXMLWord last = wordList.get(wordList.size()-1);
-						UimaBioCAnnotation lastAnnotation = lookup.get(last);
+
+						int i = 0;
+						while (!lookup.containsKey(wordList.get(i)))
+							i++;
+						UimaBioCAnnotation firstAnnotation = lookup
+								.get(wordList.get(i));
+
+						i = wordList.size() - 1;
+						while (!lookup.containsKey(wordList.get(i)))
+							i--;
+						UimaBioCAnnotation lastAnnotation = lookup.get(wordList
+								.get(i));
+
 						int begin = firstAnnotation.getBegin();
 						int end = lastAnnotation.getEnd();
-					
-						annotationsToAdd.add( 
-								createChunkAnnotation(jCas, p, xmlChunk, begin, end)
-								);
-							
+
+						annotationsToAdd.add(createChunkAnnotation(jCas, p,
+								xmlChunk, begin, end));
+
+					} else {
+
+						int pauseHere = 0;
 					}
-					
-					
+
 				}
 
 			}
 
 			FSArray existingAnnotations = docP.getAnnotations();
 			int n = existingAnnotations.size();
-			FSArray newAnnotations = new FSArray(jCas, 
-					existingAnnotations.size() + annotationsToAdd.size() );
-			for(int i=0; i<n; i++) {
+			FSArray newAnnotations = new FSArray(jCas,
+					existingAnnotations.size() + annotationsToAdd.size());
+			for (int i = 0; i < n; i++) {
 				newAnnotations.set(i, existingAnnotations.get(i));
 			}
-			for(int j=0; j<annotationsToAdd.size(); j++) {
-				newAnnotations.set(n+j, annotationsToAdd.get(j));				
+			for (int j = 0; j < annotationsToAdd.size(); j++) {
+				newAnnotations.set(n + j, annotationsToAdd.get(j));
 			}
 			docP.setAnnotations(newAnnotations);
 
@@ -236,11 +345,10 @@ public class MatchPdfBlocksAndSentencesToNxmlText extends
 
 	}
 
-	private UimaBioCAnnotation createWordAnnotation(JCas jCas, int p, LapdftextXMLWord w,
-			int begin, int end) {
-		
-		UimaBioCAnnotation uiA = new UimaBioCAnnotation(
-				jCas);
+	private UimaBioCAnnotation createWordAnnotation(JCas jCas, int p,
+			LapdftextXMLWord w, int begin, int end) {
+
+		UimaBioCAnnotation uiA = new UimaBioCAnnotation(jCas);
 		uiA.setBegin(begin);
 		uiA.setEnd(end);
 		Map<String, String> infons = new HashMap<String, String>();
@@ -252,9 +360,13 @@ public class MatchPdfBlocksAndSentencesToNxmlText extends
 		infons.put("t", w.getT() + "");
 		infons.put("font", w.getFont());
 		infons.put("p", p + "");
-		uiA.setInfons(UimaBioCUtils.convertInfons(infons,
-				jCas));
+		uiA.setInfons(UimaBioCUtils.convertInfons(infons, jCas));
 		uiA.addToIndexes();
+
+		if (!w.getT().toLowerCase().equals(uiA.getCoveredText().toLowerCase())) {
+			int pause = 0;
+			pause++;
+		}
 
 		FSArray locations = new FSArray(jCas, 1);
 		uiA.setLocations(locations);
@@ -262,15 +374,14 @@ public class MatchPdfBlocksAndSentencesToNxmlText extends
 		locations.set(0, uiL);
 		uiL.setOffset(begin);
 		uiL.setLength(end - begin);
-		
+
 		return uiA;
 	}
-	
-	private UimaBioCAnnotation createChunkAnnotation(JCas jCas, int p, LapdftextXMLChunk c,
-			int begin, int end) {
-		
-		UimaBioCAnnotation uiA = new UimaBioCAnnotation(
-				jCas);
+
+	private UimaBioCAnnotation createChunkAnnotation(JCas jCas, int p,
+			LapdftextXMLChunk c, int begin, int end) {
+
+		UimaBioCAnnotation uiA = new UimaBioCAnnotation(jCas);
 		uiA.setBegin(begin);
 		uiA.setEnd(end);
 		Map<String, String> infons = new HashMap<String, String>();
@@ -281,8 +392,7 @@ public class MatchPdfBlocksAndSentencesToNxmlText extends
 		infons.put("h", c.getH() + "");
 		infons.put("font", c.getFont());
 		infons.put("p", p + "");
-		uiA.setInfons(UimaBioCUtils.convertInfons(infons,
-				jCas));
+		uiA.setInfons(UimaBioCUtils.convertInfons(infons, jCas));
 		uiA.addToIndexes();
 
 		FSArray locations = new FSArray(jCas, 1);
@@ -291,47 +401,87 @@ public class MatchPdfBlocksAndSentencesToNxmlText extends
 		locations.set(0, uiL);
 		uiL.setOffset(begin);
 		uiL.setLength(end - begin);
-		
+
 		return uiA;
 	}
 
-	private int tweakWordLocation(String txt, int docPos,
-			int offset, LapdftextXMLWord w) {
-		
-		int begin = docPos + offset;
+	/**
+	 * 
+	 * @param txt
+	 *            : text of the whole file
+	 * @param docPos
+	 *            : position in that text of an anchor word
+	 * @param offset
+	 *            : offset from that anchor of the current word
+	 * @param w
+	 *            : the current word
+	 * @return int[]: an array of two numbers describing the best guess for the
+	 *         offset begin and end of the current word. Use a greedy search to
+	 *         match the string with a minimum number of edits based on
+	 *         Levenshtein distance to the text in the PDF word block.
+	 * @throws Exception
+	 */
+	private float[] tweakWordLocationAndLength(String txt, int docPos,
+			int offset, LapdftextXMLWord w) throws Exception {
 
-		// It's important to get the location of the start 
-		// of the word correct but not essential that 
-		// there be a perfect match. Look around for 
-		// a match for the first letter of the word.
-		// If we can't get that, then we just use the 
-		// word from the offsets of word lengths.  
-		int tweak = 0;
-		boolean tweakForward = true;
-		int maxTweak = 10;
-		while (!txt.substring(begin, begin+1).equals(w.getT().substring(0, 1)) 
-				&& !(begin > 0 && wbDetect.matcher(txt.substring(begin-1, begin+1)).find())
-				&& tweak < maxTweak ) {
-			
-			if( tweakForward ) {
-				begin = docPos + offset + Math.round(tweak/2.0f);
-			} else {
-				begin = docPos + offset - Math.round(tweak/2.0f);
+		int begin = docPos + offset;
+		int end = begin + w.getT().length();
+
+		String testWord = txt.substring(begin, end);
+		if (testWord.equals(w.getT())) {
+			float[] tweak = { 0.0f, 0.0f, 0.0f };
+			return tweak;
+		}
+
+		float bestSim = -1.0f;
+		int bestBegin = 0, bestEnd = 0;
+
+		int kk[] = { -1, 1 };
+		for (int i = 0; i < 5; i++) { // increase the length of the string
+			for (int j = 1; j < 6; j++) { // vary the start position
+				for (int k : kk) { // vary the direction
+
+					begin = docPos + offset + (j * k);
+					end = begin + w.getT().length() + i;
+					testWord = txt.substring(begin, end);
+
+					if (testWord.equals(w.getT())) {
+						float[] tweak = { begin - (docPos + offset),
+								end - (begin + w.getT().length()), 
+								1.0f };
+						return tweak;
+					}
+
+					float sim = levenshteinSimilarityMetric.compare(testWord,
+							w.getT());
+					if (sim > bestSim) {
+						bestSim = sim;
+						bestBegin = begin;
+						bestEnd = end;
+					}
+
+				}
+
 			}
-			tweak++;
-			tweakForward = !tweakForward;
+
 		}
+
+		begin = bestBegin;
+		end = bestEnd;
+
+		if (bestSim < 0.5)
+			throw new Exception("Can't find word:" + w.getT() + " in block");
+
+		float[] tweak = { begin - (docPos + offset),
+				end - (begin + w.getT().length()), 
+				bestSim};
 		
-		if( tweak == maxTweak ) {
-			begin = docPos + offset;
-		}
-		return begin;
+		return tweak;
+
 	}
 
-	private WordAnchorPosition readAnchorForChunk(JCas jCas,
+	private WordAnchorPosition readAnchorForChunk(String txt,
 			LapdftextXMLChunk chunk) {
-
-		String txt = jCas.getDocumentText();
 
 		int nWords = 10;
 		int offset = 0;
@@ -341,6 +491,9 @@ public class MatchPdfBlocksAndSentencesToNxmlText extends
 		while (stillLooking) {
 
 			String chunkTxt = readSubstringFromChunk(chunk, offset, nWords);
+			if (chunkTxt.length() == 0)
+				return null;
+
 			nHits = this.countHits(txt, chunkTxt);
 
 			hitLocation = txt.indexOf(chunkTxt);
@@ -348,7 +501,7 @@ public class MatchPdfBlocksAndSentencesToNxmlText extends
 				stillLooking = false;
 			} else {
 				if (offset == chunk.getWords().size()) {
-					stillLooking = false;
+					return null;
 				}
 				offset++;
 			}
@@ -366,7 +519,7 @@ public class MatchPdfBlocksAndSentencesToNxmlText extends
 			int nWords) {
 
 		String chunkText = "";
-		for (int i = offset; i < nWords; i++) {
+		for (int i = offset; i < nWords + offset; i++) {
 
 			if (i >= chunk.getWords().size())
 				return chunkText;

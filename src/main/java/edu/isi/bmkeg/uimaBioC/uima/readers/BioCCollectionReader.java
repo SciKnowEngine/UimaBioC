@@ -1,16 +1,12 @@
 package edu.isi.bmkeg.uimaBioC.uima.readers;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
@@ -18,27 +14,20 @@ import org.apache.uima.UimaContext;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
 import org.apache.uima.collection.CollectionException;
 import org.apache.uima.jcas.JCas;
-import org.apache.uima.jcas.cas.FSArray;
 import org.apache.uima.resource.ResourceInitializationException;
 import org.apache.uima.util.Progress;
 import org.apache.uima.util.ProgressImpl;
 import org.uimafit.component.JCasCollectionReader_ImplBase;
 import org.uimafit.descriptor.ConfigurationParameter;
 import org.uimafit.factory.ConfigurationParameterFactory;
-import org.uimafit.util.JCasUtil;
 
 import bioc.BioCDocument;
 import bioc.io.BioCDocumentReader;
 import bioc.io.BioCFactory;
-import bioc.type.UimaBioCAnnotation;
-import bioc.type.UimaBioCDocument;
-import bioc.type.UimaBioCLocation;
-import bioc.type.UimaBioCPassage;
 
 import com.google.gson.Gson;
 
 import edu.isi.bmkeg.uimaBioC.UimaBioCUtils;
-import edu.isi.bmkeg.uimaBioC.uima.out.SaveAsBioCDocuments;
 
 /**
  * We want to optimize this interaction for speed, so we run a
@@ -63,6 +52,18 @@ public class BioCCollectionReader extends JCasCollectionReader_ImplBase {
 	@ConfigurationParameter(mandatory = true, description = "Input Directory for BioC Files")
 	protected String inputDirectory;
 
+	/*
+	 * If this is set, then we expect to output BioC files to this directory.
+	 * Also, if we detect an appropriately named file in this directory, we'll
+	 * skip to the next JCas.
+	 */
+	public static final String OUTPUT_DIRECTORY = ConfigurationParameterFactory
+			.createConfigurationParameterName(BioCCollectionReader.class,
+					"outputDirectory");
+	@ConfigurationParameter(mandatory = false, description = "Output Directory for BioC Files")
+	protected String outputDirectory;
+	protected Set<String> existingFiles;
+	
 	public static String XML = "xml";
 	public static String JSON = "json";
 	public final static String PARAM_FORMAT = ConfigurationParameterFactory
@@ -77,12 +78,23 @@ public class BioCCollectionReader extends JCasCollectionReader_ImplBase {
 		try {
 			
 			String[] fileTypes = {this.inFileFormat};
-			Collection<File> l = (Collection<File>) FileUtils.listFiles(new File(inputDirectory), fileTypes, true);
+			Collection<File> l = (Collection<File>) FileUtils.listFiles(
+					new File(inputDirectory), fileTypes, true);
+			
+			this.existingFiles = new HashSet<String>();
+			if( outputDirectory != null ) {
+				for(Object o : FileUtils.listFiles(
+						new File(outputDirectory), fileTypes, true)) {
+					this.existingFiles.add( ((File) o).getName() );
+				}
+			}
+			
 			this.bioCFileIt = l.iterator();
 			this.count = l.size();
 			
 		} catch (Exception e) {
 
+			e.printStackTrace();
 			throw new ResourceInitializationException(e);
 
 		}
@@ -100,10 +112,14 @@ public class BioCCollectionReader extends JCasCollectionReader_ImplBase {
 				return;
 			
 			File bioCFile = bioCFileIt.next();
-			while( !bioCFile.exists()  ) {
+			while( !bioCFile.exists() ||
+					this.existingFiles.contains(bioCFile.getName()) ) {
+				
 				if(!bioCFileIt.hasNext()) 
 					return;
+				
 				bioCFile = bioCFileIt.next();
+			
 			}
 
 			BioCDocument bioD;
@@ -120,7 +136,6 @@ public class BioCCollectionReader extends JCasCollectionReader_ImplBase {
 			} else if (inFileFormat.equals(JSON)) {
 
 				Gson gson = new Gson();
-				Class<String> classOfT;
 				bioD = gson.fromJson(new FileReader(bioCFile), BioCDocument.class);
 				
 			} else {
@@ -131,22 +146,7 @@ public class BioCCollectionReader extends JCasCollectionReader_ImplBase {
 			
 			}
 			
-			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			UimaBioCDocument uiD = UimaBioCUtils.convertBioCDocument(bioD, jcas);
-			
-			FSArray passages = uiD.getPassages();
-			if (passages != null) {
-				for (int i = 0; i < passages.size(); i++) {
-					UimaBioCPassage uiP = (UimaBioCPassage) passages.get(i);
-					
-					Map<String, String> infons = UimaBioCUtils.convertInfons(uiP.getInfons());
-					if( infons.containsKey("type") && 
-							infons.get("type").equals("document") ) {
-						jcas.setDocumentText( uiP.getText() );
-					}
-				
-				}
-			}
+			UimaBioCUtils.addBioCDocumentToUimaCas(bioD, jcas);
 						
 		    pos++;
 		    if( (pos % 1000) == 0) {
