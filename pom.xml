@@ -318,7 +318,7 @@
 
 		<dependency>
 			<artifactId>lapdftext</artifactId>
-			<version>1.7.4-SNAPSHOT</version>
+			<version>1.7.5-SNAPSHOT</version>
 			<groupId>edu.isi.bmkeg</groupId>
 		</dependency>
 
