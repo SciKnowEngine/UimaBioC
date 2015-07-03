@@ -65,7 +65,8 @@ public class SaveAsBioCDocuments extends JCasAnnotator_ImplBase {
 				UimaBioCDocument.class)) {
 			
 			try {
-
+				
+				BioCCollection c = new BioCCollection();
 				BioCDocument d = UimaBioCUtils.convertUimaBioCDocument(uiD);
 				String relPath = d.getInfon("relative-source-path").replaceAll("\\.txt", "") 
 						+ outFileFormat;
@@ -83,6 +84,7 @@ public class SaveAsBioCDocuments extends JCasAnnotator_ImplBase {
 							BioCFactory.STANDARD).createBioCDocumentWriter(
 							new FileWriter(outFile));
 
+					writer.writeCollectionInfo(c);
 					writer.writeDocument(d);
 
 					writer.close();
