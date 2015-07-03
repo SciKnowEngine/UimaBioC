@@ -83,6 +83,9 @@ public class BioCCollectionReader extends JCasCollectionReader_ImplBase {
 			
 			this.existingFiles = new HashSet<String>();
 			if( outputDirectory != null ) {
+				File outDir = new File(outputDirectory);
+				if(!outDir.exists())
+					outDir.mkdirs();
 				for(Object o : FileUtils.listFiles(
 						new File(outputDirectory), fileTypes, true)) {
 					this.existingFiles.add( ((File) o).getName() );

@@ -91,9 +91,13 @@ public class S02_Nxml2txt_to_BioC {
 		
 		builder.add(TokenAnnotator.getDescription()); // Tokenization
 
-		String outFormat = SaveAsBioCDocuments.JSON;
+		String outFormat = null;
 		if( options.outFormat.toLowerCase().equals("xml") ) 
 			outFormat = SaveAsBioCDocuments.XML;
+		else if( options.outFormat.toLowerCase().equals("json") ) 
+			outFormat = SaveAsBioCDocuments.JSON;
+		else 
+			throw new Exception("Output format " + options.outFormat + " not recognized");
 
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
 				SaveAsBioCDocuments.class, 
