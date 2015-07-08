@@ -139,7 +139,9 @@ public class ExperimentTypeClassifier extends JCasAnnotator_ImplBase {
 		for (UimaBioCPassage uiP : passages) {			
 		
 			Map<String, String> psgInf = UimaBioCUtils.convertInfons(uiP.getInfons());
-			if( psgInf.containsKey("type") && psgInf.get("type").equals("fig") ){
+			if( psgInf.containsKey("type") 
+					&& psgInf.get("type").equals("formatting")
+					&& psgInf.get("value").equals("fig") ){
 				
 				Matcher m = patt.matcher(uiP.getCoveredText());
 				int figNumber = -1;
@@ -151,7 +153,9 @@ public class ExperimentTypeClassifier extends JCasAnnotator_ImplBase {
 				for (UimaBioCPassage caption : captions) {			
 
 					Map<String, String> capInf = UimaBioCUtils.convertInfons(caption.getInfons());
-					if( capInf.containsKey("type") && capInf.get("type").equals("caption") ){
+					if( capInf.containsKey("type") 
+							&& capInf.get("type").equals("formatting") 
+							&& capInf.get("value").equals("caption") ){
 
 						List<Sentence> sentences = JCasUtil.selectCovered(Sentence.class, caption);
 						for (Sentence sentence : sentences) {			

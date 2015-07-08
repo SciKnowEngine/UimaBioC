@@ -127,7 +127,8 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 			passageCount++;
 			
 			infons = new HashMap<String, String>();
-			infons.put("type", "document");
+			infons.put("type", "formatting");
+			infons.put("value", "document");
 			uiP.setInfons(UimaBioCUtils.convertInfons(infons, jcas));
 			uiP.addToIndexes();
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -171,7 +172,8 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 					uiA.setBegin(begin);
 					uiA.setEnd(end);
 					Map<String,String> infons2 = new HashMap<String, String>();
-					infons2.put("type", type);
+					infons2.put("type", "formatting");
+					infons2.put("value", type);
 					uiA.setInfons(UimaBioCUtils.convertInfons(infons2, jcas));
 					uiA.addToIndexes();
 					
@@ -196,7 +198,8 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 					uiA.setBegin(begin);
 					uiA.setEnd(end);
 					Map<String,String> infons2 = new HashMap<String, String>();
-					infons2.put("type", type);
+					infons2.put("type", "formatting");
+					infons2.put("value", type);
 					uiA.setInfons(UimaBioCUtils.convertInfons(infons2, jcas));
 					uiA.addToIndexes();
 					
@@ -219,7 +222,8 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 					uiA.setBegin(begin);
 					uiA.setEnd(end);
 					Map<String,String> infons2 = new HashMap<String, String>();
-					infons2.put("type", type);
+					infons2.put("type", "formatting");
+					infons2.put("value", type);
 					uiA.setInfons(UimaBioCUtils.convertInfons(infons2, jcas));
 					uiA.addToIndexes();
 					
@@ -242,7 +246,8 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 		
 					String[] keyValue = codes.split("=");
 					infons.put(keyValue[1], str);
-					infons.put("type", "article-id");
+					infons.put("type", "formatting");
+					infons.put("value", "article-id");
 					uiD.setInfons(
 							UimaBioCUtils.convertInfons(infons, jcas)
 							);

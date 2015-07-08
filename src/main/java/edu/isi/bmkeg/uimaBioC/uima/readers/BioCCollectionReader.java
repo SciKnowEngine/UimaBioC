@@ -119,12 +119,14 @@ public class BioCCollectionReader extends JCasCollectionReader_ImplBase {
 					this.existingFiles.contains(bioCFile.getName()) ) {
 				
 				if(!bioCFileIt.hasNext()) 
-					return;
+					throw new AnalysisEngineProcessException(
+							new Exception("Output directory contains all required files: " + 
+									outputDirectory ) );
 				
 				bioCFile = bioCFileIt.next();
 			
 			}
-
+			
 			BioCDocument bioD;
 			if (inFileFormat.equals(XML)) {
 				

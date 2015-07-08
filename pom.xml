@@ -322,6 +322,30 @@
 			<groupId>edu.isi.bmkeg</groupId>
 		</dependency>
 
+		<dependency>
+			<artifactId>mavuno</artifactId>
+			<version>0.2</version>
+			<groupId>edu.isi.mavuno</groupId>
+		</dependency>
+
+		<dependency>
+			<artifactId>fanseparser</artifactId>
+			<version>0.2.2</version>
+			<groupId>tratz</groupId>
+		</dependency>
+
+		<dependency>
+			<groupId>edu.stanford.nlp</groupId>
+			<artifactId>stanford-corenlp</artifactId>
+			<version>3.5.2</version>
+		</dependency>
+		<dependency>
+			<groupId>edu.stanford.nlp</groupId>
+			<artifactId>stanford-corenlp</artifactId>
+			<version>3.5.2</version>
+			<classifier>models</classifier>
+		</dependency>
+
 	</dependencies>
 
 </project>

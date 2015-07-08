@@ -121,7 +121,8 @@ public class MatchPdfBlocksAndSentencesToNxmlText extends
 				Map<String, String> infons = UimaBioCUtils.convertInfons(uiA
 						.getInfons());
 				if (infons.containsKey("type")
-						&& infons.get("type").equals("body")) {
+						&& infons.get("type").equals("formatting") 
+						&& infons.get("value").equals("body")) {
 					bodyBegin = uiA.getBegin();
 					bodyEnd = uiA.getEnd();
 				}

@@ -29,31 +29,19 @@ import bioc.type.UimaBioCAnnotation;
 import bioc.type.UimaBioCDocument;
 import edu.isi.bmkeg.uimaBioC.UimaBioCUtils;
 
-public class TabulateNestedBioCAnnotations extends JCasAnnotator_ImplBase {
+public class TabulateBioCAnnotationTypes extends JCasAnnotator_ImplBase {
 
 	public final static String PARAM_TITLE = ConfigurationParameterFactory
 			.createConfigurationParameterName(
-					TabulateNestedBioCAnnotations.class, "title");
+					TabulateBioCAnnotationTypes.class, "title");
 	@ConfigurationParameter(mandatory = true, description = "The title of the spreadsheet.")
 	String title;
-
+	
 	public final static String PARAM_FILE_PATH = ConfigurationParameterFactory
 			.createConfigurationParameterName(
-					TabulateNestedBioCAnnotations.class, "outFilePath");
+					TabulateBioCAnnotationTypes.class, "outFilePath");
 	@ConfigurationParameter(mandatory = true, description = "The path to the summary file.")
 	String outFilePath;
-
-	public final static String PARAM_OUTER_ANNOTATION_TYPE = ConfigurationParameterFactory
-			.createConfigurationParameterName(
-					TabulateNestedBioCAnnotations.class, "ann1Type");
-	@ConfigurationParameter(mandatory = true, description = "Outer Annotations to be counted.")
-	String ann1Type;
-
-	public final static String PARAM_INNER_ANNOTATION_TYPE = ConfigurationParameterFactory
-			.createConfigurationParameterName(
-					TabulateNestedBioCAnnotations.class, "ann2Type");
-	@ConfigurationParameter(mandatory = true, description = "Inner Annotations to be counted.")
-	String ann2Type;
 
 	private File outFile;
 	private BioCCollection collection;
@@ -78,38 +66,31 @@ public class TabulateNestedBioCAnnotations extends JCasAnnotator_ImplBase {
 		UimaBioCDocument uiD = JCasUtil.selectSingle(jCas,
 				UimaBioCDocument.class);
 
+		Map<String, Integer> row = null;
+		if( table.containsKey(uiD.getId()) ) {
+			row = table.get(uiD.getId()); 
+		} else {
+			row = new HashMap<String, Integer>();
+		}
+		
 		List<UimaBioCAnnotation> outerAnnotations = JCasUtil.selectCovered(
 				UimaBioCAnnotation.class, uiD);
 		for (UimaBioCAnnotation uiA1 : outerAnnotations) {
 			
 			Map<String, String> inf = UimaBioCUtils.convertInfons(uiA1.getInfons());
-			if( !inf.containsKey("type") || !inf.get("type").equals(ann1Type) ) 
+			if( !inf.containsKey("type")  ) 
 				continue;
 
-			List<UimaBioCAnnotation> innerAnnotations = JCasUtil.selectCovered(
-					UimaBioCAnnotation.class, uiA1);
-			for (UimaBioCAnnotation uiA2 : innerAnnotations) {
+			Integer count = row.get(inf.get("type"));
+			if( count == null )
+				count = 0;
 				
-				Map<String, String> inf2 = UimaBioCUtils.convertInfons(uiA2.getInfons());
-				if( !inf2.get("type").equals(ann2Type) ) 
-					continue;
+			count++;
 				
-				Map<String, Integer> row = table.get(inf.get("value"));
-				if( row == null )
-					row = new HashMap<String, Integer>();
-				
-				Integer count = row.get(inf2.get("value"));
-				if( count == null )
-					count = 0;
-				
-				count++;
-				
-				row.put(inf2.get("value"), count);
-				table.put(inf.get("value"), row);
-				
-			}
-
+			row.put(inf.get("type"), count);
 		}
+
+		table.put(uiD.getId(), row);
 
 	}
 	
@@ -124,9 +105,9 @@ public class TabulateNestedBioCAnnotations extends JCasAnnotator_ImplBase {
 			
 			PrintWriter out = new PrintWriter(new BufferedWriter(
 					new FileWriter(outFile, true)));
-
+			
 			out.println( title );
-			out.println( this.ann1Type + "\t" + this.ann2Type + "\tcount" );
+			out.println( "pmid\ttype\tcount" );
 			
 			for( String ann1 : this.table.keySet() ) {
 				for( String ann2 : this.table.get(ann1).keySet() ) {
