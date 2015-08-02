@@ -4,6 +4,7 @@ This project provides code that permits the use BioC structures as a UIMA type a
 
 ## The BioC Data Model
 
+![UML Diagram](src/main/resources/uml/bioc.jpg)
 
 ## BioC Processing Libraries
 
