@@ -11,7 +11,7 @@ This diagram shows the relationship between the various elements. Note that anno
 * The document has an infons object describing it's metadata:
 
 ```
-  {'"pmc": "2191828",  
+  {"pmc": "2191828",  
   "pmid": "7528775", 
   "publisher-id": "95105720", 
   "relative-source-path": "7528775.txt", 
