@@ -81,13 +81,13 @@ public class TabulateBioCAnnotationTypes extends JCasAnnotator_ImplBase {
 			if( !inf.containsKey("type")  ) 
 				continue;
 
-			Integer count = row.get(inf.get("type"));
+			Integer count = row.get(inf.get("type") + "." + inf.get("value"));
 			if( count == null )
 				count = 0;
 				
 			count++;
 				
-			row.put(inf.get("type"), count);
+			row.put(inf.get("type") + "." + inf.get("value"), count);
 		}
 
 		table.put(uiD.getId(), row);

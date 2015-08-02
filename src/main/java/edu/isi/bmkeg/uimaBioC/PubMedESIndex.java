@@ -58,7 +58,7 @@ public class PubMedESIndex {
 	private static Logger logger = Logger
 			.getLogger(PubMedESIndex.class);
 
-	public PubMedESIndex(File pmcRepo, File pmcFileListDir) throws IOException,
+	public PubMedESIndex(File pmcFileListDir) throws IOException,
 			ClassNotFoundException {
 
 		Settings settings = ImmutableSettings.settingsBuilder()
@@ -84,7 +84,7 @@ public class PubMedESIndex {
 				.setQuery(termQuery("_type", "nxml")).execute()
 				.actionGet();
 		if (response.getCount() == 0) {
-			buildXmlIndex(pmcRepo, f);
+			buildXmlIndex(f);
 		}
 
 		f = new File(pmcFileListDir + "/" + readFilename(PDFS));
@@ -97,7 +97,7 @@ public class PubMedESIndex {
 				.setQuery(termQuery("_type", "pdf")).execute()
 				.actionGet();
 		if (response.getCount() == 0) {
-			buildPdfMaps(pmcRepo, f);
+			buildPdfMaps(f);
 		}
 
 	}
@@ -118,7 +118,7 @@ public class PubMedESIndex {
 
 	}
 
-	private void buildXmlIndex(File pmcRepo, File f)
+	private void buildXmlIndex(File f)
 			throws FileNotFoundException, IOException, ClassNotFoundException {
 
 		BufferedReader in2 = new BufferedReader(new InputStreamReader(
@@ -173,7 +173,7 @@ public class PubMedESIndex {
 
 	}
 
-	private void buildPdfMaps(File targetDir, File f)
+	private void buildPdfMaps(File f)
 			throws FileNotFoundException, IOException, ClassNotFoundException {
 
 		BufferedReader in2 = new BufferedReader(new InputStreamReader(

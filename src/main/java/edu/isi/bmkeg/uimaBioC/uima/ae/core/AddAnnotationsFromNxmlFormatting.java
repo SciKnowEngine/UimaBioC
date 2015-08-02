@@ -30,8 +30,7 @@ public class AddAnnotationsFromNxmlFormatting extends JCasAnnotator_ImplBase {
 			passageCount++;
 
 			Map<String,String> infons = UimaBioCUtils.convertInfons(uiP.getInfons());
-			if( infons.get("type").equals("formatting") &&
-					infons.get("value").equals("document")) {
+			if( infons.get("type").equals("document") ) {
 				docPassage = uiP;				
 			}
 		}

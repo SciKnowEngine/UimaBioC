@@ -127,8 +127,7 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 			passageCount++;
 			
 			infons = new HashMap<String, String>();
-			infons.put("type", "formatting");
-			infons.put("value", "document");
+			infons.put("type", "document");
 			uiP.setInfons(UimaBioCUtils.convertInfons(infons, jcas));
 			uiP.addToIndexes();
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
