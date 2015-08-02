@@ -6,7 +6,10 @@ This project provides code that permits the use BioC structures as a UIMA type a
 
 ![UML Diagram](src/main/resources/uml/bioc.jpg)
 
-This diagram shows the relationship between the various elements. Note that annotations are primarily structured using `infons` key-value tables, which are themselves unspecified. Using this library to extract data from `*.nxml` files generates annotations described in the following section: 
+This diagram shows the relationship between the various elements. Note that annotations are primarily structured using `infons` key-value tables, which are themselves unspecified. Using this library to extract data from `*.nxml` files generates BioC formatted data with the following organization (based on `![edu.isi.bmkeg.uimaBioC.uima.readers.Nxml2TxtFilesCollectionReader](src/main/java/edu/isi/bmkeg/uimaBioC/uima/readers/Nxml2TxtFilesCollectionReader.java)`
+
+
+1. The
 
 ### Infons key-value pairs and data.
 
