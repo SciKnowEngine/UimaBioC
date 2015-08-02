@@ -10,14 +10,16 @@ This diagram shows the relationship between the various elements. Note that anno
 
 * The document has an infons object describing it's metadata:
 
+```
   {'"pmc": "2191828",  
   "pmid": "7528775", 
   "publisher-id": "95105720", 
   "relative-source-path": "7528775.txt", 
   "type": "formatting", 
   "value": "article-id"}
+```
 
-* We add a single passage containing all available text to the document with an infons object: `{'type':'document'}. All annotations can then be attached to this passage.
+* We add a single passage containing all available text to the document with an infons object: `{'type':'document'}`. All annotations can then be attached to this passage.
 * We use annotations with an infons object `{'type':'formatting', 'value': '???'}` where the value field could be `front`, `abstract`, `body` or `ref-list` to denote those parts of the text. 
 * Similarly, we use annotations with an infons object `{'type':'formatting', 'value': '???'}` where the value field could be `title`, `subtitle`, `sec`, `p`,  `caption` or `fig` to denote those parts of the text.
 * The same is true for the following simple text formating elements: `bold`, `italic`, `sub`, `sup`.
