@@ -44,8 +44,8 @@ public class UimaBioCUtils {
 				d.addPassage(p);
 
 				Map<String, String> inf = p.getInfons();
-				if (inf.containsKey("type")
-						&& inf.get("type").equals("document"))
+				if( (inf.containsKey("type") && inf.get("type").equals("document")) ||
+						(inf.containsKey("value") && inf.get("value").equals("document")))
 					p.setText(uiP.getCoveredText());
 
 				FSArray annotations = uiP.getAnnotations();
@@ -57,7 +57,10 @@ public class UimaBioCUtils {
 						BioCAnnotation a = new BioCAnnotation();
 						a.setInfons(convertInfons(uiA.getInfons()));
 						a.setID(uiA.getId());
-						// a.setText(uiA.getCoveredText());
+						
+						inf = a.getInfons();
+						if( inf.containsKey("type") && !inf.get("type").equals("formatting") )
+							a.setText(uiA.getCoveredText());
 
 						p.addAnnotation(a);
 
@@ -129,8 +132,10 @@ public class UimaBioCUtils {
 
 		UimaBioCDocument uiD = new UimaBioCDocument(jcas);		
 		for( BioCPassage bioP : d.getPassages() ) {
-			if (bioP.getInfons().containsKey("type")
-					&& bioP.getInfons().get("type").equals("document")) {
+			if( (bioP.getInfons().containsKey("type")
+					&& bioP.getInfons().get("type").equals("document")) 
+				|| (bioP.getInfons().containsKey("value")
+						&& bioP.getInfons().get("value").equals("document") ) ) {
 				uiD.setBegin(0);
 				uiD.setEnd(bioP.getText().length());
 				jcas.setDocumentText(bioP.getText());
@@ -268,7 +273,8 @@ public class UimaBioCUtils {
 			UimaBioCPassage uiP = (UimaBioCPassage) passages.get(i);
 			Map<String, String> infons = UimaBioCUtils.convertInfons(uiP
 					.getInfons());
-			if(infons.get("type").equals("document")) {
+			if(infons.get("type").equals("document") || 
+					(infons.containsKey("value") && infons.get("value").equals("document")) ) {
 				docPassage = uiP;
 			}
 		}

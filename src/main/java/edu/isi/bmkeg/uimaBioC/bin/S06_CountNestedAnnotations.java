@@ -25,7 +25,7 @@ import edu.isi.bmkeg.uimaBioC.uima.readers.BioCCollectionReader;
  * @author Gully
  * 
  */
-public class S07_CountNestedAnnotations {
+public class S06_CountNestedAnnotations {
 
 	public static class Options {
 
@@ -44,7 +44,7 @@ public class S07_CountNestedAnnotations {
 	}
 
 	private static Logger logger = Logger
-			.getLogger(S07_CountNestedAnnotations.class);
+			.getLogger(S06_CountNestedAnnotations.class);
 
 	/**
 	 * @param args

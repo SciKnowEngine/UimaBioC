@@ -16,9 +16,8 @@ import org.uimafit.factory.CollectionReaderFactory;
 import org.uimafit.factory.TypeSystemDescriptionFactory;
 import org.uimafit.pipeline.SimplePipeline;
 
-import edu.isi.bmkeg.uimaBioC.uima.ae.core.FanseParseAnnotator;
-import edu.isi.bmkeg.uimaBioC.uima.ae.core.MatchPdfBlocksAndSentencesToNxmlText;
 import edu.isi.bmkeg.uimaBioC.uima.out.SaveAsBioCDocuments;
+import edu.isi.bmkeg.uimaBioC.uima.out.TabulateBioCAnnotationTypes;
 import edu.isi.bmkeg.uimaBioC.uima.readers.BioCCollectionReader;
 
 
@@ -30,20 +29,20 @@ import edu.isi.bmkeg.uimaBioC.uima.readers.BioCCollectionReader;
  * @author Gully
  * 
  */
-public class S05_RunTratzParse {
+public class S05_AnnotationStatistics {
 
 	public static class Options {
 
 		@Option(name = "-inDir", usage = "Input Directory", required = true, metaVar = "IN-DIRECTORY")
 		public File inDir;
 
-		@Option(name = "-outDir", usage = "Output Directory", required = true, metaVar = "OUT-DIRECTORY")
-		public File outDir;
+		@Option(name = "-outFile", usage = "Output Directory", required = true, metaVar = "OUT-FILE")
+		public File outFile;
 
 	}
 
 	private static Logger logger = Logger
-			.getLogger(S05_RunTratzParse.class);
+			.getLogger(S05_AnnotationStatistics.class);
 
 	/**
 	 * @param args
@@ -76,23 +75,19 @@ public class S05_RunTratzParse {
 		CollectionReader cr = CollectionReaderFactory.createCollectionReader(
 				BioCCollectionReader.class, typeSystem,
 				BioCCollectionReader.INPUT_DIRECTORY, options.inDir,
-				BioCCollectionReader.OUTPUT_DIRECTORY, options.outDir,
 				BioCCollectionReader.PARAM_FORMAT, BioCCollectionReader.JSON);
 
 		AggregateBuilder builder = new AggregateBuilder();
 
 		builder.add(SentenceAnnotator.getDescription()); // Sentence
 		builder.add(TokenAnnotator.getDescription());   // Tokenization
-
-		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
-				FanseParseAnnotator.class));
 	
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
-				SaveAsBioCDocuments.class, 
-				SaveAsBioCDocuments.PARAM_FILE_PATH,
-				options.outDir.getPath(),
-				SaveAsBioCDocuments.PARAM_FORMAT,
-				SaveAsBioCDocuments.JSON));
+				TabulateBioCAnnotationTypes.class, 
+				TabulateBioCAnnotationTypes.PARAM_TITLE,
+				options.inDir.getPath(),
+				TabulateBioCAnnotationTypes.PARAM_FILE_PATH,
+				options.outFile.getPath()));
 
 		SimplePipeline.runPipeline(cr, builder.createAggregateDescription());
 
