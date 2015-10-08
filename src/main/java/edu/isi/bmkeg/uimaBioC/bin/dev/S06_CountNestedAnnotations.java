@@ -1,12 +1,10 @@
-package edu.isi.bmkeg.uimaBioC.bin;
+package edu.isi.bmkeg.uimaBioC.bin.dev;
 
 import java.io.File;
 
 import org.apache.log4j.Logger;
 import org.apache.uima.collection.CollectionReader;
 import org.apache.uima.resource.metadata.TypeSystemDescription;
-import org.cleartk.opennlp.tools.SentenceAnnotator;
-import org.cleartk.token.tokenizer.TokenAnnotator;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
@@ -16,11 +14,9 @@ import org.uimafit.factory.CollectionReaderFactory;
 import org.uimafit.factory.TypeSystemDescriptionFactory;
 import org.uimafit.pipeline.SimplePipeline;
 
-import edu.isi.bmkeg.uimaBioC.uima.out.SaveAsBioCDocuments;
 import edu.isi.bmkeg.uimaBioC.uima.out.TabulateBioCAnnotationTypes;
+import edu.isi.bmkeg.uimaBioC.uima.out.TabulateNestedBioCAnnotations;
 import edu.isi.bmkeg.uimaBioC.uima.readers.BioCCollectionReader;
-
-
 
 /**
  * This script runs through serialized JSON files from the model and converts
@@ -29,20 +25,26 @@ import edu.isi.bmkeg.uimaBioC.uima.readers.BioCCollectionReader;
  * @author Gully
  * 
  */
-public class S05_AnnotationStatistics {
+public class S06_CountNestedAnnotations {
 
 	public static class Options {
 
 		@Option(name = "-inDir", usage = "Input Directory", required = true, metaVar = "IN-DIRECTORY")
 		public File inDir;
-
-		@Option(name = "-outFile", usage = "Output Directory", required = true, metaVar = "OUT-FILE")
+		
+		@Option(name = "-outFile", usage = "Output Directory", required = true, metaVar = "OUT-DIRECTORY")
 		public File outFile;
+
+		@Option(name = "-annType1", usage = "Output Format", required = true, metaVar = "XML/JSON")
+		public String annType1;
+
+		@Option(name = "-annType2", usage = "Output Format", required = true, metaVar = "XML/JSON")
+		public String annType2;
 
 	}
 
 	private static Logger logger = Logger
-			.getLogger(S05_AnnotationStatistics.class);
+			.getLogger(S06_CountNestedAnnotations.class);
 
 	/**
 	 * @param args
@@ -68,10 +70,13 @@ public class S05_AnnotationStatistics {
 			System.exit(-1);
 
 		}
+		
+		if (!options.outFile.getParentFile().exists())
+			options.outFile.getParentFile().mkdirs();
 
 		TypeSystemDescription typeSystem = TypeSystemDescriptionFactory
 				.createTypeSystemDescription("bioc.TypeSystem");
-
+		
 		CollectionReader cr = CollectionReaderFactory.createCollectionReader(
 				BioCCollectionReader.class, typeSystem,
 				BioCCollectionReader.INPUT_DIRECTORY, options.inDir,
@@ -79,15 +84,16 @@ public class S05_AnnotationStatistics {
 
 		AggregateBuilder builder = new AggregateBuilder();
 
-		builder.add(SentenceAnnotator.getDescription()); // Sentence
-		builder.add(TokenAnnotator.getDescription());   // Tokenization
-	
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
-				TabulateBioCAnnotationTypes.class, 
-				TabulateBioCAnnotationTypes.PARAM_TITLE,
+				TabulateNestedBioCAnnotations.class, 
+				TabulateNestedBioCAnnotations.PARAM_TITLE,
 				options.inDir.getPath(),
-				TabulateBioCAnnotationTypes.PARAM_FILE_PATH,
-				options.outFile.getPath()));
+				TabulateNestedBioCAnnotations.PARAM_OUTER_ANNOTATION_TYPE,
+				options.annType1,
+				TabulateNestedBioCAnnotations.PARAM_FILE_PATH,
+				options.outFile.getPath(),
+				TabulateNestedBioCAnnotations.PARAM_INNER_ANNOTATION_TYPE,
+				options.annType2));
 
 		SimplePipeline.runPipeline(cr, builder.createAggregateDescription());
 

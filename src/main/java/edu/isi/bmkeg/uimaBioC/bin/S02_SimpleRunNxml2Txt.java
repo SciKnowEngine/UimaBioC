@@ -23,7 +23,7 @@ import org.kohsuke.args4j.Option;
  * @author Gully
  * 
  */
-public class S01_SimpleRunNxml2Txt {
+public class S02_SimpleRunNxml2Txt {
 
 	public static class Options {
 
@@ -42,7 +42,7 @@ public class S01_SimpleRunNxml2Txt {
 	}
 
 	private static Logger logger = Logger
-			.getLogger(S01_SimpleRunNxml2Txt.class);
+			.getLogger(S02_SimpleRunNxml2Txt.class);
 
 	/**
 	 * @param args

@@ -1,4 +1,4 @@
-package edu.isi.bmkeg.uimaBioC.bin;
+package edu.isi.bmkeg.uimaBioC.bin.dev;
 
 import java.io.File;
 
@@ -16,36 +16,31 @@ import org.uimafit.factory.CollectionReaderFactory;
 import org.uimafit.factory.TypeSystemDescriptionFactory;
 import org.uimafit.pipeline.SimplePipeline;
 
-import edu.isi.bmkeg.uimaBioC.uima.ae.core.MatchPdfBlocksAndSentencesToNxmlText;
-import edu.isi.bmkeg.uimaBioC.uima.out.SaveAsBioCDocuments;
-import edu.isi.bmkeg.uimaBioC.uima.readers.BioCCollectionReader;
-
-
+import edu.isi.bmkeg.uimaBioC.uima.out.SimpleOneLinePerDocWriter;
+import edu.isi.bmkeg.uimaBioC.uima.readers.TxtFilesCollectionReader;
 
 /**
- * This script runs through serialized JSON files from the model and converts
- * them to VPDMf KEfED models, including the data.
+ * This script provides a simple demonstration of loading BioC data from 
+ * text derived from NXML files with the added annotations on top of them.
+ * It then dumps the output as BioC files in the specified output directory. 
  * 
  * @author Gully
  * 
  */
-public class S04_AddPdfBlocksToBioC {
+public class S03_TxtDocDir_to_LinePerDocTxtFile {
 
 	public static class Options {
 
 		@Option(name = "-inDir", usage = "Input Directory", required = true, metaVar = "IN-DIRECTORY")
 		public File inDir;
 
-		@Option(name = "-lapdfDir", usage = "Layout Aware PDF Directory", required = true, metaVar = "LAPDF-FILE")
-		public File lapdfDir;
-
-		@Option(name = "-outDir", usage = "Output Directory", required = true, metaVar = "OUT-DIRECTORY")
-		public File outDir;
-
+		@Option(name = "-outFile", usage = "Output File", required = true, metaVar = "OUT-FILE")
+		public File outFile;
+		
 	}
 
 	private static Logger logger = Logger
-			.getLogger(S04_AddPdfBlocksToBioC.class);
+			.getLogger(S03_TxtDocDir_to_LinePerDocTxtFile.class);
 
 	/**
 	 * @param args
@@ -72,31 +67,23 @@ public class S04_AddPdfBlocksToBioC {
 
 		}
 
+		if (!options.outFile.getParentFile().exists())
+			options.outFile.getParentFile().mkdirs();
+
 		TypeSystemDescription typeSystem = TypeSystemDescriptionFactory
 				.createTypeSystemDescription("bioc.TypeSystem");
 
 		CollectionReader cr = CollectionReaderFactory.createCollectionReader(
-				BioCCollectionReader.class, typeSystem,
-				BioCCollectionReader.INPUT_DIRECTORY, options.inDir,
-				BioCCollectionReader.OUTPUT_DIRECTORY, options.outDir,
-				BioCCollectionReader.PARAM_FORMAT, BioCCollectionReader.JSON);
+				TxtFilesCollectionReader.class, typeSystem,
+				TxtFilesCollectionReader.PARAM_INPUT_DIRECTORY, options.inDir);
 
 		AggregateBuilder builder = new AggregateBuilder();
 
-		builder.add(SentenceAnnotator.getDescription()); // Sentence
-		builder.add(TokenAnnotator.getDescription());   // Tokenization
-
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
-				MatchPdfBlocksAndSentencesToNxmlText.class, 
-				MatchPdfBlocksAndSentencesToNxmlText.LAPDF_DIR,
-				options.lapdfDir));
-	
-		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
-				SaveAsBioCDocuments.class, 
-				SaveAsBioCDocuments.PARAM_FILE_PATH,
-				options.outDir.getPath(),
-				SaveAsBioCDocuments.PARAM_FORMAT,
-				SaveAsBioCDocuments.JSON));
+				SimpleOneLinePerDocWriter.class, 
+				SimpleOneLinePerDocWriter.PARAM_OUT_FILE_PATH,
+				options.outFile.getPath() 
+				));
 
 		SimplePipeline.runPipeline(cr, builder.createAggregateDescription());
 

@@ -30,10 +30,13 @@ import edu.isi.bmkeg.uimaBioC.PubMedESIndex;
  * @author Gully
  * 
  */
-public class S00_PmcidPmidConverter {
+public class S01_BuildCorpusFromPmidListFile {
 
 	public static class Options {
 
+		@Option(name = "-clusteName", usage = "ES Cluster Name", required = true, metaVar = "CLUSTER_NAME")
+		public String clusterName;
+		
 		@Option(name = "-inFile", usage = "Input", required = true, metaVar = "INPUT")
 		public File inFile;
 
@@ -53,7 +56,7 @@ public class S00_PmcidPmidConverter {
 	}
 
 	private static Logger logger = Logger
-			.getLogger(S00_PmcidPmidConverter.class);
+			.getLogger(S01_BuildCorpusFromPmidListFile.class);
 
 	/**0
 	 * @param args
@@ -80,7 +83,7 @@ public class S00_PmcidPmidConverter {
 
 		}
 
-		PubMedESIndex pmES = new PubMedESIndex();
+		PubMedESIndex pmES = new PubMedESIndex(options.clusterName);
 		
 		if( !options.outFile.getParentFile().exists() )
 			options.outFile.getParentFile().mkdirs();

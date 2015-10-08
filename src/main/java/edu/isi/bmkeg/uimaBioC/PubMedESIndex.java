@@ -54,21 +54,24 @@ public class PubMedESIndex {
 	Pattern p2 = Pattern.compile("\\w{2}\\/\\w{2}\\/(.*?)_\\d{4}_");
 
 	Client esClient;
+	
+	String clusterName = "";
 
 	private static Logger logger = Logger
 			.getLogger(PubMedESIndex.class);
 
-	public PubMedESIndex(File pmcFileListDir) throws IOException,
+	public PubMedESIndex(File pmcFileListDir, String clusterName) throws IOException,
 			ClassNotFoundException {
 
+		this.clusterName = clusterName;
 		Settings settings = ImmutableSettings.settingsBuilder()
-				.put("cluster.name", "pubmed").build();
+				.put("cluster.name", clusterName).build();
 		esClient = new TransportClient(settings)
 				.addTransportAddress(new InetSocketTransportAddress(
 						"127.0.0.1", 9300));
 
 		try {
-			SearchRequestBuilder response = esClient.prepareSearch("pubmed");
+			SearchRequestBuilder response = esClient.prepareSearch(clusterName);
 		} catch (NoNodeAvailableException e) {
 			throw e;
 		}
@@ -80,7 +83,7 @@ public class PubMedESIndex {
 		}
 		logger.info("Loading NXML information");
 
-		CountResponse response = esClient.prepareCount("pubmed")
+		CountResponse response = esClient.prepareCount(clusterName)
 				.setQuery(termQuery("_type", "nxml")).execute()
 				.actionGet();
 		if (response.getCount() == 0) {
@@ -93,7 +96,7 @@ public class PubMedESIndex {
 			this.dumpToTextFile(PDFS, f);
 		}
 		logger.info("Loading PDF information");
-		response = esClient.prepareCount("pubmed")
+		response = esClient.prepareCount(clusterName)
 				.setQuery(termQuery("_type", "pdf")).execute()
 				.actionGet();
 		if (response.getCount() == 0) {
@@ -102,16 +105,17 @@ public class PubMedESIndex {
 
 	}
 
-	public PubMedESIndex() throws IOException, ClassNotFoundException {
+	public PubMedESIndex(String clusterName) throws IOException, ClassNotFoundException {
 
+		this.clusterName = clusterName;
 		Settings settings = ImmutableSettings.settingsBuilder()
-				.put("cluster.name", "pubmed").build();
+				.put("cluster.name", clusterName).build();
 		esClient = new TransportClient(settings)
 				.addTransportAddress(new InetSocketTransportAddress(
 						"127.0.0.1", 9300));
 
 		try {
-			SearchRequestBuilder response = esClient.prepareSearch("pubmed");
+			SearchRequestBuilder response = esClient.prepareSearch(clusterName);
 		} catch (NoNodeAvailableException e) {
 			throw e;
 		}
@@ -143,7 +147,7 @@ public class PubMedESIndex {
 							String xmlFilePath = dirStem + "/" + xmlStem
 									+ ".nxml";
 							IndexResponse response = esClient
-									.prepareIndex("pubmed", "nxml",
+									.prepareIndex(clusterName, "nxml",
 											pmidStr)
 									.setSource(
 											jsonBuilder()
@@ -190,7 +194,7 @@ public class PubMedESIndex {
 					String pdf = BASE + "/" + fields[0];
 
 					IndexResponse response = esClient
-							.prepareIndex("pubmed", "pdf", pmidStr)
+							.prepareIndex(clusterName, "pdf", pmidStr)
 							.setSource(
 									jsonBuilder().startObject()
 											.field("pmid", pmidStr)
@@ -250,7 +254,7 @@ public class PubMedESIndex {
 
 	public boolean hasEntry(String term, String value, String type) {
 
-		CountResponse response = esClient.prepareCount("pubmed")
+		CountResponse response = esClient.prepareCount(clusterName)
 				.setQuery(QueryBuilders.matchQuery(term, value)).execute()
 				.actionGet();
 
@@ -263,7 +267,7 @@ public class PubMedESIndex {
 	
 	public Map<String,Object> getMapFromTerm(String term, String value, String type) {
 
-		SearchResponse response = esClient.prepareSearch("pubmed")
+		SearchResponse response = esClient.prepareSearch(clusterName)
 				.setTypes(type)
 				.setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
 				.setQuery(QueryBuilders.matchQuery(term, value)).execute()

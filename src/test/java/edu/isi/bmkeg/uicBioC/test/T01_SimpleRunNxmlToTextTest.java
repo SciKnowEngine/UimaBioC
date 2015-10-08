@@ -10,7 +10,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import edu.isi.bmkeg.uimaBioC.UimaBioCProperties;
-import edu.isi.bmkeg.uimaBioC.bin.S01_SimpleRunNxml2Txt;
+import edu.isi.bmkeg.uimaBioC.bin.S02_SimpleRunNxml2Txt;
 
 public class T01_SimpleRunNxmlToTextTest extends TestCase {
 		
@@ -46,7 +46,7 @@ public class T01_SimpleRunNxmlToTextTest extends TestCase {
 				"-execPath", execPath.getPath(), 
 				};
 
-		S01_SimpleRunNxml2Txt.main(args);
+		S02_SimpleRunNxml2Txt.main(args);
 						
 	}
 		
