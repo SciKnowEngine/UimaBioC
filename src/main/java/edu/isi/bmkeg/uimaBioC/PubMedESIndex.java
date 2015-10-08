@@ -94,11 +94,11 @@ public class PubMedESIndex {
 			CreateIndexRequestBuilder createIndexBuilder = esClient.admin()
 					.indices().prepareCreate("pubmed");
 			createIndexBuilder.setSettings(settings);
-			createIndexBuilder.execute();
+			createIndexBuilder.execute().actionGet();
 			
 			// We wait now for the yellow (or green) status
-			esClient.admin().cluster().prepareHealth()
-					.setWaitForYellowStatus().execute().actionGet();
+			//esClient.admin().cluster().prepareHealth()
+			//		.setWaitForYellowStatus().execute().actionGet();
 			
 			response = esClient.prepareCount("pubmed")
 					.setQuery(termQuery("_type", "nxml")).execute()
