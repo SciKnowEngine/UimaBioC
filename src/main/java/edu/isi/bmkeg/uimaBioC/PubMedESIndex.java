@@ -21,6 +21,10 @@ import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 import org.apache.log4j.Logger;
+import org.elasticsearch.action.ListenableActionFuture;
+import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
+import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
+import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.count.CountResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -33,6 +37,7 @@ import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.indices.IndexMissingException;
 import org.elasticsearch.search.SearchHit;
 
 /**
@@ -70,12 +75,6 @@ public class PubMedESIndex {
 				.addTransportAddress(new InetSocketTransportAddress(
 						"127.0.0.1", 9300));
 
-		try {
-			SearchRequestBuilder response = esClient.prepareSearch(clusterName);
-		} catch (NoNodeAvailableException e) {
-			throw e;
-		}
-
 		File f = new File(pmcFileListDir + "/" + readFilename(FILE_LIST));
 		if (!f.exists()) {
 			logger.info("Getting " + FILE_LIST);
@@ -83,9 +82,29 @@ public class PubMedESIndex {
 		}
 		logger.info("Loading NXML information");
 
-		CountResponse response = esClient.prepareCount(clusterName)
-				.setQuery(termQuery("_type", "nxml")).execute()
-				.actionGet();
+		CountResponse response = null;
+		try {
+		
+			response = esClient.prepareCount("pubmed")
+					.setQuery(termQuery("_type", "nxml")).execute()
+					.actionGet();
+		
+		} catch( IndexMissingException e ) {
+			
+			CreateIndexRequestBuilder createIndexBuilder = esClient.admin()
+					.indices().prepareCreate("pubmed");
+			createIndexBuilder.setSettings(settings);
+			createIndexBuilder.execute();
+			
+			// We wait now for the yellow (or green) status
+			esClient.admin().cluster().prepareHealth()
+					.setWaitForYellowStatus().execute().actionGet();
+			
+			response = esClient.prepareCount("pubmed")
+					.setQuery(termQuery("_type", "nxml")).execute()
+					.actionGet();
+		}
+		
 		if (response.getCount() == 0) {
 			buildXmlIndex(f);
 		}
@@ -96,7 +115,7 @@ public class PubMedESIndex {
 			this.dumpToTextFile(PDFS, f);
 		}
 		logger.info("Loading PDF information");
-		response = esClient.prepareCount(clusterName)
+		response = esClient.prepareCount("pubmed")
 				.setQuery(termQuery("_type", "pdf")).execute()
 				.actionGet();
 		if (response.getCount() == 0) {
@@ -115,7 +134,7 @@ public class PubMedESIndex {
 						"127.0.0.1", 9300));
 
 		try {
-			SearchRequestBuilder response = esClient.prepareSearch(clusterName);
+			SearchRequestBuilder response = esClient.prepareSearch("pubmed");
 		} catch (NoNodeAvailableException e) {
 			throw e;
 		}
@@ -147,7 +166,7 @@ public class PubMedESIndex {
 							String xmlFilePath = dirStem + "/" + xmlStem
 									+ ".nxml";
 							IndexResponse response = esClient
-									.prepareIndex(clusterName, "nxml",
+									.prepareIndex("pubmed", "nxml",
 											pmidStr)
 									.setSource(
 											jsonBuilder()
@@ -194,7 +213,7 @@ public class PubMedESIndex {
 					String pdf = BASE + "/" + fields[0];
 
 					IndexResponse response = esClient
-							.prepareIndex(clusterName, "pdf", pmidStr)
+							.prepareIndex("pubmed", "pdf", pmidStr)
 							.setSource(
 									jsonBuilder().startObject()
 											.field("pmid", pmidStr)
@@ -254,7 +273,7 @@ public class PubMedESIndex {
 
 	public boolean hasEntry(String term, String value, String type) {
 
-		CountResponse response = esClient.prepareCount(clusterName)
+		CountResponse response = esClient.prepareCount("pubmed")
 				.setQuery(QueryBuilders.matchQuery(term, value)).execute()
 				.actionGet();
 
@@ -267,7 +286,7 @@ public class PubMedESIndex {
 	
 	public Map<String,Object> getMapFromTerm(String term, String value, String type) {
 
-		SearchResponse response = esClient.prepareSearch(clusterName)
+		SearchResponse response = esClient.prepareSearch("pubmed")
 				.setTypes(type)
 				.setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
 				.setQuery(QueryBuilders.matchQuery(term, value)).execute()

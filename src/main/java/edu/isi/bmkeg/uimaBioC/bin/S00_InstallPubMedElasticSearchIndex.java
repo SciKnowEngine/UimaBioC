@@ -35,13 +35,13 @@ public class S00_InstallPubMedElasticSearchIndex {
 	public static class Options {
 
 		@Option(name = "-pubmedFiles", 
-				usage = "Local File where files from PubMed can be stored",
+				usage = "Local directory where files from PubMed can be stored",
 				required = true, metaVar = "PUBMED_FILES")
 		public File pubmedFiles;
 
-		@Option(name = "-clusterNameFiles", 
+		@Option(name = "-clusterName", 
 				usage = "Name used for the Elastic Search Cluster",
-				required = true, metaVar = "ES_CLUSTER_NAME")
+				required = true, metaVar = "CLUSTER_NAME")
 		public String clusterName;
 		
 	}
