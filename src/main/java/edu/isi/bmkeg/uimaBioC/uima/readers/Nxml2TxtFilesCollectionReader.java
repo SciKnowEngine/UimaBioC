@@ -8,9 +8,9 @@ import java.io.InputStreamReader;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
@@ -24,7 +24,6 @@ import org.apache.uima.util.ProgressImpl;
 import org.uimafit.component.JCasCollectionReader_ImplBase;
 import org.uimafit.descriptor.ConfigurationParameter;
 import org.uimafit.factory.ConfigurationParameterFactory;
-import org.uimafit.util.JCasUtil;
 
 import bioc.type.UimaBioCAnnotation;
 import bioc.type.UimaBioCDocument;
@@ -54,6 +53,8 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 					"inputDirectory");
 	@ConfigurationParameter(mandatory = true, description = "Input Directory for Nxml2Txt Files")
 	protected String inputDirectory;
+	
+	private Pattern firstLinePatt = Pattern.compile("^(.*)\\n");
 	
 	@Override
 	public void initialize(UimaContext context) throws ResourceInitializationException {
@@ -185,13 +186,8 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 				}
 				
-				// Sections, Paragraphs, Titles, Subtitles Figure Captions.
-				if( type.equals("title") || 
-						type.equals("subtitle") ||  
-						type.equals("sec") ||  
-						type.equals("p") ||  
-						type.equals("caption") ||  
-						type.equals("fig")){					
+				// Figure Captions + paragraphs
+				if( type.equals("p") || type.equals("fig")){					
 					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 					UimaBioCAnnotation uiA = new UimaBioCAnnotation(jcas);
 					uiA.setBegin(begin);
@@ -199,6 +195,34 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 					Map<String,String> infons2 = new HashMap<String, String>();
 					infons2.put("type", "formatting");
 					infons2.put("value", type);
+					uiA.setInfons(UimaBioCUtils.convertInfons(infons2, jcas));
+					uiA.addToIndexes();
+					
+					FSArray locations = new FSArray(jcas, 1);
+					uiA.setLocations(locations);
+					UimaBioCLocation uiL = new UimaBioCLocation(jcas);
+					locations.set(0, uiL);
+					uiL.setOffset(begin);
+					uiL.setLength(end - begin);
+					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				}
+
+				// Section Headings
+				if( type.equals("sec") ){					
+					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+					String subText = txt.substring(begin, end);
+					Matcher firstLineMatch = firstLinePatt.matcher(subText);
+					if( !firstLineMatch.find() ) 
+						continue;
+					String sectionHeading = firstLineMatch.group(1);
+					
+					UimaBioCAnnotation uiA = new UimaBioCAnnotation(jcas);
+					uiA.setBegin(begin);
+					uiA.setEnd(end);
+					Map<String,String> infons2 = new HashMap<String, String>();
+					infons2.put("type", "formatting");
+					infons2.put("value", "sec");
+					infons2.put("sectionHeading", sectionHeading);
 					uiA.setInfons(UimaBioCUtils.convertInfons(infons2, jcas));
 					uiA.addToIndexes();
 					
