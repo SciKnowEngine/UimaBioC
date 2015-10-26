@@ -40,13 +40,13 @@ public class T01_SimpleRunNxmlToTextTest extends TestCase {
 	@Test
 	public final void testBuildTriageCorpusFromScratch() throws Exception {
 
-		String[] args = new String[] { 
+		/*String[] args = new String[] { 
 				"-inDir", inDir.getPath(), 
 				"-outDir", outDir.getPath(), 
 				"-execPath", execPath.getPath(), 
 				};
 
-		S02_SimpleRunNxml2Txt.main(args);
+		S02_SimpleRunNxml2Txt.main(args);*/
 						
 	}
 		
