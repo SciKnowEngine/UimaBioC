@@ -28,20 +28,20 @@
 			<id>isi.nexus.server.thirdparty</id>
 			<name>ISI Third Party Nexus Repository</name>
 			<url>http://colo-pm2.isi.edu:8081/nexus/content/repositories/thirdparty/</url>
-		</repository>	
+		</repository>
 
 		<repository>
 			<id>isi.nexus.server.snapshots</id>
 			<name>ISI Snapshots Nexus Repository</name>
 			<url>http://colo-pm2.isi.edu:8081/nexus/content/repositories/snapshots/</url>
-		</repository>	
+		</repository>
 
 		<repository>
 			<id>isi.nexus.server</id>
 			<name>ISI Snapshots Nexus Repository</name>
 			<url>http://colo-pm2.isi.edu:8081/nexus/content/repositories/public/</url>
 		</repository>
-		
+
 		<!-- Maven Central -->
 		<repository>
 			<id>maven-central</id>
@@ -204,6 +204,13 @@
 	</build>
 
 	<dependencies>
+	
+		<dependency>
+			<groupId>edu.isi.bmkeg</groupId>
+			<artifactId>uimaBioC-fanseParser-models</artifactId>
+			<version>1.0</version>
+		</dependency>
+	
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-io</artifactId>
@@ -400,18 +407,19 @@
 			<artifactId>fanseparser</artifactId>
 			<version>0.2.2</version>
 		</dependency>
+
+		<dependency>
+			<groupId>edu.stanford.nlp</groupId>
+			<artifactId>stanford-corenlp</artifactId>
+			<version>3.5.2</version>
+		</dependency>
 		
 		<dependency>
-    <groupId>edu.stanford.nlp</groupId>
-    <artifactId>stanford-corenlp</artifactId>
-    <version>3.5.2</version>
-</dependency>
-<dependency>
-    <groupId>edu.stanford.nlp</groupId>
-    <artifactId>stanford-corenlp</artifactId>
-    <version>3.5.2</version>
-    <classifier>models</classifier>
-</dependency>
+			<groupId>edu.stanford.nlp</groupId>
+			<artifactId>stanford-corenlp</artifactId>
+			<version>3.5.2</version>
+			<classifier>models</classifier>
+		</dependency>
 
 	</dependencies>
 
