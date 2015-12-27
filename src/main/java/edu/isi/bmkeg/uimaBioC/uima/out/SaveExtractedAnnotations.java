@@ -15,6 +15,7 @@ import org.apache.uima.UimaContext;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
 import org.apache.uima.jcas.JCas;
 import org.apache.uima.resource.ResourceInitializationException;
+import org.cleartk.token.type.Sentence;
 import org.uimafit.component.JCasAnnotator_ImplBase;
 import org.uimafit.descriptor.ConfigurationParameter;
 import org.uimafit.factory.ConfigurationParameterFactory;
@@ -100,7 +101,12 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 				throw( new AnalysisEngineProcessException(e));
 			}
 			
-			out.println( uiA1.getCoveredText() );
+			List<Sentence> sentences = JCasUtil.selectCovered(
+					org.cleartk.token.type.Sentence.class, uiA1
+					);
+			for(Sentence s : sentences) {
+				out.println( s.getCoveredText() );
+			}
 			out.close();
 			
 		}

@@ -187,7 +187,7 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 				}
 				
 				// Figure Captions + paragraphs
-				if( type.equals("p") || type.equals("fig")){					
+				if( type.equals("p") || type.equals("fig") || type.equals("title")){					
 					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 					UimaBioCAnnotation uiA = new UimaBioCAnnotation(jcas);
 					uiA.setBegin(begin);

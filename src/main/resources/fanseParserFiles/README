@@ -1,0 +1,125 @@
+README file for:
+	"A Fast, Accurate, Non-Projective, Semantically-Enriched Parser"
+Code by:
+	Stephen Tratz while a Ph.D student at the University of Southern California's Information Sciences Institute
+Contact: 
+	stevatra 'at' gmail 'dot' com
+Version: 0.2
+
+==================================================
+1. INTRODUCTION
+==================================================
+
+	This package contains code for a semantically-enriched parsing system described in an EMNLP 2011 paper by Stephen Tratz and Eduard Hovy. The code has been updated somewhat, so the results produced by this system will not be exactly the same as reported earlier, but should be close. 
+
+	The main component of the system is the dependency parser. There is also code for part-of-speech tagging, preposition sense disambiguation, noun compound interpretation, interpretation of possessives, and PropBank-style semantic role labeling. The parser can parse about 75 sentences per second on my machine (Q6600 Intel processor with 8GB of RAM) (not including time for POS-tagging and semantic annotation).
+
+	NOTE: This is research code and backwards-compatibility may not be maintained in future releases. 
+
+==================================================
+2. RELATED PUBLICATIONS
+==================================================
+
+	The parser and general overview of the system (this is probably the citation you should be using to cite this work)
+	Stephen Tratz and Eduard Hovy. 2011. A Fast, Accurate, Non-Projective, Semantically-Enriched Parser. In Proceedings of the 2011 Conference on Empirical Methods in Natural Language Processing. Edinburgh, Scotland, UK. 
+
+	An earlier version of the preposition sense disambiguation system
+	Dirk Hovy, Stephen Tratz, and Eduardy Hovy. 2010.
+
+	An earlier version of the noun compound interpretation system
+	Stephen Tratz and Eduardy Hovy. 2010.
+
+	An even earlier version of the preposition sense disambiguation system
+	Stephen Tratz and Dirk Hovy. 2009
+
+
+==================================================
+3. GETTING STARTED
+==================================================
+
+	In this release, only a single helper script is provided. This script (parse.sh) can be used to 
+	POS-tag, parse, and semantically-annotate files containing plain text sentences. Each line should contain exactly one sentence and
+	the tokens should be separated by whitespace.
+
+	Sample usage:
+	./parse.sh input.txt output.txt 
+
+	If you need something that does less/more than this script, I suggest you see the underlying code (tratz.parse.ParsingScript.java)
+
+==================================================
+4. COMPILING THE CODE
+==================================================
+
+The code is typically compiled using Apache Ant.
+	To download, or for more information, see
+		http://ant.apache.org/
+		
+To create a jar file containing the compiled code, switch to INSTALLATION_DIR/build and type "ant -f build_common.xml makeJar"
+
+==================================================
+5. FILES/DIRECTORIES IN THIS RELEASE
+==================================================
+
+	build/ -- contains several Apache Ant build files for training the different components of the system
+	conf/ -- contains file configuring the feature generating code for the semantic annotation models (only needed during training)
+	data/ -- contains various data files (only needed during training)
+	src/ -- the source directory
+	lib/ -- the library directory for dependent jars (currently empty)
+	
+	LICENSE-2.0 -- The text of the license for this software (Apache 2.0)
+	PENNCONVERTER_LICENSE -- The license covering the pennconverter
+	README -- this file
+	TRAINING_INSTRUCTIONS -- Instructions for training the various components of the system
+	TREEBANK_CONVERSION_PROCESS -- Description of how to convert the Penn Treebank in a fashion similar to that of Tratz and Hovy (2011)
+	VERSION_HISTORY -- History of released versions
+	WORDNET_LICENSE -- The text of the license for WordNet 3.0
+	
+	NounCompoundDefinitions.pdf -- PDF file containing noun-noun semantic relation definitions
+	PrepositionSenseDefinitions.pdf -- PDF file containing preposition senses
+	PossessiveDefinitions.pdf -- PDF file containing the list of interpretations of English possessives
+	SyntacticDependencyGuide.pdf -- PDF file containing the list of syntactic dependencies created by the parser
+
+	fanseparser-0.2.2.jar -- The source code compiled into a .jar
+	finegrainconverter-0.1.jar -- Fine-grain conversion code (should be run *after* running the pennconverter tool)
+	pennconverter_modified.jar -- A modified version of the pennconverter (Johansson and Nugues, 2007) tool
+	pennconverter-110609.tar.gz -- *Unmodified* copy of the pennconverter code
+	ModifiedYamadaHeadFinder(withTratz&Hovy2011changes).zip -- the modified code for the pennconverter
+
+	parse.sh -- a simple script for running the whole system
+
+	nnModel.gz 				-- a wrapped noun compound interpretation model
+	psdModels.gz 			-- wrapped preposition sense disambiguation models
+	possessivesModels.gz 	-- a wrapped possessive interpretation model
+	srlPredWrapper.gz 		-- a wrapped PropBank-style semantic role labeling models for predicate disambiguation 
+	srlArgsWrapper.gz 		-- a wrapped PropBank-style semantic role labeling models for argument/adjunct classification
+	posTaggingModel.gz		-- a wrapped Part-of-speech tagging model
+	parseModel.gz 			-- Parsing model trained using sections 2-21 of the PTB as training, 22 as development
+
+
+==================================================
+6. ERRATA for the Tratz & Hovy (2011) EMNLP paper
+==================================================
+	In feature templates:
+		The x should not be bold on the line two rows after 'if rho_-1 == CC' in the supplementary feature templates\
+	In head-finding rules:
+		For ADVP, FW and onward should all be underlined (left-to-right) and RB|RBR|JJ|JJR should NOT be underlined
+	Regarding parser training:
+		The paper incorrectly states than an oracle similar to that of Nivre et al. (2010) was used. This is incorrect (but was true for an earlier version).
+		
+		
+==================================================
+7. LICENSES
+==================================================
+
+	This software is licensed under the Apache 2.0 license.
+	See the LICENSE-2.0 file for more information.
+	This file may also be found at http://www.apache.org/licenses/LICENSE-2.0
+
+	A copy of WordNet 3.0 is included with this software. 
+	Its license is provided in the 'WORDNET_LICENSE' file.
+
+	Copies of the pennconverter (Johansson and Nugues, 2007) are included with this software. 
+	Its license is provided in the 'PENNCONVERTER_LICENSE' file.
+ 
+	
+	

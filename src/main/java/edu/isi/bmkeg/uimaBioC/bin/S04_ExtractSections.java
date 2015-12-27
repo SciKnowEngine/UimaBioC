@@ -16,6 +16,8 @@ import org.uimafit.factory.CollectionReaderFactory;
 import org.uimafit.factory.TypeSystemDescriptionFactory;
 import org.uimafit.pipeline.SimplePipeline;
 
+import edu.isi.bmkeg.uimaBioC.uima.ae.core.FixSentencesFromHeadings;
+import edu.isi.bmkeg.uimaBioC.uima.out.SaveBody;
 import edu.isi.bmkeg.uimaBioC.uima.out.SaveExtractedAnnotations;
 import edu.isi.bmkeg.uimaBioC.uima.readers.BioCCollectionReader;
 
@@ -81,7 +83,11 @@ public class S04_ExtractSections {
 
 		builder.add(SentenceAnnotator.getDescription()); // Sentence
 		builder.add(TokenAnnotator.getDescription());   // Tokenization
-	
+
+		// Some sentences include headers that don't end in periods
+		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
+				FixSentencesFromHeadings.class));		
+
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
 				SaveExtractedAnnotations.class, 
 				SaveExtractedAnnotations.PARAM_ANNOT_2_EXTRACT,
