@@ -6,8 +6,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,6 +43,13 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 	@ConfigurationParameter(mandatory = true, description = "The path to the output directory.")
 	String outDirPath;
 
+	public final static String PARAM_HEADER_LINKS = ConfigurationParameterFactory
+			.createConfigurationParameterName(
+					SaveExtractedAnnotations.class, "headerLinksStr");
+	@ConfigurationParameter(mandatory = true, description = "Should we include headers and links in the output.")
+	String headerLinksStr;
+	Boolean headerLinks = false;
+	
 	private File outDir;
 	private BioCCollection collection;
 
@@ -57,6 +66,15 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 
 		if( !this.outDir.exists() )
 			this.outDir.mkdirs();
+		
+		if(this.headerLinksStr.toLowerCase().equals("true") ) {
+			headerLinks = true;
+		} else if(this.headerLinksStr.toLowerCase().equals("false") ) {
+			headerLinks = false;
+		} else {
+			Exception e = new Exception("Please set PARAM_HEADER_LINKS to 'true' or 'false'");
+			throw new ResourceInitializationException(e);
+		}		
 			
 		this.collection = new BioCCollection();
 		
@@ -70,6 +88,8 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 				UimaBioCDocument.class);
 
 		String id = uiD.getId();
+
+		boolean anyTextExtracted = false;
 		
 		List<UimaBioCAnnotation> outerAnnotations = JCasUtil.selectCovered(
 				UimaBioCAnnotation.class, uiD);
@@ -89,29 +109,95 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 				continue;
 			}
 
+			anyTextExtracted = true;
 			File outFile = new File(this.outDir.getPath() + "/" + 
 					id + "_" + this.annot2Extract + "_" + uiA1.getBegin() + 
 					"_" + uiA1.getEnd() + ".txt");
 			
-			PrintWriter out;
-			try {
-				out = new PrintWriter(new BufferedWriter(
-						new FileWriter(outFile, true)));
-			} catch (IOException e) {
-				throw( new AnalysisEngineProcessException(e));
-			}
+			this.dumpSectionToFile(jCas, outFile, uiA1);
 			
-			List<Sentence> sentences = JCasUtil.selectCovered(
-					org.cleartk.token.type.Sentence.class, uiA1
-					);
-			for(Sentence s : sentences) {
-				out.println( s.getCoveredText() );
+		}
+		
+		if(!anyTextExtracted) {
+
+			for (UimaBioCAnnotation uiA1 : outerAnnotations) {
+				
+				Map<String, String> inf = UimaBioCUtils.convertInfons(uiA1.getInfons());
+				if( !inf.containsKey("type")  ) 
+					continue;
+
+				if( !(inf.get("type").equals("formatting") &&
+						inf.get("value").equals("body")) ) {
+					continue;
+				}
+				
+				File outFile = new File(this.outDir.getPath() + "/" + 
+						id + "_body_" + uiA1.getBegin() + 
+						"_" + uiA1.getEnd() + ".txt");
+				
+				this.dumpSectionToFile(jCas, outFile, uiA1);
+				break;
+				
 			}
-			out.close();
 			
 		}
 
 		
+	}
+	
+	private void dumpSectionToFile(JCas jCas, File outFile, UimaBioCAnnotation uiA1) 
+			throws AnalysisEngineProcessException {
+		
+		PrintWriter out;
+		try {
+			out = new PrintWriter(new BufferedWriter(
+					new FileWriter(outFile, true)));
+		} catch (IOException e) {
+			throw( new AnalysisEngineProcessException(e));
+		}
+		
+		List<Sentence> sentences = JCasUtil.selectCovered(
+				org.cleartk.token.type.Sentence.class, uiA1
+				);
+		for(Sentence s : sentences) {
+			
+			out.print( s.getCoveredText() );
+			
+			//
+			// Identify exLinks, inLinks or headers
+			//
+			if( this.headerLinks ) {
+				out.print("\t");
+				Set<String> codes = new HashSet<String>();
+				for( UimaBioCAnnotation a : JCasUtil.selectCovered(
+						UimaBioCAnnotation.class, s) ) {
+					Map<String, String> infons = 
+							UimaBioCUtils.convertInfons(a.getInfons());
+					if( infons.containsKey("refType") 
+							&& infons.get("refType").equals("bibr") ){
+						codes.add("exLink");							
+					} else if( infons.containsKey("refType") 
+							&& infons.get("refType").equals("fig") ){
+						codes.add("inLink");							
+					} 
+				}	
+				// Looking for section headings
+				for( UimaBioCAnnotation a : JCasUtil.selectCovering(jCas, 
+						UimaBioCAnnotation.class, s.getBegin(), s.getEnd()) ) {
+					Map<String, String> infons = 
+							UimaBioCUtils.convertInfons(a.getInfons());						
+					if( infons.get("value").equals("title") ) {
+						codes.add("header");							
+					}
+				}					
+				out.print(codes.toString());
+			
+			}
+			
+			out.print("\n");
+			
+		}
+		out.close();
 	}
 	
 }

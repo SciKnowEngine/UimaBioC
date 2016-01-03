@@ -37,13 +37,12 @@ import org.springframework.data.elasticsearch.repository.config.EnableElasticsea
  * @author Gully Burns
  */
 @Configuration
-@EnableElasticsearchRepositories("edu.isi.bmkeg.elasticNlm.repos")
+@EnableElasticsearchRepositories("edu.isi.bmkeg")
 @PropertySource("classpath:/application.properties")
 @EnableAutoConfiguration
 public class AppConfiguration {
 
 	private static Logger logger = Logger.getLogger(AppConfiguration.class);
-	
 	
 	@PreDestroy
 	public void deleteIndex() {

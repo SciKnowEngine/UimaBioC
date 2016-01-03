@@ -41,6 +41,9 @@ public class S04_ExtractSections {
 		@Option(name = "-outDir", usage = "Output Directory", required = true, metaVar = "OUT-FILE")
 		public File outDir;
 
+		@Option(name = "-headerLink", usage = "Output Directory", required = true, metaVar = "OUT-FILE")
+		public Boolean headerLink = false;
+
 	}
 
 	private static Logger logger = Logger
@@ -88,13 +91,25 @@ public class S04_ExtractSections {
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
 				FixSentencesFromHeadings.class));		
 
-		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
-				SaveExtractedAnnotations.class, 
-				SaveExtractedAnnotations.PARAM_ANNOT_2_EXTRACT,
-				options.ann2Ext,
-				SaveExtractedAnnotations.PARAM_DIR_PATH,
-				options.outDir.getPath()));
-
+		if( options.headerLink ) {
+			builder.add(AnalysisEngineFactory.createPrimitiveDescription(
+					SaveExtractedAnnotations.class, 
+					SaveExtractedAnnotations.PARAM_ANNOT_2_EXTRACT,
+					options.ann2Ext,
+					SaveExtractedAnnotations.PARAM_DIR_PATH,
+					options.outDir.getPath(),
+					SaveExtractedAnnotations.PARAM_HEADER_LINKS, 
+					"true"));
+		} else {
+			builder.add(AnalysisEngineFactory.createPrimitiveDescription(
+					SaveExtractedAnnotations.class, 
+					SaveExtractedAnnotations.PARAM_ANNOT_2_EXTRACT,
+					options.ann2Ext,
+					SaveExtractedAnnotations.PARAM_DIR_PATH,
+					options.outDir.getPath(), 
+					SaveExtractedAnnotations.PARAM_HEADER_LINKS, 
+					"false"));
+		}
 		SimplePipeline.runPipeline(cr, builder.createAggregateDescription());
 
 	}

@@ -281,6 +281,46 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 				
 				}
 				
+				// X-REF Columns
+				// format: ref-type="bibr" rid="B7"
+				if( type.equals("xref") ){		
+										
+					String refType = "";
+					String refId = "";
+					try {
+						String[] lc = codes.split(" ");
+						refType = lc[0].substring(lc[0].indexOf("=")+2, lc[0].length()-1);
+						refId = lc[1].substring(lc[1].indexOf("=")+2, lc[1].length()-1);					
+					} catch (ArrayIndexOutOfBoundsException e) {
+						System.err.println("XREF not formatted correctly (" + codes + "), skipping XREF annotation");
+					}
+					
+					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+					if( refType.length() > 0 && refId.length() > 0 && 
+							( refType.equals("bibr") || refType.equals("fig") ) 
+							) {
+						UimaBioCAnnotation uiA = new UimaBioCAnnotation(jcas);
+						uiA.setBegin(begin);
+						uiA.setEnd(end);
+						Map<String,String> infons2 = new HashMap<String, String>();
+						infons2.put("type", "formatting");
+						infons2.put("value", type);
+						infons2.put("refType", refType);
+						infons2.put("refId", refId);
+						uiA.setInfons(UimaBioCUtils.convertInfons(infons2, jcas));
+						uiA.addToIndexes();
+						
+						FSArray locations = new FSArray(jcas, 1);
+						uiA.setLocations(locations);
+						UimaBioCLocation uiL = new UimaBioCLocation(jcas);
+						locations.set(0, uiL);
+						uiL.setOffset(begin);
+						uiL.setLength(end - begin);					
+					}
+					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				
+				}
+				
 			}
 		
 			uiD.addToIndexes();
