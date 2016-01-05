@@ -18,15 +18,20 @@ package edu.isi.bmkeg.uimaBioC.elasticSearch;
 import java.util.List;
 
 import org.bigmech.fries.esViews.FRIES_EntityMentionView.FRIES_EntityMentionView__FRIES_EntityMention;
+import org.bigmech.fries.esViews.FRIES_EventMentionView.FRIES_EventMentionView__FRIES_EventMention;
+import org.bigmech.fries.esViews.FRIES_EventMentionView.FRIES_EventMentionView__FRIES_Meta;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 
 /**
  * @author Gully Burns
  */
-public interface EntityMentionRepository extends ElasticsearchRepository<FRIES_EntityMentionView__FRIES_EntityMention, String> {
+public interface EventMentionRepository extends ElasticsearchRepository
+		<FRIES_EventMentionView__FRIES_EventMention, String> {
 	
-	List<FRIES_EntityMentionView__FRIES_EntityMention> findByType(String type);
+	List<FRIES_EventMentionView__FRIES_EventMention> 
+			findByType(String type);
 
-	List<FRIES_EntityMentionView__FRIES_EntityMention> findByFrameIdLike(String docId);
-
+	List<FRIES_EventMentionView__FRIES_EventMention> 
+			findByFrameIdLike(String docId);
+			
 }

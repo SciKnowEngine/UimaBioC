@@ -1,4 +1,4 @@
-package edu.isi.bmkeg.uimaBioC.bin;
+package edu.isi.bmkeg.uimaBioC.bin.dev;
 
 import java.io.File;
 
@@ -16,38 +16,26 @@ import org.uimafit.factory.CollectionReaderFactory;
 import org.uimafit.factory.TypeSystemDescriptionFactory;
 import org.uimafit.pipeline.SimplePipeline;
 
+import edu.isi.bmkeg.uimaBioC.rubicon.ReachAnnotator;
 import edu.isi.bmkeg.uimaBioC.uima.ae.core.FixSentencesFromHeadings;
-import edu.isi.bmkeg.uimaBioC.uima.out.SaveBody;
 import edu.isi.bmkeg.uimaBioC.uima.out.SaveExtractedAnnotations;
 import edu.isi.bmkeg.uimaBioC.uima.readers.BioCCollectionReader;
 
-/**
- * This script runs through serialized JSON files from the model and converts
- * them to VPDMf KEfED models, including the data.
- * 
- * @author Gully
- * 
- */
-public class S04_ExtractSections {
+public class S09_runReach {
 
 	public static class Options {
 
 		@Option(name = "-inDir", usage = "Input Directory", required = true, metaVar = "IN-DIRECTORY")
 		public File inDir;
+		
+		@Option(name = "-outDir", usage = "Output Directory", required = true, metaVar = "OUT-DIRECTORY")
+		public File outDir;
 
 		@Option(name = "-ann2Extract", usage = "Annotation Type to Extract", required = true, metaVar = "ANNOTATION")
 		public File ann2Ext;
-
-		@Option(name = "-outDir", usage = "Output Directory", required = true, metaVar = "OUT-FILE")
-		public File outDir;
-
-		@Option(name = "-headerLink", usage = "Output Directory", required = true, metaVar = "OUT-FILE")
-		public Boolean headerLink = false;
-
 	}
 
-	private static Logger logger = Logger
-			.getLogger(S04_ExtractSections.class);
+	private static Logger logger = Logger.getLogger(S09_runReach.class);
 
 	/**
 	 * @param args
@@ -91,29 +79,14 @@ public class S04_ExtractSections {
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
 				FixSentencesFromHeadings.class));		
 
-		if( options.headerLink ) {
-			builder.add(AnalysisEngineFactory.createPrimitiveDescription(
-					SaveExtractedAnnotations.class, 
-					SaveExtractedAnnotations.PARAM_ANNOT_2_EXTRACT,
-					options.ann2Ext,
-					SaveExtractedAnnotations.PARAM_DIR_PATH,
-					options.outDir.getPath(),
-					SaveExtractedAnnotations.PARAM_KEEP_FLOATING_BOXES, 
-					"false",
-					SaveExtractedAnnotations.PARAM_HEADER_LINKS, 
-					"true"));
-		} else {
-			builder.add(AnalysisEngineFactory.createPrimitiveDescription(
-					SaveExtractedAnnotations.class, 
-					SaveExtractedAnnotations.PARAM_ANNOT_2_EXTRACT,
-					options.ann2Ext,
-					SaveExtractedAnnotations.PARAM_DIR_PATH,
-					options.outDir.getPath(), 
-					SaveExtractedAnnotations.PARAM_KEEP_FLOATING_BOXES, 
-					"false",
-					SaveExtractedAnnotations.PARAM_HEADER_LINKS, 
-					"false"));
-		}
+		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
+					ReachAnnotator.class,
+					ReachAnnotator.PARAM_OUT_REACH_DIR_PATH, 
+					options.outDir,					
+					ReachAnnotator.PARAM_SECTION_ANNOTATION,
+					options.ann2Ext
+					));
+
 		SimplePipeline.runPipeline(cr, builder.createAggregateDescription());
 
 	}

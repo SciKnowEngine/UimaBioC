@@ -460,6 +460,19 @@
 			<version>0.9.10</version>
 		</dependency>
 
+		<!-- <dependency>
+			<groupId>org.clulab</groupId>
+			<artifactId>processors_2.11</artifactId>
+			<version>5.7.3</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.clulab</groupId>
+			<artifactId>reach_2.11</artifactId>
+			<version>1.2.1</version>
+		</dependency>  -->
+
+
 	</dependencies>
 
 </project>

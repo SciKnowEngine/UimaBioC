@@ -187,7 +187,7 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 				}
 				
 				// Figure Captions + paragraphs
-				if( type.equals("p") || type.equals("fig") || type.equals("title")){					
+				if( type.equals("p") || type.equals("title")){					
 					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 					UimaBioCAnnotation uiA = new UimaBioCAnnotation(jcas);
 					uiA.setBegin(begin);
@@ -206,6 +206,37 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 					uiL.setLength(end - begin);
 					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 				}
+				
+				if( type.equals("fig") ){					
+					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+					UimaBioCAnnotation uiA = new UimaBioCAnnotation(jcas);
+					uiA.setBegin(begin);
+					uiA.setEnd(end);
+					Map<String,String> infons2 = new HashMap<String, String>();
+					infons2.put("type", "formatting");
+					infons2.put("value", type);
+					
+					// Check for floating figure legends
+					if( fields.length > 3 ) {
+						String[] subfields = fields[3].split("\\s+");
+						for( String s : subfields ){
+							if( s.equals("position=\"float\"") ) {
+								infons2.put("position", "float");			
+							}
+						}
+					}
+					uiA.setInfons(UimaBioCUtils.convertInfons(infons2, jcas));
+					uiA.addToIndexes();
+					
+					FSArray locations = new FSArray(jcas, 1);
+					uiA.setLocations(locations);
+					UimaBioCLocation uiL = new UimaBioCLocation(jcas);
+					locations.set(0, uiL);
+					uiL.setOffset(begin);
+					uiL.setLength(end - begin);
+					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				}
+
 
 				// Section Headings
 				if( type.equals("sec") ){					

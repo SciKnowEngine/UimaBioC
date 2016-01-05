@@ -1,5 +1,7 @@
 package edu.isi.bmkeg.uimaBioC.elasticSearch;
 
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
@@ -39,12 +41,25 @@ public class ViewConverter {
 				vpdmfFiles.add(url);
 			}
 		}
+		
+		//
+		// Avoid annoying information from 
+		// reflections about the classpath 
+		// by redirecting STDOUT to null. 
+		//
+		PrintStream original = System.out;
+	    System.setOut(new PrintStream(new OutputStream() {
+	                public void write(int b) {
+	                    //DO NOTHING
+	                }
+	            }));
 		Reflections reflections = new Reflections(new ConfigurationBuilder()
 			    .setScanners(new SubTypesScanner(false /* don't exclude Object.class */), 
 			    new ResourcesScanner())
 			    .setUrls(vpdmfFiles)
 			    .filterInputsBy(new FilterBuilder().include(FilterBuilder.prefix( p.getName() ))
 			    		));
+	    System.setOut(original);
 		
 		viewClasses = reflections.getSubTypesOf(Object.class);
 	}

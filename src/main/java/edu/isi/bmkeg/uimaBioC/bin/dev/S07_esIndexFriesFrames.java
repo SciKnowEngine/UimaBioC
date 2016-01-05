@@ -11,9 +11,10 @@ import org.bigmech.fries.FRIES_EventMention;
 import org.bigmech.fries.FRIES_Frame;
 import org.bigmech.fries.FRIES_FrameCollection;
 import org.bigmech.fries.FRIES_Passage;
-import org.bigmech.fries.FRIES_RelativePosition;
 import org.bigmech.fries.FRIES_Sentence;
 import org.bigmech.fries.esViews.FRIES_EntityMentionView.FRIES_EntityMentionView__FRIES_EntityMention;
+import org.bigmech.fries.esViews.FRIES_EventMentionView.FRIES_EventMentionView__FRIES_EventMention;
+import org.bigmech.fries.esViews.FRIES_SentenceView.FRIES_SentenceView__FRIES_Sentence;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
@@ -28,6 +29,8 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.typeadapters.RuntimeTypeAdapterFactory;
 
 import edu.isi.bmkeg.uimaBioC.elasticSearch.EntityMentionRepository;
+import edu.isi.bmkeg.uimaBioC.elasticSearch.EventMentionRepository;
+import edu.isi.bmkeg.uimaBioC.elasticSearch.SentenceRepository;
 import edu.isi.bmkeg.uimaBioC.elasticSearch.ViewConverter;
 
 @Component
@@ -36,16 +39,16 @@ public class S07_esIndexFriesFrames {
 	@Autowired
 	EntityMentionRepository entityMentionRepo;
 
+	@Autowired
+	EventMentionRepository eventMentionRepo;
+
+	@Autowired
+	SentenceRepository sentRepo;
+	
 	public static class Options {
 
 		@Option(name = "-inDir", usage = "Input Directory", required = true, metaVar = "IN-DIRECTORY")
 		public File inDir;
-
-		@Option(name = "-outFile", usage = "Output Directory", required = false, metaVar = "OUT-DIRECTORY")
-		public File outFile;
-
-		@Option(name = "-figLabelFile", usage = "Figure Label File", required = false, metaVar = "FIGURE-LABEL-FILE")
-		public File figLabelFile;
 
 	}
 
@@ -99,11 +102,13 @@ public class S07_esIndexFriesFrames {
 		// First list the sentences
 		String[] extensions = { "json" };
 		Collection<File> frameFiles = FileUtils.listFiles(options.inDir, extensions, true);
+		int fileCount = 0;
 		for (File file : frameFiles) {
 			FRIES_FrameCollection fc = gson.fromJson(new FileReader(file), 
 					FRIES_FrameCollection.class);	 
 			
 			for( FRIES_Frame frame : fc.getFrames() ) {
+				
 				if( frame instanceof FRIES_EntityMention ) {
 					
 					FRIES_EntityMention femFrame  = (FRIES_EntityMention) frame;
@@ -112,10 +117,38 @@ public class S07_esIndexFriesFrames {
 					
 					ViewConverter vc = new ViewConverter(esFemFrame);
 					esFemFrame = vc.baseObjectToView(femFrame, esFemFrame);
-					
+				
 					main.entityMentionRepo.index(esFemFrame);
+				
+				} else if( frame instanceof FRIES_EventMention ) {
+					
+					FRIES_EventMention femFrame  = (FRIES_EventMention) frame;
+					FRIES_EventMentionView__FRIES_EventMention esFemFrame = 
+							new FRIES_EventMentionView__FRIES_EventMention();
+					
+					ViewConverter vc = new ViewConverter(esFemFrame);
+					esFemFrame = vc.baseObjectToView(femFrame, esFemFrame);
+				
+					main.eventMentionRepo.index(esFemFrame);
+				
+				} else if( frame instanceof FRIES_Sentence ) {
+						
+						FRIES_Sentence sentFrame  = (FRIES_Sentence) frame;
+						FRIES_SentenceView__FRIES_Sentence esSentFrame = 
+								new FRIES_SentenceView__FRIES_Sentence();
+						
+						ViewConverter vc = new ViewConverter(esSentFrame);
+						esSentFrame = vc.baseObjectToView(sentFrame, esSentFrame);
+					
+						main.sentRepo.index(esSentFrame);
+					
 				}
+			
 			}
+
+			fileCount++;
+			if( fileCount % 10 == 0 )
+				System.out.println(fileCount + " files processed");
 			
 		}
 

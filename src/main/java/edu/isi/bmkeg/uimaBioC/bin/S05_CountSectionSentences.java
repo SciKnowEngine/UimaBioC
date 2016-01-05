@@ -28,7 +28,7 @@ import edu.isi.bmkeg.uimaBioC.uima.readers.BioCCollectionReader;
  * @author Gully
  * 
  */
-public class S04_ExtractSections {
+public class S05_CountSectionSentences {
 
 	public static class Options {
 
@@ -47,7 +47,7 @@ public class S04_ExtractSections {
 	}
 
 	private static Logger logger = Logger
-			.getLogger(S04_ExtractSections.class);
+			.getLogger(S05_CountSectionSentences.class);
 
 	/**
 	 * @param args
@@ -98,8 +98,6 @@ public class S04_ExtractSections {
 					options.ann2Ext,
 					SaveExtractedAnnotations.PARAM_DIR_PATH,
 					options.outDir.getPath(),
-					SaveExtractedAnnotations.PARAM_KEEP_FLOATING_BOXES, 
-					"false",
 					SaveExtractedAnnotations.PARAM_HEADER_LINKS, 
 					"true"));
 		} else {
@@ -109,8 +107,6 @@ public class S04_ExtractSections {
 					options.ann2Ext,
 					SaveExtractedAnnotations.PARAM_DIR_PATH,
 					options.outDir.getPath(), 
-					SaveExtractedAnnotations.PARAM_KEEP_FLOATING_BOXES, 
-					"false",
 					SaveExtractedAnnotations.PARAM_HEADER_LINKS, 
 					"false"));
 		}

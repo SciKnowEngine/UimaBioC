@@ -176,6 +176,14 @@ public class UimaBioCUtils {
 			uiP.setAnnotations(annotations);
 			int count = 0;
 			for (BioCAnnotation a : p.getAnnotations()) {
+				
+				// skip simple formatting information
+				String inf = a.getInfons().get("value");
+				if( inf.equals("bold") || inf.equals("italic") || 
+						inf.equals("sup") || inf.equals("sub") ) {
+					continue;
+				}
+				
 				UimaBioCAnnotation uiA = convertBioCAnnotation(a, jcas);
 				annotations.set(count, uiA);
 				count++;
