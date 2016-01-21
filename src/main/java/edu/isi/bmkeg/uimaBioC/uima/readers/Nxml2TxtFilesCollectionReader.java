@@ -299,6 +299,9 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 					codes = codes.replaceAll("\"", "");
 		
 					String[] keyValue = codes.split("=");
+					if( keyValue.length < 2)
+						continue;
+					
 					infons.put(keyValue[1], str);
 					infons.put("type", "formatting");
 					infons.put("value", "article-id");

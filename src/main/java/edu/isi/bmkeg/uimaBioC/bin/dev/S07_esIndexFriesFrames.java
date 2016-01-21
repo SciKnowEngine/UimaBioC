@@ -31,7 +31,7 @@ import com.google.gson.typeadapters.RuntimeTypeAdapterFactory;
 import edu.isi.bmkeg.uimaBioC.elasticSearch.EntityMentionRepository;
 import edu.isi.bmkeg.uimaBioC.elasticSearch.EventMentionRepository;
 import edu.isi.bmkeg.uimaBioC.elasticSearch.SentenceRepository;
-import edu.isi.bmkeg.uimaBioC.elasticSearch.ViewConverter;
+import edu.isi.bmkeg.utils.ViewConverter;
 
 @Component
 public class S07_esIndexFriesFrames {

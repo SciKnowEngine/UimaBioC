@@ -206,6 +206,13 @@
 	<dependencies>
 
 		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>1.14.8</version>
+			<scope>compile</scope>
+		</dependency>
+
+		<dependency>
 			<groupId>edu.isi.bmkeg</groupId>
 			<artifactId>uimaBioC-fanseParser-models</artifactId>
 			<version>1.0</version>
@@ -303,13 +310,28 @@
 			</exclusions>
 		</dependency>
 
-		<!-- <dependency> <groupId>org.cleartk</groupId> <artifactId>cleartk-berkeleyparser</artifactId> 
-			<version>${cleartk.version}</version> </dependency> <dependency> <groupId>org.cleartk</groupId> 
-			<artifactId>cleartk-clearnlp</artifactId> <version>${cleartk.version}</version> 
-			</dependency> <dependency> <groupId>org.cleartk</groupId> <artifactId>cleartk-maltparser</artifactId> 
-			<version>${cleartk.version}</version> </dependency> <dependency> <groupId>org.cleartk</groupId> 
-			<artifactId>cleartk-stanford-corenlp</artifactId> <version>${cleartk.version}</version> 
-			</dependency> -->
+
+		<!-- <dependency>
+			<groupId>org.cleartk</groupId>
+			<artifactId>cleartk-berkeleyparser</artifactId>
+			<version>${cleartk.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.cleartk</groupId>
+			<artifactId>cleartk-clearnlp</artifactId>
+			<version>${cleartk.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.cleartk</groupId>
+			<artifactId>cleartk-maltparser</artifactId>
+			<version>${cleartk.version}</version>
+		</dependency>-->
+		
+		<dependency>
+			<groupId>org.cleartk</groupId>
+			<artifactId>cleartk-stanford-corenlp</artifactId>
+			<version>${cleartk.version}</version>
+		</dependency>
 		<dependency>
 			<groupId>org.cleartk</groupId>
 			<artifactId>cleartk-snowball</artifactId>
@@ -370,20 +392,20 @@
 		<dependency>
 			<groupId>edu.stanford.nlp</groupId>
 			<artifactId>stanford-corenlp</artifactId>
-			<version>3.5.2</version>
+			<version>3.2.0</version>
 		</dependency>
 
 		<dependency>
 			<groupId>edu.stanford.nlp</groupId>
 			<artifactId>stanford-corenlp</artifactId>
-			<version>3.5.2</version>
+			<version>3.2.0</version>
 			<classifier>models</classifier>
 		</dependency>
 
 		<dependency>
 			<groupId>edu.stanford.nlp</groupId>
 			<artifactId>stanford-parser</artifactId>
-			<version>3.5.2</version>
+			<version>3.2.0</version>
 		</dependency>
 
 		<dependency>
@@ -412,12 +434,6 @@
 		</dependency>
 
 		<dependency>
-			<groupId>bioc</groupId>
-			<artifactId>vpdmf-bioc-es</artifactId>
-			<version>1.0.0-SNAPSHOT</version>
-		</dependency>
-
-		<dependency>
 			<groupId>org.bigmech.fries</groupId>
 			<artifactId>vpdmf-fries-es</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
@@ -427,19 +443,6 @@
 			<groupId>tratz</groupId>
 			<artifactId>fanseparser</artifactId>
 			<version>0.2.2</version>
-		</dependency>
-
-		<dependency>
-			<groupId>edu.stanford.nlp</groupId>
-			<artifactId>stanford-corenlp</artifactId>
-			<version>3.5.2</version>
-		</dependency>
-
-		<dependency>
-			<groupId>edu.stanford.nlp</groupId>
-			<artifactId>stanford-corenlp</artifactId>
-			<version>3.5.2</version>
-			<classifier>models</classifier>
 		</dependency>
 
 		<dependency>
@@ -460,17 +463,15 @@
 			<version>0.9.10</version>
 		</dependency>
 
-		<!-- <dependency>
-			<groupId>org.clulab</groupId>
-			<artifactId>processors_2.11</artifactId>
-			<version>5.7.3</version>
+		<dependency>
+			<artifactId>uimafit-spring</artifactId>
+			<groupId>org.apache.uima</groupId>
+			<version>2.0.0</version>
 		</dependency>
 
-		<dependency>
-			<groupId>org.clulab</groupId>
-			<artifactId>reach_2.11</artifactId>
-			<version>1.2.1</version>
-		</dependency>  -->
+		<!-- <dependency> <groupId>org.clulab</groupId> <artifactId>processors_2.11</artifactId> 
+			<version>5.7.3</version> </dependency> <dependency> <groupId>org.clulab</groupId> 
+			<artifactId>reach_2.11</artifactId> <version>1.2.1</version> </dependency> -->
 
 
 	</dependencies>

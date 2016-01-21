@@ -20,10 +20,11 @@ import org.springframework.stereotype.Component;
 
 import com.google.gson.Gson;
 
-import bioc.esViews.view__BioCDocument.BioCAnnotation;
-import bioc.esViews.view__BioCDocument.BioCDocument;
-import bioc.esViews.view__BioCDocument.BioCLocation;
-import bioc.esViews.view__BioCDocument.BioCPassage;
+import bioc.BioCDocument;
+import bioc.esViews.BioCDocumentView.BioCDocumentView__BioCAnnotation;
+import bioc.esViews.BioCDocumentView.BioCDocumentView__BioCDocument;
+import bioc.esViews.BioCDocumentView.BioCDocumentView__BioCLocation;
+import bioc.esViews.BioCDocumentView.BioCDocumentView__BioCPassage;
 import bioc.io.BioCDocumentReader;
 import bioc.io.BioCFactory;
 import edu.isi.bmkeg.uimaBioC.elasticSearch.BioCRepository;
@@ -64,7 +65,7 @@ public class S02_LoadBioCDirToElasticSearch {
 		}
 
 		// Use annotated beans from the specified package
-		ApplicationContext ctx = new AnnotationConfigApplicationContext("edu.isi.bmkeg.elasticNlm.bin");
+		ApplicationContext ctx = new AnnotationConfigApplicationContext("edu.isi.bmkeg.uimaBioC");
 
 		S02_LoadBioCDirToElasticSearch main = ctx.getBean(S02_LoadBioCDirToElasticSearch.class);
 
@@ -75,11 +76,11 @@ public class S02_LoadBioCDirToElasticSearch {
 				true);
 		for (File f : fileList) {
 
-			bioc.BioCDocument bioD = null;
+			BioCDocument bioD = null;
 			if (f.getName().endsWith(".json")) {
 
 				Gson gson = new Gson();
-				bioD = gson.fromJson(new FileReader(f), bioc.BioCDocument.class);
+				bioD = gson.fromJson(new FileReader(f), BioCDocument.class);
 
 			} else {
 
@@ -91,7 +92,7 @@ public class S02_LoadBioCDirToElasticSearch {
 				reader.close();
 			}
 
-			BioCDocument esBioD = main.convertToES(bioD);
+			BioCDocumentView__BioCDocument esBioD = main.convertToES(bioD);
 
 			main.biocRepo.index(esBioD);
 
@@ -99,14 +100,14 @@ public class S02_LoadBioCDirToElasticSearch {
 
 	}
 
-	public BioCDocument convertToES(bioc.BioCDocument d) {
+	public BioCDocumentView__BioCDocument convertToES(bioc.BioCDocument d) {
 		
-		BioCDocument esBioD = new BioCDocument();
+		BioCDocumentView__BioCDocument esBioD = new BioCDocumentView__BioCDocument();
 		esBioD.setId( d.getID() );
 		esBioD.setInfons(d.getInfons());
 	
 		for( bioc.BioCPassage p : d.getPassages() ) {
-			BioCPassage pp = new BioCPassage();
+			BioCDocumentView__BioCPassage pp = new BioCDocumentView__BioCPassage();
 			esBioD.getPassages().add(pp);
 			
 			pp.setOffset(p.getOffset());
@@ -114,7 +115,7 @@ public class S02_LoadBioCDirToElasticSearch {
 			pp.setInfons(p.getInfons());
 	
 			for( bioc.BioCAnnotation a : p.getAnnotations() ) {
-				BioCAnnotation aa = new BioCAnnotation();
+				BioCDocumentView__BioCAnnotation aa = new BioCDocumentView__BioCAnnotation();
 				pp.getAnnotations().add(aa);
 				
 				aa.setId(a.getID());
@@ -122,7 +123,7 @@ public class S02_LoadBioCDirToElasticSearch {
 				aa.setText(a.getText());
 	
 				for( bioc.BioCLocation l : a.getLocations() ) {
-					BioCLocation ll = new BioCLocation();
+					BioCDocumentView__BioCLocation ll = new BioCDocumentView__BioCLocation();
 					aa.getLocations().add(ll);
 					
 					ll.setLength(l.getLength());

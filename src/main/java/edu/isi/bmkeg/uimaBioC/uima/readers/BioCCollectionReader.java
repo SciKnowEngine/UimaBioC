@@ -1,12 +1,17 @@
 package edu.isi.bmkeg.uimaBioC.uima.readers;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.xml.stream.XMLStreamException;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
@@ -21,12 +26,11 @@ import org.uimafit.component.JCasCollectionReader_ImplBase;
 import org.uimafit.descriptor.ConfigurationParameter;
 import org.uimafit.factory.ConfigurationParameterFactory;
 
+import com.google.gson.Gson;
+
 import bioc.BioCDocument;
 import bioc.io.BioCDocumentReader;
 import bioc.io.BioCFactory;
-
-import com.google.gson.Gson;
-
 import edu.isi.bmkeg.uimaBioC.UimaBioCUtils;
 
 /**
@@ -72,12 +76,14 @@ public class BioCCollectionReader extends JCasCollectionReader_ImplBase {
 	@ConfigurationParameter(mandatory = true, description = "The format of the BioC input files.")
 	String inFileFormat;
 	
+	Pattern patt = Pattern.compile("^(.*?)[_\\.]");
+	
 	@Override
 	public void initialize(UimaContext context) throws ResourceInitializationException {
 
 		try {
 			
-			String[] fileTypes = {this.inFileFormat};
+			String[] fileTypes = {"xml", "txt", "json"};
 			Collection<File> l = (Collection<File>) FileUtils.listFiles(
 					new File(inputDirectory), fileTypes, true);
 			
@@ -88,7 +94,11 @@ public class BioCCollectionReader extends JCasCollectionReader_ImplBase {
 					outDir.mkdirs();
 				for(Object o : FileUtils.listFiles(
 						new File(outputDirectory), fileTypes, true)) {
-					this.existingFiles.add( ((File) o).getName() );
+					String fName = ((File) o).getName();
+					Matcher m = patt.matcher(fName);
+					if( m.find() ) {
+						this.existingFiles.add(m.group(1));						
+					}
 				}
 			}
 			
@@ -115,42 +125,13 @@ public class BioCCollectionReader extends JCasCollectionReader_ImplBase {
 				return;
 			
 			File bioCFile = bioCFileIt.next();
-			while( !bioCFile.exists() ||
-					this.existingFiles.contains(bioCFile.getName()) ) {
-				
-				if(!bioCFileIt.hasNext()) 
-					throw new AnalysisEngineProcessException(
-							new Exception("Output directory contains all required files: " + 
-									outputDirectory ) );
-				
+			BioCDocument bioD = readBioCFile(bioCFile);
+			
+			while( this.existingFiles.contains(bioD.getID())) {
 				bioCFile = bioCFileIt.next();
-			
+				bioD = readBioCFile(bioCFile);
 			}
-			
-			BioCDocument bioD;
-			if (inFileFormat.equals(XML)) {
-				
-				BioCDocumentReader reader = BioCFactory.newFactory(
-						BioCFactory.STANDARD).createBioCDocumentReader(
-								new FileReader(bioCFile));
-
-				bioD = reader.readDocument();
-
-				reader.close();
-
-			} else if (inFileFormat.equals(JSON)) {
-
-				Gson gson = new Gson();
-				bioD = gson.fromJson(new FileReader(bioCFile), BioCDocument.class);
-				
-			} else {
-				
-				throw new AnalysisEngineProcessException(
-						new Exception("Please write to an *.xml or a *.json file")
-						);
-			
-			}
-			
+					
 			UimaBioCUtils.addBioCDocumentToUimaCas(bioD, jcas);
 						
 		    pos++;
@@ -165,6 +146,46 @@ public class BioCCollectionReader extends JCasCollectionReader_ImplBase {
 
 		}
 
+	}
+
+	private BioCDocument readBioCFile(File bioCFile)
+			throws AnalysisEngineProcessException, FileNotFoundException, XMLStreamException, IOException {
+		while( !bioCFile.exists() ||
+				this.existingFiles.contains(bioCFile.getName()) ) {
+			
+			if(!bioCFileIt.hasNext()) 
+				throw new AnalysisEngineProcessException(
+						new Exception("Output directory contains all required files: " + 
+								outputDirectory ) );
+			
+			bioCFile = bioCFileIt.next();
+		
+		}
+		
+		BioCDocument bioD;
+		if (inFileFormat.equals(XML)) {
+			
+			BioCDocumentReader reader = BioCFactory.newFactory(
+					BioCFactory.STANDARD).createBioCDocumentReader(
+							new FileReader(bioCFile));
+
+			bioD = reader.readDocument();
+
+			reader.close();
+
+		} else if (inFileFormat.equals(JSON)) {
+
+			Gson gson = new Gson();
+			bioD = gson.fromJson(new FileReader(bioCFile), BioCDocument.class);
+			
+		} else {
+			
+			throw new AnalysisEngineProcessException(
+					new Exception("Please write to an *.xml or a *.json file")
+					);
+		
+		}
+		return bioD;
 	}
 		
 	protected void error(String message) {

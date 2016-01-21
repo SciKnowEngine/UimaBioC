@@ -28,6 +28,7 @@ import org.uimafit.util.JCasUtil;
 import bioc.BioCCollection;
 import bioc.type.UimaBioCAnnotation;
 import bioc.type.UimaBioCDocument;
+import bioc.type.UimaBioCPassage;
 import edu.isi.bmkeg.uimaBioC.UimaBioCUtils;
 
 public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
@@ -59,6 +60,12 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 	String keepFloatsStr;
 	Boolean keepFloats = false;
 
+	public final static String PARAM_ADD_FRIES_CODES = ConfigurationParameterFactory
+			.createConfigurationParameterName(
+					SaveExtractedAnnotations.class, "keepFloatsStr");
+	@ConfigurationParameter(mandatory = false, description = "Should we include floating boxes in the output.")
+	String addFriesStr;
+	Boolean addFries = false;
 	
 	private File outDir;
 	private BioCCollection collection;
@@ -94,11 +101,17 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 		} else if(this.keepFloatsStr.toLowerCase().equals("false") ) {
 			keepFloats = false;
 		} else {
-			Exception e = new Exception("Please set PARAM_KEEP_FLOATING_BOXES to 'true' or 'false'");
+			keepFloats = false;
+			Exception e = new Exception("Please set PARAM_ADD_FRIES_CODES to 'true' or 'false'");
 			throw new ResourceInitializationException(e);
 		}		
 
-		
+		if(this.addFriesStr != null && this.addFriesStr.toLowerCase().equals("true") ) {
+			addFries = true;
+		} else {
+			addFries = false;
+		}		
+
 		this.collection = new BioCCollection();
 		
 		this.patt = Pattern.compile(this.annot2Extract);
@@ -117,12 +130,12 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 		//
 		// 1. Delineated by brackets
 		this.figPatt.add( 
-				Pattern.compile("\\("+b+"\\s*(\\d+.*)\\)") 
+				Pattern.compile("\\("+b+"\\s*(\\d+.*?)\\)") 
 				);
 		//
 		// 2. Simple single alphanumeric codes, followed by punctuation.
 		this.figPatt.add( 
-				Pattern.compile(b+"\\s*(\\d+\\s*[A-Za-z]\\p{Punct})") 
+				Pattern.compile(b+"\\s*(\\d+\\s*[A-Za-z])\\p{Punct}") 
 				);
 		
 		//
@@ -163,7 +176,7 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 				UimaBioCDocument.class);
 
 		String id = uiD.getId();
-
+		
 		boolean anyTextExtracted = false;
 		
 		Set<UimaBioCAnnotation> selectedAnnotations = new HashSet<UimaBioCAnnotation>();
@@ -246,6 +259,7 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 		}
 
 		List<UimaBioCAnnotation> floats = new ArrayList<UimaBioCAnnotation>();
+		List<UimaBioCAnnotation> parags = new ArrayList<UimaBioCAnnotation>();
 		for( UimaBioCAnnotation a : JCasUtil.selectCovered(
 				UimaBioCAnnotation.class, uiA1) ) {
 			Map<String, String> infons = 
@@ -253,7 +267,12 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 			if( infons.containsKey("position") 
 					&& infons.get("position").equals("float") ){
 				floats.add(a);							
+			} else if( infons.containsKey("value") 
+					&& (infons.get("value").equals("p") || 
+							infons.get("value").equals("title")) ){
+				parags.add(a);							
 			} 
+
 		}
 		
 		List<Sentence> sentences = JCasUtil.selectCovered(
@@ -263,22 +282,17 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 		
 			if( !this.keepFloats ) {
 				for( UimaBioCAnnotation f : floats ) {
-					if( s.getBegin()>=f.getBegin()-2 && s.getEnd()<=f.getEnd()+2 ) {
+					if( s.getBegin()>=f.getBegin() && s.getEnd()<=f.getEnd() ) {
 						continue SENTENCE_LOOP;
-					} else {
-						int i=0;
 					}
 				}
 			}
 			
-			out.print( s.getCoveredText() );
-			
 			//
 			// Identify exLinks, inLinks or headers
 			//
+			Map<Integer,Integer> currLvl = new HashMap<Integer,Integer>();
 			if( this.headerLinks ) {
-				
-				out.print("\t");
 				
 				Set<String> codes = new HashSet<String>();
 				Set<String> expts = new HashSet<String>();
@@ -298,11 +312,13 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 						// THE EXPERIMENTAL CODES
 						// MORE ACCURATELY?
 						String exptCodes = readExptCodes(jCas, a);
-						/*expts.add(exptCodes);*/
+						expts.add(exptCodes);
 					} 
 				}	
-				// Looking for section headings
-				
+
+				//
+				// Look for section headings
+				//
 				for( UimaBioCAnnotation a : JCasUtil.selectCovering(jCas, 
 						UimaBioCAnnotation.class, s.getBegin(), s.getEnd()) ) {
 					Map<String, String> infons = 
@@ -317,13 +333,72 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 							codes.add("header-?");							
 							continue;
 						}
-						int level = readHeadingLevel(jCas, secAnn, 0);
+						
+						int level = 99;
+						try {
+							level = readHeadingLevel(jCas, secAnn, 0);
+						} catch (StackOverflowError e) {
+							e.printStackTrace();
+						}
+
+						if( currLvl.containsKey(level) ) {
+							currLvl.put(level, currLvl.get(level) + 1);
+							int tempLevel = level;
+							while( currLvl.containsKey(tempLevel+1) ) {
+								tempLevel++;
+								currLvl.remove(tempLevel);
+							}
+						} else {
+							currLvl.put(level, 1);
+						}
 						codes.add("header-" + level);							
 					}
 
-				}					
+				}	
+				
+				// 
+				// Look for paragraphs
+				// 
+				String pCode = "-";
+				for( int i=0; i<parags.size(); i++ ) {
+					UimaBioCAnnotation p = parags.get(i);
+					if( s.getBegin()>=p.getBegin() && s.getEnd()<=p.getEnd() ) {
+						UimaBioCUtils.convertInfons(p.getInfons()).get("value");
+						pCode = UimaBioCUtils.convertInfons(p.getInfons()).get("value") + i;
+						break;
+					}
+				}
+				
+				String friesSentenceId = "-";
+				String friesEventsIds = "-";
+				for( UimaBioCPassage friesSent : JCasUtil.selectCovered(
+						UimaBioCPassage.class, s
+						)) {
+					Map<String,String> inf = UimaBioCUtils.convertInfons(friesSent.getInfons());
+					if( inf.containsKey("friesId")) {
+						friesSentenceId = inf.get("friesId") + ":" + inf.get("score") ;
+						friesEventsIds = inf.get("events");
+					}
+				}				
+				
+				out.print( readTokenizedText(jCas, s) );
+				out.print("\t");
 				out.print(codes.toString());
-			
+				out.print("\t");
+				out.print(expts.toString());
+				out.print("\t");
+				out.print( pCode );
+				if( addFries ) {
+					out.print("\t");
+					out.print( friesSentenceId );
+					out.print("\t");
+					out.print( friesEventsIds );
+				}
+				
+			} else {
+				
+				out.print( readTokenizedText(jCas, s) );
+
 			}
 			
 			out.print("\n");
@@ -341,11 +416,11 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 		} 
 			
 		List<Token> l = JCasUtil.selectCovered(Token.class, s);
-		List<Token> f = JCasUtil.selectFollowing(jCas, Token.class, s, 6);
+		List<Token> f = JCasUtil.selectFollowing(jCas, Token.class, s, 10);
 		List<Token> p = JCasUtil.selectPreceding(jCas, Token.class, s, offset);
 		
 		Token start = p.get(0);
-		Token end = f.get(5);
+		Token end = f.get(9);
 		String figFrag = jCas.getDocumentText().substring(
 				start.getBegin(), 
 				end.getEnd());
@@ -353,7 +428,8 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 		for(Pattern patt : this.figPatt){
 			Matcher m = patt.matcher(figFrag);
 			if( m.find() ) {
-				return m.group(0);
+				// use group 2 since all 
+				return m.group(2);
 			}
 		}
 		
@@ -380,7 +456,7 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 
 	
 	
-	private int readHeadingLevel(JCas jCas, UimaBioCAnnotation a, int level) {
+	private int readHeadingLevel(JCas jCas, UimaBioCAnnotation a, int level) throws StackOverflowError {
 		
 		// Looking for section headings
 		for( UimaBioCAnnotation a1 : JCasUtil.selectCovering(jCas, 
@@ -399,6 +475,12 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 				
 	}
 	
-	
+	private String readTokenizedText(JCas jCas, Sentence s) {
+		String txt = "";
+		for( Token t : JCasUtil.selectCovered(jCas, Token.class, s) ) {
+			txt += t.getCoveredText() + " ";
+		}		
+		return txt.substring(0,txt.length()-1);
+	}
 	
 }

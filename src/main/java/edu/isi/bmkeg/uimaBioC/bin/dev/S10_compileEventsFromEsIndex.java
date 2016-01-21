@@ -1,5 +1,6 @@
 package edu.isi.bmkeg.uimaBioC.bin.dev;
 
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 
@@ -15,7 +16,9 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.stereotype.Component;
 
+import bioc.esViews.BioCDocumentView.BioCDocumentView__BioCDocument;
 import edu.isi.bmkeg.uimaBioC.PubMedESIndex;
+import edu.isi.bmkeg.uimaBioC.elasticSearch.BioCRepository;
 import edu.isi.bmkeg.uimaBioC.elasticSearch.EntityMentionRepository;
 import edu.isi.bmkeg.uimaBioC.elasticSearch.EventMentionRepository;
 import edu.isi.bmkeg.uimaBioC.elasticSearch.SentenceRepository;
@@ -31,9 +34,13 @@ public class S10_compileEventsFromEsIndex {
 
 	@Autowired
 	SentenceRepository sentRepo;
+
+	@Autowired
+	BioCRepository biocRepo;
 	
 	public static class Options {
 
+		
 		@Option(name = "-docId", usage = "Document Id", required = true, metaVar = "IN-DIRECTORY")
 		public String docId;
 
@@ -77,12 +84,15 @@ public class S10_compileEventsFromEsIndex {
 		else 
 			nxmlMap = pmES.getMapFromTerm("pmid", options.docId, "nxml");
 		String pmcId = (String) nxmlMap.get("pmcId");
+		String pmid = (String) nxmlMap.get("pmid");
 		
 		S10_compileEventsFromEsIndex main = ctx.getBean(S10_compileEventsFromEsIndex.class);
 
 		List<FRIES_EntityMentionView__FRIES_EntityMention> entities = main.entityMentionRepo.findByFrameIdLike("*-" + pmcId + "-*");
 		List<FRIES_EventMentionView__FRIES_EventMention> events = main.eventMentionRepo.findByFrameIdLike("*-" + pmcId + "-*");
 		List<FRIES_SentenceView__FRIES_Sentence> sentences = main.sentRepo.findByFrameIdLike("*-" + pmcId + "-*");
+		
+		BioCDocumentView__BioCDocument biocd = main.biocRepo.findOne(pmid);
 		
 		int pause = 1;
 		
