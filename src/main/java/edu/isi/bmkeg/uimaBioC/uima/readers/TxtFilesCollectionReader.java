@@ -97,6 +97,10 @@ public class TxtFilesCollectionReader extends JCasCollectionReader_ImplBase {
 			infons.put("pos", pos + "");
 			uiD.setInfons(UimaBioCUtils.convertInfons(infons, jcas));
 			
+			String id = txtFile.getName();
+			id = id.substring(0, id.lastIndexOf("."));
+			uiD.setId(id);
+			
 			uiD.setBegin(0);
 			uiD.setEnd(txt.length());
 						

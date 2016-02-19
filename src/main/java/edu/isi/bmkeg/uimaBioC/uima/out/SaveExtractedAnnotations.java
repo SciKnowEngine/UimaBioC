@@ -39,7 +39,7 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 	@ConfigurationParameter(mandatory = true, description = "The section heading *pattern* to extract")
 	String annot2Extract;
 	private Pattern patt;
-	
+
 	public final static String PARAM_DIR_PATH = ConfigurationParameterFactory
 			.createConfigurationParameterName(
 					SaveExtractedAnnotations.class, "outDirPath");
@@ -62,10 +62,18 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 
 	public final static String PARAM_ADD_FRIES_CODES = ConfigurationParameterFactory
 			.createConfigurationParameterName(
-					SaveExtractedAnnotations.class, "keepFloatsStr");
-	@ConfigurationParameter(mandatory = false, description = "Should we include floating boxes in the output.")
+					SaveExtractedAnnotations.class, "addFriesStr");
+	@ConfigurationParameter(mandatory = false, description = "Should we add FRIES output?")
 	String addFriesStr;
 	Boolean addFries = false;
+	
+	public final static String PARAM_SKIP_BODY = ConfigurationParameterFactory
+			.createConfigurationParameterName(
+					SaveExtractedAnnotations.class, "skipBodyStr");
+	@ConfigurationParameter(mandatory = false, description = "Should we skip output that doesn't match patterns.")
+	String skipBodyStr;
+	Boolean skipBody = false;
+
 	
 	private File outDir;
 	private BioCCollection collection;
@@ -110,7 +118,14 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 			addFries = true;
 		} else {
 			addFries = false;
+		}	
+		
+		if(this.skipBodyStr != null && this.skipBodyStr.toLowerCase().equals("true") ) {
+			skipBody = true;
+		} else {
+			skipBody = false;
 		}		
+
 
 		this.collection = new BioCCollection();
 		
@@ -220,7 +235,7 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 			
 			this.dumpSectionToFile(jCas, outFile, bestA);
 
-		} else {
+		} else if( !this.skipBody ) {
 
 			for (UimaBioCAnnotation uiA1 : outerAnnotations) {
 				
@@ -275,6 +290,7 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 
 		}
 		
+		int sNumber = 0;
 		List<Sentence> sentences = JCasUtil.selectCovered(
 				org.cleartk.token.type.Sentence.class, uiA1
 				);
@@ -381,6 +397,35 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 					}
 				}				
 				
+				sNumber++;
+				PHRASE_LOOP: for( UimaBioCAnnotation a : JCasUtil.selectCovered(jCas, UimaBioCAnnotation.class, s) ) {
+					Map<String, String> infons = 
+							UimaBioCUtils.convertInfons(a.getInfons());						
+					if( infons.get("type").equals("rubicon") &&
+							infons.get("value").equals("clause") ) {
+						
+						out.print( sNumber );
+						out.print( "\t" );
+						out.print( readTokenizedText(jCas, a) );
+						out.print("\t");
+						out.print(codes.toString());
+						out.print("\t");
+						out.print(expts.toString());
+						out.print("\t");
+						out.print( pCode );
+						if( addFries ) {
+							out.print("\t");
+							out.print( friesSentenceId );
+							out.print("\t");
+							out.print( friesEventsIds );
+						}
+						out.print("\n");
+
+					}
+				}
+				
+				/*out.print( sNumber++ );
+				out.print("\t");
 				out.print( readTokenizedText(jCas, s) );
 				out.print("\t");
 				out.print(codes.toString());
@@ -393,16 +438,15 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 					out.print( friesSentenceId );
 					out.print("\t");
 					out.print( friesEventsIds );
-				}
+				}*/
 				
 			} else {
 				
 				out.print( readTokenizedText(jCas, s) );
+				out.print("\n");
 
 			}
-			
-			out.print("\n");
-			
+						
 		}
 		out.close();
 	}
@@ -453,8 +497,6 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 		return null;
 				
 	}
-
-	
 	
 	private int readHeadingLevel(JCas jCas, UimaBioCAnnotation a, int level) throws StackOverflowError {
 		
@@ -478,6 +520,14 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 	private String readTokenizedText(JCas jCas, Sentence s) {
 		String txt = "";
 		for( Token t : JCasUtil.selectCovered(jCas, Token.class, s) ) {
+			txt += t.getCoveredText() + " ";
+		}		
+		return txt.substring(0,txt.length()-1);
+	}
+	
+	private String readTokenizedText(JCas jCas, UimaBioCAnnotation a) {
+		String txt = "";
+		for( Token t : JCasUtil.selectCovered(jCas, Token.class, a) ) {
 			txt += t.getCoveredText() + " ";
 		}		
 		return txt.substring(0,txt.length()-1);

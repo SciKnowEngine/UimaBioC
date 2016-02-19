@@ -22,6 +22,7 @@ package edu.isi.bmkeg.uimaBioC.rubicon;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -33,7 +34,6 @@ import org.apache.log4j.Logger;
 import org.apache.uima.UimaContext;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
 import org.apache.uima.jcas.JCas;
-import org.apache.uima.jcas.cas.FSArray;
 import org.apache.uima.resource.ResourceInitializationException;
 import org.uimafit.component.JCasAnnotator_ImplBase;
 import org.uimafit.descriptor.ConfigurationParameter;
@@ -41,11 +41,10 @@ import org.uimafit.factory.ConfigurationParameterFactory;
 import org.uimafit.util.JCasUtil;
 
 import bioc.type.UimaBioCDocument;
-import bioc.type.UimaBioCPassage;
-import bioc.type.UimaBioCAnnotation;
 import edu.isi.bmkeg.uimaBioC.UimaBioCUtils;
 import tratz.parse.FullSystemWrapper;
 import tratz.parse.FullSystemWrapper.FullSystemResult;
+import tratz.parse.io.DefaultSentenceWriter;
 import tratz.parse.io.SentenceWriter;
 import tratz.parse.io.TokenizingSentenceReader;
 import tratz.parse.types.Parse;
@@ -53,72 +52,81 @@ import tratz.parse.types.Sentence;
 import tratz.parse.types.Token;
 
 /**
- * Iterates the FANSE PARSER over all sentences in the CAS.
+ * Simply iterates the FANSE PARSER over all sentences in the CAS.
+ * Requires the following dependency to be present in pom.xml
+ * 
+ * 		<dependency>
+ *			<groupId>edu.isi.bmkeg</groupId>
+ *			<artifactId>uimaBioC-fanseParser-models</artifactId>
+ *			<version>1.0</version>
+ *		</dependency>
+ * 
  */
-public class FanseParserAnnotator extends JCasAnnotator_ImplBase {
+public class FanseParser extends JCasAnnotator_ImplBase {
 
 	private static Logger logger = Logger
-			.getLogger(FanseParserAnnotator.class);
+			.getLogger(FanseParser.class);
 	
 	public static final String OPT_POS_MODEL = ConfigurationParameterFactory
 			.createConfigurationParameterName(
-					FanseParserAnnotator.class, "posModelFile");
+					FanseParser.class, "posModelFile");
 	@ConfigurationParameter(mandatory = false, description = "part-of-speech tagging model file")
 	protected String posModelFile;
 	
 	public static final String OPT_PARSE_MODEL = ConfigurationParameterFactory
 			.createConfigurationParameterName(
-					FanseParserAnnotator.class, "parseModelFile");
+					FanseParser.class, "parseModelFile");
 	@ConfigurationParameter(mandatory = false, description = "parser model file")
 	protected String parseModelFile;
 	
 	public static final String OPT_POSSESSIVES_MODEL = ConfigurationParameterFactory
 			.createConfigurationParameterName(
-					FanseParserAnnotator.class, "possessivesModelFile");
+					FanseParser.class, "possessivesModelFile");
 	@ConfigurationParameter(mandatory = false, description = "possessives interpretation model file")
 	protected String possessivesModelFile;
 	
 	public static final String OPT_NOUN_COMPOUND_MODEL = ConfigurationParameterFactory
 			.createConfigurationParameterName(
-					FanseParserAnnotator.class, "nounCompoundModelFile");
+					FanseParser.class, "nounCompoundModelFile");
 	@ConfigurationParameter(mandatory = false, description = "noun compound interpretation model file")
 	protected String nounCompoundModelFile;
 
 	public static final String OPT_PREPOSITIONS_MODEL = ConfigurationParameterFactory
 			.createConfigurationParameterName(
-					FanseParserAnnotator.class, "prepositionModelFile");
+					FanseParser.class, "prepositionModelFile");
 	@ConfigurationParameter(mandatory = false, description = "preposition disambiguation models file")
 	protected String prepositionModelFile;
 	
 	public static final String OPT_SRL_ARGS_MODEL = ConfigurationParameterFactory
 			.createConfigurationParameterName(
-					FanseParserAnnotator.class, "srlArgsModelFile");
+					FanseParser.class, "srlArgsModelFile");
 	@ConfigurationParameter(mandatory = false, description = "semantic role labeling model file")
 	protected String srlArgsModelFile;
 
 	public static final String OPT_SRL_PREDICATES_MODEL = ConfigurationParameterFactory
 			.createConfigurationParameterName(
-					FanseParserAnnotator.class, "srlPredicatesModelFile");
+					FanseParser.class, "srlPredicatesModelFile");
 	@ConfigurationParameter(mandatory = false, description = "semantic role labeling model file")
 	protected String srlPredicatesModelFile;
 	
 	public static final String OPT_WORDNET_DIR = ConfigurationParameterFactory
 			.createConfigurationParameterName(
-					FanseParserAnnotator.class, "wnDir");
+					FanseParser.class, "wnDir");
 	@ConfigurationParameter(mandatory = false, description = "WordNet dictionary (dict) directory")
 	protected String wnDir;
 
 	public final static String PARAM_SECTION_ANNOTATION = ConfigurationParameterFactory
-			.createConfigurationParameterName(FanseParserAnnotator.class,
+			.createConfigurationParameterName(FanseParser.class,
 					"sectionAnnotation");
 	@ConfigurationParameter(mandatory = false, description = "The subsection of the paper to be extracted")
 	String sectionAnnotation;
 	
 	public final static String PARAM_OUT_FANSE_DIR_PATH = ConfigurationParameterFactory
-			.createConfigurationParameterName(FanseParserAnnotator.class,
+			.createConfigurationParameterName(FanseParser.class,
 					"outFanseDirPath");
 	@ConfigurationParameter(mandatory = true, description = "The place to put the parse files")
 	String outFanseDirPath;
+	File outFanseDir;
 	
 	FullSystemWrapper fullSystemWrapper;
 	SentenceWriter sentenceWriter;
@@ -163,8 +171,11 @@ public class FanseParserAnnotator extends JCasAnnotator_ImplBase {
 					parseModelFile, 
 					wnDir);
 		
-		
-			sentenceWriter = new RubiconSentenceWriter();
+			sentenceWriter = new DefaultSentenceWriter();
+			
+			this.outFanseDir = new File(this.outFanseDirPath);
+			if( !outFanseDir.exists() )
+				this.outFanseDir.mkdirs();
 			
 		} catch (ClassNotFoundException e) {
 			throw new ResourceInitializationException(e);
@@ -180,68 +191,16 @@ public class FanseParserAnnotator extends JCasAnnotator_ImplBase {
 			
 			UimaBioCDocument uiD = JCasUtil.selectSingle(jCas,
 					UimaBioCDocument.class);
-			UimaBioCPassage docP = UimaBioCUtils
-					.readDocumentUimaBioCPassage(jCas);
-						
-			List<org.cleartk.token.type.Sentence> sentences = null;
-			if( sectionAnnotation != null ){
 
-				String sa = sectionAnnotation.toLowerCase();
-				
-				List<UimaBioCAnnotation> annotations = JCasUtil.selectCovered(
-						UimaBioCAnnotation.class, docP);
-				for (UimaBioCAnnotation a : annotations) {
-					Map<String, String> inf = UimaBioCUtils.convertInfons(a.getInfons());
-					if( inf.containsKey("sectionHeading") 
-							&& inf.get("sectionHeading").toLowerCase().startsWith(sa)) {
-						sentences = JCasUtil.selectCovered(
-								org.cleartk.token.type.Sentence.class, a
-								);
-						break;
-					}
-				}	
-				
-			} else {
-				List<UimaBioCAnnotation> annotations = JCasUtil.selectCovered(
-						UimaBioCAnnotation.class, docP);
-				for (UimaBioCAnnotation a : annotations) {
-					Map<String, String> inf = UimaBioCUtils.convertInfons(a.getInfons());
-					if( inf.containsKey("value") 
-							&& inf.get("value").toLowerCase().equals("body")) {
-						sentences = JCasUtil.selectCovered(
-								org.cleartk.token.type.Sentence.class, a
-								);
-						break;
-					}
-				}	
-			}
-
-			if( sentences == null) {
-				List<UimaBioCAnnotation> annotations = JCasUtil.selectCovered(
-						UimaBioCAnnotation.class, docP);
-				for (UimaBioCAnnotation a : annotations) {
-					Map<String, String> inf = UimaBioCUtils.convertInfons(a.getInfons());
-					if( inf.containsKey("value") 
-							&& inf.get("value").toLowerCase().equals("body")) {
-						sentences = JCasUtil.selectCovered(
-								org.cleartk.token.type.Sentence.class, a
-								);
-						break;
-					}
-				}
-			}
+			List<org.cleartk.token.type.Sentence> sentences = JCasUtil.selectCovered(
+							org.cleartk.token.type.Sentence.class, uiD);
 			
-			if (sentences == null) {
-				Exception e = new Exception("Can't find text in document to parse");
-				throw new AnalysisEngineProcessException(e);
-			}
-			
-			String outFile = outFanseDirPath + "/" + uiD.getId() + "_crf_in" ;
+			String outFile = outFanseDirPath + "/" + uiD.getId() + "_fanse.txt" ;
 			
 			logger.info(uiD.getId());
 
 			Map<String, String> writerArgsMap = new HashMap<String, String>();
-			writerArgsMap.put(RubiconSentenceWriter.PARAM_OUTPUT_FILE, outFile);
+			writerArgsMap.put(CONLL_SentenceWriter.PARAM_OUTPUT_FILE, outFile);
 			sentenceWriter.initialize(writerArgsMap);
 			
 			for (org.cleartk.token.type.Sentence ss : sentences) {
@@ -260,11 +219,8 @@ public class FanseParserAnnotator extends JCasAnnotator_ImplBase {
 			sentenceWriter.close();
 			
 			Map<String, String> docInfo = UimaBioCUtils.convertInfons(uiD.getInfons());
-			docInfo.put("crf_in_file", outFile);
-			
-			String crfModelFile = this.getClass().getResource("/rubicon/para_model.crf").getFile();
-			docInfo.put("crf_model_file", crfModelFile);
-			
+			docInfo.put("fanse_file", outFile);
+						
 			uiD.setInfons(UimaBioCUtils.convertInfons(docInfo, jCas));
 			
 		} catch (Exception e) {

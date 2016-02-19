@@ -1,4 +1,4 @@
-package edu.isi.bmkeg.uimaBioC.bin.dev;
+package edu.isi.bmkeg.uimaBioC.bin;
 
 import java.io.File;
 
@@ -10,8 +10,6 @@ import org.cleartk.token.tokenizer.TokenAnnotator;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.uimafit.factory.AggregateBuilder;
 import org.uimafit.factory.AnalysisEngineFactory;
 import org.uimafit.factory.CollectionReaderFactory;
@@ -19,21 +17,24 @@ import org.uimafit.factory.TypeSystemDescriptionFactory;
 import org.uimafit.pipeline.SimplePipeline;
 
 import edu.isi.bmkeg.uimaBioC.uima.ae.core.FixSentencesFromHeadings;
-import edu.isi.bmkeg.uimaBioC.uima.ae.core.MatchReachAndNxmlText;
+import edu.isi.bmkeg.uimaBioC.uima.out.SaveBody;
 import edu.isi.bmkeg.uimaBioC.uima.out.SaveExtractedAnnotations;
 import edu.isi.bmkeg.uimaBioC.uima.readers.BioCCollectionReader;
-import edu.isi.bmkeg.uimaBioC.uima.readers.BioCDocumentElasticSearchReader;
 
-public class S11_matchBioCAndFries {
+/**
+ * This script runs through serialized JSON files from the model and converts
+ * them to VPDMf KEfED models, including the data.
+ * 
+ * @author Gully
+ * 
+ */
+public class UIMABIOC_03_ExtractSections {
 
 	public static class Options {
-		
-		@Option(name = "-biocDir", usage = "Input Directory", required = true, metaVar = "IN-DIRECTORY")
-		public File biocDir;
 
-		@Option(name = "-friesDir", usage = "Output Directory", required = true, metaVar = "OUT-FILE")
-		public File friesDir;
-		
+		@Option(name = "-inDir", usage = "Input Directory", required = true, metaVar = "IN-DIRECTORY")
+		public File inDir;
+
 		@Option(name = "-ann2Extract", usage = "Annotation Type to Extract", required = true, metaVar = "ANNOTATION")
 		public File ann2Ext;
 
@@ -42,10 +43,11 @@ public class S11_matchBioCAndFries {
 
 		@Option(name = "-headerLink", usage = "Output Directory", required = true, metaVar = "OUT-FILE")
 		public Boolean headerLink = false;
-	
+
 	}
 
-	private static Logger logger = Logger.getLogger(S11_matchBioCAndFries.class);
+	private static Logger logger = Logger
+			.getLogger(UIMABIOC_03_ExtractSections.class);
 
 	/**
 	 * @param args
@@ -71,13 +73,14 @@ public class S11_matchBioCAndFries {
 			System.exit(-1);
 
 		}
-		
+
 		TypeSystemDescription typeSystem = TypeSystemDescriptionFactory
 				.createTypeSystemDescription("bioc.TypeSystem");
 
 		CollectionReader cr = CollectionReaderFactory.createCollectionReader(
 				BioCCollectionReader.class, typeSystem,
-				BioCCollectionReader.INPUT_DIRECTORY, options.biocDir.getPath(),
+				BioCCollectionReader.INPUT_DIRECTORY, options.inDir,
+				BioCCollectionReader.OUTPUT_DIRECTORY, options.outDir,
 				BioCCollectionReader.PARAM_FORMAT, BioCCollectionReader.JSON);
 
 		AggregateBuilder builder = new AggregateBuilder();
@@ -85,14 +88,9 @@ public class S11_matchBioCAndFries {
 		builder.add(SentenceAnnotator.getDescription()); // Sentence
 		builder.add(TokenAnnotator.getDescription());   // Tokenization
 
-		//
 		// Some sentences include headers that don't end in periods
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
 				FixSentencesFromHeadings.class));		
-
-		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
-				MatchReachAndNxmlText.class,
-				MatchReachAndNxmlText.PARAM_INPUT_DIRECTORY, options.friesDir.getPath()));
 
 		if( options.headerLink ) {
 			builder.add(AnalysisEngineFactory.createPrimitiveDescription(
@@ -117,7 +115,6 @@ public class S11_matchBioCAndFries {
 					SaveExtractedAnnotations.PARAM_HEADER_LINKS, 
 					"false"));
 		}
-		
 		SimplePipeline.runPipeline(cr, builder.createAggregateDescription());
 
 	}

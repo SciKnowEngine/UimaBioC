@@ -28,7 +28,7 @@ import edu.isi.bmkeg.uimaBioC.uima.readers.Nxml2TxtFilesCollectionReader;
  * @author Gully
  * 
  */
-public class S01_Nxml2txt_to_BioC {
+public class UIMABIOC_01_Nxml2txt_to_BioC {
 
 	public static class Options {
 
@@ -44,7 +44,7 @@ public class S01_Nxml2txt_to_BioC {
 	}
 
 	private static Logger logger = Logger
-			.getLogger(S01_Nxml2txt_to_BioC.class);
+			.getLogger(UIMABIOC_01_Nxml2txt_to_BioC.class);
 
 	/**
 	 * @param args
@@ -107,7 +107,7 @@ public class S01_Nxml2txt_to_BioC {
 				outFormat));
 
 		SimplePipeline.runPipeline(cr, builder.createAggregateDescription());
-
+		
 	}
 
 }

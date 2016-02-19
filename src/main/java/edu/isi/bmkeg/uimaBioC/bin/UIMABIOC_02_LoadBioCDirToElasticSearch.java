@@ -30,9 +30,9 @@ import bioc.io.BioCFactory;
 import edu.isi.bmkeg.uimaBioC.elasticSearch.BioCRepository;
 
 @Component
-public class S02_LoadBioCDirToElasticSearch {
+public class UIMABIOC_02_LoadBioCDirToElasticSearch {
 
-	private static final Logger logger = LoggerFactory.getLogger(S02_LoadBioCDirToElasticSearch.class);
+	private static final Logger logger = LoggerFactory.getLogger(UIMABIOC_02_LoadBioCDirToElasticSearch.class);
 
 	@Autowired
 	BioCRepository biocRepo;
@@ -67,7 +67,7 @@ public class S02_LoadBioCDirToElasticSearch {
 		// Use annotated beans from the specified package
 		ApplicationContext ctx = new AnnotationConfigApplicationContext("edu.isi.bmkeg.uimaBioC");
 
-		S02_LoadBioCDirToElasticSearch main = ctx.getBean(S02_LoadBioCDirToElasticSearch.class);
+		UIMABIOC_02_LoadBioCDirToElasticSearch main = ctx.getBean(UIMABIOC_02_LoadBioCDirToElasticSearch.class);
 
 		logger.info("BioC File Location: " + options.biocDirectory);
 

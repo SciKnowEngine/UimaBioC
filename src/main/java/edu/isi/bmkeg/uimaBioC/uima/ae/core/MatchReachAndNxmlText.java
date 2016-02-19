@@ -18,6 +18,7 @@ import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
 import org.apache.uima.jcas.JCas;
 import org.apache.uima.jcas.tcas.DocumentAnnotation;
 import org.apache.uima.resource.ResourceInitializationException;
+import org.bigmech.fries.FRIES_Argument;
 import org.bigmech.fries.FRIES_EntityMention;
 import org.bigmech.fries.FRIES_EventMention;
 import org.bigmech.fries.FRIES_Frame;
@@ -57,7 +58,7 @@ public class MatchReachAndNxmlText extends
 	public final static String PARAM_INPUT_DIRECTORY = ConfigurationParameterFactory
 			.createConfigurationParameterName(MatchReachAndNxmlText.class,
 					"inDirPath");
-	@ConfigurationParameter(mandatory = true, description = "The place to put the document files to be classified.")
+	@ConfigurationParameter(mandatory = true, description = "Directory for the FRIES Frames.")
 	String inDirPath;
 	File inDir;
 	
@@ -173,11 +174,16 @@ public class MatchReachAndNxmlText extends
 					FRIES_EventMention em  = (FRIES_EventMention) frame;
 					String sn = em.getSentence();
 					String ev = em.getFrameId();
+					String code = (em.getSubtype()!=null) ? em.getType() + "." + em.getSubtype() : em.getType();
+					for( FRIES_Argument args: em.getArguments() ) {
+						code += "["+args.getText()+"]";
+					}
+					String type = em.getType();
 					if( !map.containsKey(sn) ) {
 						map.put(sn, new HashSet<String>());
 					}
 					Set<String> evs = map.get(sn);
-					evs.add(ev);
+					evs.add(ev+"="+code);
 					map.put(sn, evs);
 				}
 			}
@@ -185,7 +191,7 @@ public class MatchReachAndNxmlText extends
 			FRIES_FrameCollection fc2 = gson.fromJson(new FileReader(sentenceFrames), 
 					FRIES_FrameCollection.class);	 
 			
-			for( FRIES_Frame frame : fc2.getFrames() ) {
+			FRIES_FRAMES: for( FRIES_Frame frame : fc2.getFrames() ) {
 				
 				if( frame instanceof FRIES_Sentence)  {
 					
@@ -211,7 +217,23 @@ public class MatchReachAndNxmlText extends
 						}
 					}
 	
-					if(match != null) {				
+					if(match != null) {
+						
+						//
+						//   Check for the best match based on Levenshtein edit distance
+						// to make sure that it's correct. 
+						//   We also truncate the match to the length of the FRIES corpus' 
+						// sentence to ignore errors from the FRIES sentence splitter. 
+						//
+						String s1 = fs.getText().replaceAll("\\s+", "");
+						String s2 = match.getCoveredText().replaceAll("\\s+", "");
+						if( s2.length() > s1.length() + 5) {
+							s2=s2.substring(0, s1.length()+5);
+						}
+						float sim = levenshteinSimilarityMetric.compare(s1,s2);
+						if( sim < 0.85 ) 
+							continue FRIES_FRAMES;
+						
 						UimaBioCPassage p = new UimaBioCPassage(jCas);
 						p.setBegin(match.getBegin());
 						p.setEnd(match.getEnd());

@@ -15,7 +15,7 @@ import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import edu.isi.bmkeg.uimaBioC.elasticSearch.AppConfiguration;
+import edu.isi.bmkeg.uimaBioC.elasticSearch.UimaBioCAppConfiguration;
 import edu.isi.bmkeg.uimaBioC.elasticSearch.EntityMentionRepository;
 
 /**
@@ -26,7 +26,7 @@ import edu.isi.bmkeg.uimaBioC.elasticSearch.EntityMentionRepository;
  *
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@SpringApplicationConfiguration(classes = AppConfiguration.class)
+@SpringApplicationConfiguration(classes = UimaBioCAppConfiguration.class)
 public class FrameRepositoryTest {
 	
 	@Autowired

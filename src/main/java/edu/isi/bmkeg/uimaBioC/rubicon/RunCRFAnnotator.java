@@ -57,7 +57,7 @@ public class RunCRFAnnotator extends JCasAnnotator_ImplBase {
 	private static Logger logger = Logger
 			.getLogger(RunCRFAnnotator.class);
 	
-	public final static String PARAM_OUT_CRF_DIR_PATH = ConfigurationParameterFactory
+	public final static String PARAM_OUT_DIR_PATH = ConfigurationParameterFactory
 			.createConfigurationParameterName(RunCRFAnnotator.class,
 					"outCrfDirPath");
 	@ConfigurationParameter(mandatory = true, description = "The place to put the CRF files")

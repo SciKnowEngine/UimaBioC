@@ -40,9 +40,9 @@ import org.springframework.data.elasticsearch.repository.config.EnableElasticsea
 @EnableElasticsearchRepositories("edu.isi.bmkeg")
 @PropertySource("classpath:/application.properties")
 @EnableAutoConfiguration
-public class AppConfiguration {
+public class UimaBioCAppConfiguration {
 
-	private static Logger logger = Logger.getLogger(AppConfiguration.class);
+	private static Logger logger = Logger.getLogger(UimaBioCAppConfiguration.class);
 	
 	@PreDestroy
 	public void deleteIndex() {

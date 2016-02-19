@@ -1,21 +1,19 @@
 package edu.isi.bmkeg.uimaBioC.bin.dev;
 
-import static org.apache.uima.fit.factory.ExternalResourceFactory.bindExternalResource;
+import java.io.File;
 
 import org.apache.log4j.Logger;
 import org.apache.uima.UIMAFramework;
 import org.apache.uima.collection.CollectionReader;
 import org.apache.uima.collection.CollectionReaderDescription;
 import org.apache.uima.fit.factory.CollectionReaderFactory;
-import org.apache.uima.fit.spring.SpringContextResourceManager;
 import org.apache.uima.resource.metadata.TypeSystemDescription;
 import org.cleartk.opennlp.tools.SentenceAnnotator;
 import org.cleartk.token.tokenizer.TokenAnnotator;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.stereotype.Component;
 import org.uimafit.factory.AggregateBuilder;
 import org.uimafit.factory.AnalysisEngineFactory;
@@ -23,26 +21,36 @@ import org.uimafit.factory.TypeSystemDescriptionFactory;
 import org.uimafit.pipeline.SimplePipeline;
 
 import edu.isi.bmkeg.uimaBioC.elasticSearch.BioCRepository;
+import edu.isi.bmkeg.uimaBioC.rubicon.RemoveSentencesFromOtherSections;
+import edu.isi.bmkeg.uimaBioC.rubicon.StanfordTag;
 import edu.isi.bmkeg.uimaBioC.uima.ae.core.FixSentencesFromHeadings;
-import edu.isi.bmkeg.uimaBioC.uima.readers.BioCDocumentElasticSearchReader;
+import edu.isi.bmkeg.uimaBioC.uima.readers.BioCCollectionReader;
 
 
 /** 
  * 
+ * REQUIRES UIMA FIT SPRING AND DOES NOT WORK
+ * 
  * @author Gully
+ *
  */
 
 @Component
-public class S12_accessElasticSearchIndexes {
+public class S15_runTagger {
 
 	@Autowired
 	BioCRepository biocRepo;
 
 	public static class Options {
-
+		
+		@Option(name = "-biocDir", usage = "Input Directory", required = true, metaVar = "IN-DIRECTORY")
+		public File biocDir;
+		
+		@Option(name = "-ann2Extract", usage = "Annotation Type to Extract", required = true, metaVar = "ANNOTATION")
+		public File ann2Ext;
+	
 	}
-
-	private static Logger logger = Logger.getLogger(S12_accessElasticSearchIndexes.class);
+	private static Logger logger = Logger.getLogger(S15_runTagger.class);
 
 	/**
 	 * @param args
@@ -68,26 +76,15 @@ public class S12_accessElasticSearchIndexes {
 			System.exit(-1);
 
 		}
-
-		// Use annotated beans from the specified package
-		ApplicationContext ctx = new AnnotationConfigApplicationContext(
-				"edu.isi.bmkeg.uimaBioC"
-				);
-		
-	    // Create resource manager
-	    SpringContextResourceManager resMgr = new SpringContextResourceManager();
-	    resMgr.setApplicationContext(ctx);
-	    resMgr.setAutowireEnabled(true);
 	    
 		TypeSystemDescription typeSystem = TypeSystemDescriptionFactory.createTypeSystemDescription(
 				"bioc.TypeSystem");
 		CollectionReaderDescription crDesc = CollectionReaderFactory.createReaderDescription(
-				BioCDocumentElasticSearchReader.class,
-				typeSystem);
-	    bindExternalResource(crDesc, "bioCRepository", 
-	    		BioCDocumentElasticSearchReader.BIOC_ES_REPO);
+				BioCCollectionReader.class, typeSystem,
+				BioCCollectionReader.INPUT_DIRECTORY, options.biocDir,
+				BioCCollectionReader.PARAM_FORMAT, BioCCollectionReader.JSON);
 	    
-	    CollectionReader cr =  UIMAFramework.produceCollectionReader(crDesc, resMgr, null);
+	    CollectionReader cr =  UIMAFramework.produceCollectionReader(crDesc, null, null);	    
 	    
 		AggregateBuilder builder = new AggregateBuilder();
 
@@ -97,6 +94,18 @@ public class S12_accessElasticSearchIndexes {
 		// Some sentences include headers that don't end in periods
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(FixSentencesFromHeadings.class));
 
+		// Strip out not results sections where we aren't interested in them
+		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
+				RemoveSentencesFromOtherSections.class,
+				RemoveSentencesFromOtherSections.PARAM_ANNOT_2_EXTRACT,
+				options.ann2Ext,					
+				RemoveSentencesFromOtherSections.PARAM_KEEP_FLOATING_BOXES, 
+				"false"));
+
+		// Rerun Pradeep's system to create clauses from the text
+		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
+				StanfordTag.class));
+		
 		SimplePipeline.runPipeline(crDesc, builder.createAggregateDescription());
 
 	}

@@ -1,0 +1,5 @@
+J Exp Med The Journal of Experimental Medicine 0022-1007 1540-9538 The Rockefeller University Press 7561682 2192281 96018808 Articles
+Direct association of pp125FAK with paxillin, the focal adhesion- targeting mechanism of pp125FAK
+1 10 1995
+182 4 1089 1099
+Focal adhesion kinase (pp125FAK) is localized to focal adhesions and tyrosine phosphorylated by the engagement of beta 1 integrins. However, it is unclear how pp125FAK is linked to integrin molecules. We demonstrate that pp125FAK is directly associated with paxillin, a 68-kD cytoskeleton protein. The COOH-terminal domain of pp125FAK spanning FAK residues 919-1042 is sufficient for paxillin binding and has vinculin- homologous amino acids, which are essential for paxillin binding. Microinjection and subsequent immunohistochemical analysis reveal that glutathione S-transferase-FAK fusion proteins, which bind to paxillin, localize to focal adhesions, whereas fusion proteins with no paxillin- binding activity do not localize to focal adhesions. These findings strongly suggest that pp125FAK is localized to focal adhesions by the direct association with paxillin.

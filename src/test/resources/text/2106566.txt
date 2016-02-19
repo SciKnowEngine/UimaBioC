@@ -1,0 +1,5 @@
+J Exp Med The Journal of Experimental Medicine 0022-1007 1540-9538 The Rockefeller University Press 2106566 2187791 90171833 Articles
+Interleukin 2 (IL-2)-induced tyrosine phosphorylation of IL-2 receptor p75 [published erratum appears in J Exp Med 1990 Jun 1;171(6):2183]
+1 3 1990
+171 3 637 644
+We have recently established a mAb named TU11 mAb specific for the p75 subunit of human IL-2 receptor (IL-2R). The present study using TU11 mAb demonstrates the IL-2-induced phosphorylation of IL-2Rp75 on tyrosine residues in IL-2-dependent T cells. The tyrosine phosphorylation is mediated by the high affinity IL-2R, correlates with the IL-2-induced cell growth, and rapidly increases during the first 5 min of IL-2 stimulation. Phosphorylation of serine and threonine residues of IL-2Rp75 is also detected, but its IL-2 dependency is not significant during at least the first 5 min. These results suggest some roles of a tyrosine kinase associated with IL-2Rp75 in the IL-2-induced signal-transducing pathway.

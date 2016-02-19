@@ -28,7 +28,7 @@ import edu.isi.bmkeg.uimaBioC.uima.readers.BioCCollectionReader;
  * @author Gully
  * 
  */
-public class S05_CountSectionSentences {
+public class UIMABIOC_04_CountSectionSentences {
 
 	public static class Options {
 
@@ -47,7 +47,7 @@ public class S05_CountSectionSentences {
 	}
 
 	private static Logger logger = Logger
-			.getLogger(S05_CountSectionSentences.class);
+			.getLogger(UIMABIOC_04_CountSectionSentences.class);
 
 	/**
 	 * @param args

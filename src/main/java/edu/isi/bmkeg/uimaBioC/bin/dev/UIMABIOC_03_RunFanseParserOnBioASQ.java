@@ -1,4 +1,4 @@
-package edu.isi.bmkeg.uimaBioC.bin;
+package edu.isi.bmkeg.uimaBioC.bin.dev;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,9 +28,9 @@ import edu.isi.bmkeg.uimaBioC.uima.ae.core.FixSentencesFromHeadings;
 import edu.isi.bmkeg.uimaBioC.uima.readers.BioCCollectionReader;
 
 //@Component
-public class S03_RunFanseParserOnBioC {
+public class UIMABIOC_03_RunFanseParserOnBioASQ {
 
-	private static final Logger logger = LoggerFactory.getLogger(S03_RunFanseParserOnBioC.class);
+	private static final Logger logger = LoggerFactory.getLogger(UIMABIOC_03_RunFanseParserOnBioASQ.class);
 
 	//@Autowired
 	//BioCRepository biocRepo;
@@ -69,7 +69,7 @@ public class S03_RunFanseParserOnBioC {
 
 		}
 
-		S03_RunFanseParserOnBioC main = new S03_RunFanseParserOnBioC();
+		UIMABIOC_03_RunFanseParserOnBioASQ main = new UIMABIOC_03_RunFanseParserOnBioASQ();
 
 		logger.info("BioC File Location: " + options.biocDir);
 
@@ -105,7 +105,7 @@ public class S03_RunFanseParserOnBioC {
 
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
 				RunCRFAnnotator.class, 
-				RunCRFAnnotator.PARAM_OUT_CRF_DIR_PATH,options.outDir.getPath()
+				RunCRFAnnotator.PARAM_OUT_DIR_PATH,options.outDir.getPath()
 				));
 		
 		SimplePipeline.runPipeline(cr, builder.createAggregateDescription());

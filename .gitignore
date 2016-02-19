@@ -3,6 +3,7 @@
 .settings/
 .DS_Store
 .history
+.springbeans
 target/
 journalAbbrLookup.jObj
 NeuroScholar.DTD
