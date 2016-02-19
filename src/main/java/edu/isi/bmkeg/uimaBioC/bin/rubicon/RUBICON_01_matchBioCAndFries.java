@@ -18,8 +18,8 @@ import org.uimafit.factory.CollectionReaderFactory;
 import org.uimafit.factory.CpeBuilder;
 import org.uimafit.factory.TypeSystemDescriptionFactory;
 
+import edu.isi.bmkeg.uimaBioC.rubicon.RemoveSentencesFromOtherSections;
 import edu.isi.bmkeg.uimaBioC.rubicon.SeparateClauses;
-import edu.isi.bmkeg.uimaBioC.uima.ae.core.FilterUnwantedSections;
 import edu.isi.bmkeg.uimaBioC.uima.ae.core.FixSentencesFromHeadings;
 import edu.isi.bmkeg.uimaBioC.uima.ae.core.MatchReachAndNxmlText;
 import edu.isi.bmkeg.uimaBioC.uima.out.SaveExtractedAnnotations;
@@ -99,10 +99,14 @@ public class RUBICON_01_matchBioCAndFries {
 		//
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(FixSentencesFromHeadings.class));
 
-		builder.add(AnalysisEngineFactory.createPrimitiveDescription(FilterUnwantedSections.class,
-				FilterUnwantedSections.PARAM_ANNOT_2_EXTRACT, options.ann2Ext,
-				FilterUnwantedSections.PARAM_KEEP_FLOATING_BOXES, "false"));
-
+		// Strip out not results sections where we aren't interested in them
+		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
+				RemoveSentencesFromOtherSections.class,
+				RemoveSentencesFromOtherSections.PARAM_ANNOT_2_EXTRACT,
+				options.ann2Ext,					
+				RemoveSentencesFromOtherSections.PARAM_KEEP_FLOATING_BOXES, 
+				"false"));
+		
 		//
 		// Rerun Pradeep's system to create clauses from the text
 		//

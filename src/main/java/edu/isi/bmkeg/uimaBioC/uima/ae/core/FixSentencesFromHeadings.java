@@ -21,6 +21,9 @@ public class FixSentencesFromHeadings extends JCasAnnotator_ImplBase {
 	public void process(JCas jCas) throws AnalysisEngineProcessException {
 
 		UimaBioCDocument uiD = JCasUtil.selectSingle(jCas, UimaBioCDocument.class);
+		if( uiD.getId().equals("skip") )
+			return;
+		
 		UimaBioCPassage docPassage = null;
 
 		List<UimaBioCPassage> passages = JCasUtil.selectCovered(UimaBioCPassage.class, uiD);

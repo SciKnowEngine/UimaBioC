@@ -107,6 +107,9 @@ public class MatchPdfBlocksAndSentencesToNxmlText extends
 			
 			UimaBioCDocument uiD = JCasUtil.selectSingle(jCas,
 					UimaBioCDocument.class);
+			if( uiD.getId().equals("skip") )
+				return;
+			
 			UimaBioCPassage docP = UimaBioCUtils
 					.readDocumentUimaBioCPassage(jCas);
 

@@ -133,6 +133,9 @@ public class ExperimentTypeClassifier extends JCasAnnotator_ImplBase {
 	public void process(JCas jCas) throws AnalysisEngineProcessException {
 		
 		UimaBioCDocument uiD = JCasUtil.selectSingle(jCas, UimaBioCDocument.class);
+		if( uiD.getId().equals("skip") )
+			return;
+		
 		Map<String, String> dInf = UimaBioCUtils.convertInfons(uiD.getInfons());
 		
 		List<UimaBioCPassage> passages = JCasUtil.selectCovered(UimaBioCPassage.class, uiD);

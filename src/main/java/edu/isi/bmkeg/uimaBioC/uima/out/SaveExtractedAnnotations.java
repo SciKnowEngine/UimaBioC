@@ -189,6 +189,8 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 
 		UimaBioCDocument uiD = JCasUtil.selectSingle(jCas,
 				UimaBioCDocument.class);
+		if( uiD.getId().equals("skip") )
+			return;
 
 		String id = uiD.getId();
 		

@@ -55,6 +55,8 @@ public class SimpleOneLinePerDocWriter extends JCasAnnotator_ImplBase {
 
 		UimaBioCDocument uiD = JCasUtil.selectSingle(jCas,
 				UimaBioCDocument.class);
+		if( uiD.getId().equals("skip") )
+			return;
 
 		Map<String,String> infons = UimaBioCUtils.convertInfons(uiD.getInfons());
 		String p = infons.get("pos");

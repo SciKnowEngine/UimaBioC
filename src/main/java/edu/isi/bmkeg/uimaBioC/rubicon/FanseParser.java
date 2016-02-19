@@ -191,6 +191,8 @@ public class FanseParser extends JCasAnnotator_ImplBase {
 			
 			UimaBioCDocument uiD = JCasUtil.selectSingle(jCas,
 					UimaBioCDocument.class);
+			if( uiD.getId().equals("skip") )
+				return;
 
 			List<org.cleartk.token.type.Sentence> sentences = JCasUtil.selectCovered(
 							org.cleartk.token.type.Sentence.class, uiD);

@@ -87,6 +87,9 @@ public class StanfordParse extends JCasAnnotator_ImplBase {
 		try {
 			
 			UimaBioCDocument uiD = JCasUtil.selectSingle(jCas, UimaBioCDocument.class);
+			if( uiD.getId().equals("skip") )
+				return;
+			
 			UimaBioCPassage docP = UimaBioCUtils.readDocumentUimaBioCPassage(jCas);
 
 			List<Sentence> sentences = JCasUtil.selectCovered(Sentence.class, docP);

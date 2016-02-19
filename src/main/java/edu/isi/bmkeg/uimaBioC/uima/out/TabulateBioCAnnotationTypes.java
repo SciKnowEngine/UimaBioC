@@ -65,7 +65,9 @@ public class TabulateBioCAnnotationTypes extends JCasAnnotator_ImplBase {
 
 		UimaBioCDocument uiD = JCasUtil.selectSingle(jCas,
 				UimaBioCDocument.class);
-
+		if( uiD.getId().equals("skip") )
+			return;
+		
 		Map<String, Integer> row = null;
 		if( table.containsKey(uiD.getId()) ) {
 			row = table.get(uiD.getId()); 

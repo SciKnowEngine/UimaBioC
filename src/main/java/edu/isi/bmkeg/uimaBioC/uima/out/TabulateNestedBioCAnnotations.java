@@ -77,7 +77,9 @@ public class TabulateNestedBioCAnnotations extends JCasAnnotator_ImplBase {
 
 		UimaBioCDocument uiD = JCasUtil.selectSingle(jCas,
 				UimaBioCDocument.class);
-
+		if( uiD.getId().equals("skip") )
+			return;
+		
 		List<UimaBioCAnnotation> outerAnnotations = JCasUtil.selectCovered(
 				UimaBioCAnnotation.class, uiD);
 		for (UimaBioCAnnotation uiA1 : outerAnnotations) {

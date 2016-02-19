@@ -78,6 +78,9 @@ public class ReachAnnotator extends JCasAnnotator_ImplBase {
 			
 			UimaBioCDocument uiD = JCasUtil.selectSingle(jCas,
 					UimaBioCDocument.class);
+			if( uiD.getId().equals("skip") )
+				return;
+			
 			UimaBioCPassage docP = UimaBioCUtils
 					.readDocumentUimaBioCPassage(jCas);
 						

@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.log4j.Logger;
 import org.apache.uima.UimaContext;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
 import org.apache.uima.jcas.JCas;
@@ -30,6 +31,7 @@ import bioc.type.UimaBioCAnnotation;
 import bioc.type.UimaBioCDocument;
 import bioc.type.UimaBioCPassage;
 import edu.isi.bmkeg.uimaBioC.UimaBioCUtils;
+import edu.isi.bmkeg.uimaBioC.bin.rubicon.RUBICON_01_matchBioCAndFries;
 
 public class RemoveSentencesFromOtherSections extends JCasAnnotator_ImplBase {
 
@@ -48,6 +50,8 @@ public class RemoveSentencesFromOtherSections extends JCasAnnotator_ImplBase {
 	Boolean keepFloats = false;
 
 	Map<String,Map<String,Integer>> table = new HashMap<String, Map<String, Integer>>();
+	
+	private static Logger logger = Logger.getLogger(RemoveSentencesFromOtherSections.class);
 	
 	public void initialize(UimaContext context)
 			throws ResourceInitializationException {
@@ -68,7 +72,9 @@ public class RemoveSentencesFromOtherSections extends JCasAnnotator_ImplBase {
 
 		UimaBioCDocument uiD = JCasUtil.selectSingle(jCas,
 				UimaBioCDocument.class);
-
+		if( uiD.getId().equals("skip") )
+			return;
+		
 		String id = uiD.getId();
 
 		boolean anyTextExtracted = false;
@@ -123,7 +129,8 @@ public class RemoveSentencesFromOtherSections extends JCasAnnotator_ImplBase {
 					continue;
 				}
 				
-				this.removeOtherSentences(jCas, uiA1);
+				logger.info( "Skipping " + uiD.getId() );
+				uiD.setId("skip");
 				break;
 				
 			}

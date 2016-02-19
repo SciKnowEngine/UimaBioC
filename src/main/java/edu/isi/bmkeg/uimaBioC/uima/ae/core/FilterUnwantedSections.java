@@ -59,7 +59,8 @@ public class FilterUnwantedSections extends JCasAnnotator_ImplBase {
 
 		UimaBioCDocument uiD = JCasUtil.selectSingle(jCas,
 				UimaBioCDocument.class);
-
+		if( uiD.getId().equals("skip") )
+			return;
 		
 		Set<UimaBioCAnnotation> selectedAnnotations = new HashSet<UimaBioCAnnotation>();
 		List<UimaBioCAnnotation> outerAnnotations = JCasUtil.selectCovered(
