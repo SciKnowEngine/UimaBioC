@@ -32,7 +32,10 @@ public class RUBICON_01_matchBioCAndFries {
 
 		@Option(name = "-nThreads", usage = "Number of threads", required = true, metaVar = "IN-DIRECTORY")
 		public int nThreads;
-		
+
+		@Option(name = "-maxSentenceLength", usage = "Maximum length of sentences to be parsed", required = true, metaVar = "MAX-PARSE-LENGTH")
+		public int maxSentenceLength;
+
 		@Option(name = "-biocDir", usage = "Input Directory", required = true, metaVar = "IN-DIRECTORY")
 		public File biocDir;
 
@@ -83,7 +86,7 @@ public class RUBICON_01_matchBioCAndFries {
 
 		CollectionReaderDescription crDesc = CollectionReaderFactory.createDescription(BioCCollectionReader.class,
 				typeSystem, BioCCollectionReader.INPUT_DIRECTORY, options.biocDir.getPath(),
-				//BioCCollectionReader.OUTPUT_DIRECTORY, options.outDir.getPath(), 
+				BioCCollectionReader.OUTPUT_DIRECTORY, options.outDir.getPath(), 
 				BioCCollectionReader.PARAM_FORMAT, BioCCollectionReader.JSON);
 
 		CpeBuilder cpeBuilder = new CpeBuilder();
@@ -110,7 +113,9 @@ public class RUBICON_01_matchBioCAndFries {
 		//
 		// Rerun Pradeep's system to create clauses from the text
 		//
-		builder.add(AnalysisEngineFactory.createPrimitiveDescription(SeparateClauses.class));
+		builder.add(AnalysisEngineFactory.createPrimitiveDescription(SeparateClauses.class,
+				SeparateClauses.PARAM_MAX_LENGTH, options.maxSentenceLength
+				));
 
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(MatchReachAndNxmlText.class,
 				MatchReachAndNxmlText.PARAM_INPUT_DIRECTORY, options.friesDir.getPath()));

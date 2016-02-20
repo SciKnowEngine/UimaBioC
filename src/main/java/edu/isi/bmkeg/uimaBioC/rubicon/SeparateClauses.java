@@ -21,6 +21,8 @@ import org.apache.uima.resource.ResourceInitializationException;
 import org.cleartk.token.type.Sentence;
 import org.cleartk.token.type.Token;
 import org.uimafit.component.JCasAnnotator_ImplBase;
+import org.uimafit.descriptor.ConfigurationParameter;
+import org.uimafit.factory.ConfigurationParameterFactory;
 import org.uimafit.util.JCasUtil;
 
 import bioc.type.UimaBioCAnnotation;
@@ -43,6 +45,12 @@ import edu.stanford.nlp.util.ReflectionLoading;
 
 public class SeparateClauses extends JCasAnnotator_ImplBase {
 
+	public final static String PARAM_MAX_LENGTH = ConfigurationParameterFactory
+			.createConfigurationParameterName(SeparateClauses.class,
+					"maxLength");
+	@ConfigurationParameter(mandatory = true, description = "Maximum Sentence Length")
+	int maxLength;
+	
 	private String[] args;
 
 	private PrintStream nullStream;
@@ -112,6 +120,13 @@ public class SeparateClauses extends JCasAnnotator_ImplBase {
 			List<Sentence> sentences = JCasUtil.selectCovered(Sentence.class, docP);
 			int sCount = 0;
 			SENTENCE_LOOP: for (Sentence s : sentences) {
+				
+				if( s.getEnd() - s.getBegin() > this.maxLength ) {
+					logger.warn("Sentence too long for " + uiD.getId() + ": '" + s.getCoveredText());
+					UimaBioCAnnotation otherClause = this.createClauseAnnotation(jCas, s.getBegin(), s.getEnd());
+					otherClause.addToIndexes();
+					continue SENTENCE_LOOP;
+				}
 
 				Map<Integer, Token> tokPos = new HashMap<Integer, Token>();
 				String ss = "";
