@@ -18,22 +18,23 @@ import org.uimafit.factory.CollectionReaderFactory;
 import org.uimafit.factory.CpeBuilder;
 import org.uimafit.factory.TypeSystemDescriptionFactory;
 
-import edu.isi.bmkeg.uimaBioC.rubicon.RemoveSentencesFromOtherSections;
+import edu.isi.bmkeg.uimaBioC.rubicon.MatchReachAndNxmlText;
+import edu.isi.bmkeg.uimaBioC.rubicon.RemoveSentencesNotInTitleAbstractBody;
 import edu.isi.bmkeg.uimaBioC.rubicon.SeparateClauses;
+import edu.isi.bmkeg.uimaBioC.rubicon.StanfordParse;
 import edu.isi.bmkeg.uimaBioC.uima.ae.core.FixSentencesFromHeadings;
-import edu.isi.bmkeg.uimaBioC.uima.ae.core.MatchReachAndNxmlText;
-import edu.isi.bmkeg.uimaBioC.uima.out.SaveExtractedAnnotations;
+import edu.isi.bmkeg.uimaBioC.uima.out.SaveAsBioCDocuments;
 import edu.isi.bmkeg.uimaBioC.uima.readers.BioCCollectionReader;
 import edu.isi.bmkeg.uimaBioC.utils.StatusCallbackListenerImpl;
 
-public class RUBICON_01_matchBioCAndFries {
+public class RUBICON_01_preprocessToBioC {
 
 	public static class Options {
 
 		@Option(name = "-nThreads", usage = "Number of threads", required = true, metaVar = "IN-DIRECTORY")
 		public int nThreads;
 
-		@Option(name = "-maxSentenceLength", usage = "Maximum length of sentences to be parsed", required = true, metaVar = "MAX-PARSE-LENGTH")
+		@Option(name = "-maxSentenceLength", usage = "Maximum length of sentences to be parsed", required = false, metaVar = "MAX-PARSE-LENGTH")
 		public int maxSentenceLength;
 
 		@Option(name = "-biocDir", usage = "Input Directory", required = true, metaVar = "IN-DIRECTORY")
@@ -42,18 +43,21 @@ public class RUBICON_01_matchBioCAndFries {
 		@Option(name = "-friesDir", usage = "Fries Directory", required = true, metaVar = "FRIES-DATA")
 		public File friesDir;
 
-		@Option(name = "-ann2Extract", usage = "Annotation Type to Extract", required = true, metaVar = "ANNOTATION")
+		@Option(name = "-ann2Extract", usage = "Annotation Type to Extract", required = false, metaVar = "ANNOTATION")
 		public File ann2Ext;
 
 		@Option(name = "-outDir", usage = "Output Directory", required = true, metaVar = "OUT-FILE")
 		public File outDir;
 
-		@Option(name = "-headerLink", usage = "Output Directory", required = true, metaVar = "OUT-FILE")
-		public Boolean headerLink = false;
+		@Option(name = "-outFormat", usage = "Output Format", required = true, metaVar = "OUT-FORMAT")
+		public String outFormat;
+		
+		@Option(name = "-clauseLevel", usage = "Output Directory", required = false, metaVar = "CLAUSE-LEVEL")
+		public Boolean clauseLevel = false;
 
 	}
 
-	private static Logger logger = Logger.getLogger(RUBICON_01_matchBioCAndFries.class);
+	private static Logger logger = Logger.getLogger(RUBICON_01_preprocessToBioC.class);
 
 	/**
 	 * @param args
@@ -62,7 +66,7 @@ public class RUBICON_01_matchBioCAndFries {
 	public static void main(String[] args) throws Exception {
 
 		long startTime = System.currentTimeMillis();
-		
+
 		Options options = new Options();
 
 		CmdLineParser parser = new CmdLineParser(options);
@@ -86,84 +90,98 @@ public class RUBICON_01_matchBioCAndFries {
 
 		CollectionReaderDescription crDesc = CollectionReaderFactory.createDescription(BioCCollectionReader.class,
 				typeSystem, BioCCollectionReader.INPUT_DIRECTORY, options.biocDir.getPath(),
-				BioCCollectionReader.OUTPUT_DIRECTORY, options.outDir.getPath(), 
-				BioCCollectionReader.PARAM_FORMAT, BioCCollectionReader.JSON);
+				BioCCollectionReader.OUTPUT_DIRECTORY, options.outDir.getPath(), BioCCollectionReader.PARAM_FORMAT,
+				BioCCollectionReader.JSON);
 
 		CpeBuilder cpeBuilder = new CpeBuilder();
 		cpeBuilder.setReader(crDesc);
 
 		AggregateBuilder builder = new AggregateBuilder();
-		
+
 		builder.add(SentenceAnnotator.getDescription()); // Sentence
-		builder.add(TokenAnnotator.getDescription()); // Tokenization
+		
+		builder.add(AnalysisEngineFactory.createPrimitiveDescription(TokenAnnotator.class,
+				TokenAnnotator.PARAM_TOKENIZER_NAME, 
+				"edu.isi.bmkeg.uimaBioC.rubicon.tokenizer.PennTreebankTokenizer")); // Tokenization
 
 		//
 		// Some sentences include headers that don't end in periods
 		//
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(FixSentencesFromHeadings.class));
 
-		// Strip out not results sections where we aren't interested in them
-		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
-				RemoveSentencesFromOtherSections.class,
-				RemoveSentencesFromOtherSections.PARAM_ANNOT_2_EXTRACT,
-				options.ann2Ext,					
-				RemoveSentencesFromOtherSections.PARAM_KEEP_FLOATING_BOXES, 
-				"false"));
-		
-		//
-		// Rerun Pradeep's system to create clauses from the text
-		//
-		builder.add(AnalysisEngineFactory.createPrimitiveDescription(SeparateClauses.class,
-				SeparateClauses.PARAM_MAX_LENGTH, options.maxSentenceLength
-				));
+		builder.add(AnalysisEngineFactory.createPrimitiveDescription(RemoveSentencesNotInTitleAbstractBody.class,
+				RemoveSentencesNotInTitleAbstractBody.PARAM_KEEP_FLOATING_BOXES, "true"));
 
-		builder.add(AnalysisEngineFactory.createPrimitiveDescription(MatchReachAndNxmlText.class,
-				MatchReachAndNxmlText.PARAM_INPUT_DIRECTORY, options.friesDir.getPath()));
-
-		if (options.headerLink) {
-
-			builder.add(AnalysisEngineFactory.createPrimitiveDescription(SaveExtractedAnnotations.class,
-					SaveExtractedAnnotations.PARAM_ANNOT_2_EXTRACT, options.ann2Ext,
-					SaveExtractedAnnotations.PARAM_DIR_PATH, options.outDir.getPath(),
-					SaveExtractedAnnotations.PARAM_KEEP_FLOATING_BOXES, "false",
-					SaveExtractedAnnotations.PARAM_ADD_FRIES_CODES, "true", SaveExtractedAnnotations.PARAM_SKIP_BODY,
-					"true", SaveExtractedAnnotations.PARAM_HEADER_LINKS, "true"));
-
-		} else {
-
-			builder.add(AnalysisEngineFactory.createPrimitiveDescription(SaveExtractedAnnotations.class,
-					SaveExtractedAnnotations.PARAM_ANNOT_2_EXTRACT, options.ann2Ext,
-					SaveExtractedAnnotations.PARAM_DIR_PATH, options.outDir.getPath(),
-					SaveExtractedAnnotations.PARAM_KEEP_FLOATING_BOXES, "false",
-					SaveExtractedAnnotations.PARAM_ADD_FRIES_CODES, "true", SaveExtractedAnnotations.PARAM_SKIP_BODY,
-					"true", SaveExtractedAnnotations.PARAM_HEADER_LINKS, "false"));
+		if (options.friesDir != null) {
+			//builder.add(AnalysisEngineFactory.createPrimitiveDescription(AddReachAnnotations.class,
+			//		AddReachAnnotations.PARAM_INPUT_DIRECTORY, options.friesDir.getPath()));
+			builder.add(AnalysisEngineFactory.createPrimitiveDescription(MatchReachAndNxmlText.class,
+					MatchReachAndNxmlText.PARAM_INPUT_DIRECTORY, options.friesDir.getPath()));
 		}
-		cpeBuilder.setAnalysisEngine( builder.createAggregateDescription() );
 		
+		//
+		// Strip out not results sections where we aren't interested in them
+		//
+		//if( options.ann2Ext != null ) {
+		//	builder.add(AnalysisEngineFactory.createPrimitiveDescription(RemoveSentencesFromOtherSections.class,
+		//			RemoveSentencesFromOtherSections.PARAM_ANNOT_2_EXTRACT, options.ann2Ext,
+		//			RemoveSentencesFromOtherSections.PARAM_KEEP_FLOATING_BOXES, "false"));
+		//} 
+		//
+
+		builder.add(AnalysisEngineFactory.createPrimitiveDescription(StanfordParse.class,
+				StanfordParse.PARAM_MAX_LENGTH, options.maxSentenceLength));
+//		builder.add(AnalysisEngineFactory.createPrimitiveDescription(StanfordTag.class));
+
+		if (options.clauseLevel) {
+			
+			//
+			// Run Pradeep's system to create clauses from the text
+			//
+			builder.add(AnalysisEngineFactory.createPrimitiveDescription(SeparateClauses.class));
+		}
+
+		String outFormat = null;
+		if( options.outFormat.toLowerCase().equals("xml") ) 
+			outFormat = SaveAsBioCDocuments.XML;
+		else if( options.outFormat.toLowerCase().equals("json") ) 
+			outFormat = SaveAsBioCDocuments.JSON;
+		else 
+			throw new Exception("Output format " + options.outFormat + " not recognized");
+
+		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
+				SaveAsBioCDocuments.class, 
+				SaveAsBioCDocuments.PARAM_FILE_PATH,
+				options.outDir.getPath(),
+				SaveAsBioCDocuments.PARAM_FORMAT,
+				outFormat));
+		
+		cpeBuilder.setAnalysisEngine(builder.createAggregateDescription());
+
 		cpeBuilder.setMaxProcessingUnitThreatCount(options.nThreads);
 		StatusCallbackListener callback = new StatusCallbackListenerImpl();
 		CollectionProcessingEngine cpe = cpeBuilder.createCpe(callback);
 		System.out.println("Running CPE");
 		cpe.process();
-		
+
 		try {
 			Thread.sleep(500);
 		} catch (InterruptedException e) {
-		} 
-		
+		}
+
 		while (cpe.isProcessing())
 			try {
 				Thread.sleep(200);
 			} catch (InterruptedException e) {
 			}
-		
+
 		System.out.println("\n\n ------------------ PERFORMANCE REPORT ------------------\n");
 		System.out.println(cpe.getPerformanceReport().toString());
-		
+
 		long endTime = System.currentTimeMillis();
-		float duration = (float) (endTime - startTime);		
-		System.out.format("\n\nTOTAL EXECUTION TIME: %.3f s", duration/1000);
-	
+		float duration = (float) (endTime - startTime);
+		System.out.format("\n\nTOTAL EXECUTION TIME: %.3f s", duration / 1000);
+
 	}
 
 }

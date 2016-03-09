@@ -31,8 +31,8 @@ public class S09_runReach {
 		@Option(name = "-outDir", usage = "Output Directory", required = true, metaVar = "OUT-DIRECTORY")
 		public File outDir;
 
-		@Option(name = "-ann2Extract", usage = "Annotation Type to Extract", required = true, metaVar = "ANNOTATION")
-		public File ann2Ext;
+		@Option(name = "-ann2Extract", usage = "Annotation Type to Extract", required = false, metaVar = "ANNOTATION")
+		public String ann2Ext;
 	}
 
 	private static Logger logger = Logger.getLogger(S09_runReach.class);

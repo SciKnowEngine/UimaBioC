@@ -111,7 +111,7 @@ public class MatchPdfBlocksAndSentencesToNxmlText extends
 				return;
 			
 			UimaBioCPassage docP = UimaBioCUtils
-					.readDocumentUimaBioCPassage(jCas);
+					.readDocument(jCas);
 
 			logger.info(uiD.getId());
 

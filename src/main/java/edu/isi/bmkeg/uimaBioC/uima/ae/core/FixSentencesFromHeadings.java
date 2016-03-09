@@ -51,7 +51,7 @@ public class FixSentencesFromHeadings extends JCasAnnotator_ImplBase {
 			// detects 'run-on' sentences from titles that do not end in a
 			// period
 			//
-			if (inf.containsKey("value") && inf.get("value").toLowerCase().equals("title")) {
+			if (inf.containsKey("value") && inf.get("value").toLowerCase().equals("title") ) {
 
 				List<Sentence> sentences = JCasUtil.selectCovering(jCas, Sentence.class, a.getBegin(), a.getEnd());
 
@@ -68,6 +68,18 @@ public class FixSentencesFromHeadings extends JCasAnnotator_ImplBase {
 						s2.addToIndexes(jCas);
 					}
 				}
+
+			} else if( inf.get("value").toLowerCase().equals("article-title") ) {
+
+				List<Sentence> sentences = JCasUtil.selectCovering(jCas, Sentence.class, a.getBegin(), a.getEnd());
+				for (Sentence oldSentence : sentences) {
+					oldSentence.removeFromIndexes(jCas);
+					Sentence s1 = new Sentence(jCas);
+					s1.setBegin(a.getBegin());
+					s1.setEnd(a.getEnd());
+					s1.addToIndexes(jCas);
+					break;
+				}		
 
 			}
 			//

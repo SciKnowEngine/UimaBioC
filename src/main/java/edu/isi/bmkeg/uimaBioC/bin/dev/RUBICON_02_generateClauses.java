@@ -37,7 +37,7 @@ import edu.isi.bmkeg.uimaBioC.uima.readers.BioCCollectionReader;
  */
 
 @Component
-public class S13_generateClauses {
+public class RUBICON_02_generateClauses {
 
 	@Autowired
 	BioCRepository biocRepo;
@@ -51,7 +51,7 @@ public class S13_generateClauses {
 		public File ann2Ext;
 	
 	}
-	private static Logger logger = Logger.getLogger(S13_generateClauses.class);
+	private static Logger logger = Logger.getLogger(RUBICON_02_generateClauses.class);
 
 	/**
 	 * @param args

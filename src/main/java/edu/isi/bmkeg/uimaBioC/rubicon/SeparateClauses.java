@@ -1,16 +1,11 @@
 package edu.isi.bmkeg.uimaBioC.rubicon;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.OutputStream;
 import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import org.apache.log4j.Logger;
 import org.apache.uima.UimaContext;
@@ -21,8 +16,6 @@ import org.apache.uima.resource.ResourceInitializationException;
 import org.cleartk.token.type.Sentence;
 import org.cleartk.token.type.Token;
 import org.uimafit.component.JCasAnnotator_ImplBase;
-import org.uimafit.descriptor.ConfigurationParameter;
-import org.uimafit.factory.ConfigurationParameterFactory;
 import org.uimafit.util.JCasUtil;
 
 import bioc.type.UimaBioCAnnotation;
@@ -30,26 +23,15 @@ import bioc.type.UimaBioCDocument;
 import bioc.type.UimaBioCLocation;
 import bioc.type.UimaBioCPassage;
 import edu.isi.bmkeg.uimaBioC.UimaBioCUtils;
-import edu.stanford.nlp.ling.HasWord;
 import edu.stanford.nlp.parser.lexparser.LexicalizedParser;
-import edu.stanford.nlp.parser.lexparser.NoSuchParseException;
 import edu.stanford.nlp.parser.lexparser.Options;
 import edu.stanford.nlp.parser.lexparser.ParseFiles;
-import edu.stanford.nlp.parser.lexparser.ParserQuery;
-import edu.stanford.nlp.process.DocumentPreprocessor;
 import edu.stanford.nlp.process.PTBEscapingProcessor;
 import edu.stanford.nlp.trees.PennTreeReader;
 import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.trees.TreebankLanguagePack;
-import edu.stanford.nlp.util.ReflectionLoading;
 
 public class SeparateClauses extends JCasAnnotator_ImplBase {
-
-	public final static String PARAM_MAX_LENGTH = ConfigurationParameterFactory
-			.createConfigurationParameterName(SeparateClauses.class,
-					"maxLength");
-	@ConfigurationParameter(mandatory = true, description = "Maximum Sentence Length")
-	int maxLength;
 	
 	private String[] args;
 
@@ -69,26 +51,6 @@ public class SeparateClauses extends JCasAnnotator_ImplBase {
 	public void initialize(UimaContext context) throws ResourceInitializationException {
 
 		super.initialize(context);
-
-		Properties properties = new Properties();
-		properties.put("annotators", "tokenize, ssplit, pos, lemma, ner, parse, dcoref");
-
-		op = new Options();
-
-		String[] extraArgs = { "-outputFormat", "penn" };
-		escaper = ReflectionLoading.loadByReflection("edu.stanford.nlp.process.PTBEscapingProcessor");
-		lp = LexicalizedParser.loadModel("edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz", op, extraArgs);
-		pf = new ParseFiles(op, lp.getTreePrint(), lp);
-
-		String[] args = { "-model", "edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz", "-sentences", "newline",
-				"-outputFormat", "penn", "-tokenized", "-escaper", "edu.stanford.nlp.process.PTBEscapingProcessor",
-				"-" };
-		this.args = args;
-
-		nullStream = (new PrintStream(new OutputStream() {
-			public void write(int b) {
-			}
-		}));
 
 	}
 
@@ -115,19 +77,34 @@ public class SeparateClauses extends JCasAnnotator_ImplBase {
 			if (uiD.getId().equals("skip"))
 				return;
 
-			UimaBioCPassage docP = UimaBioCUtils.readDocumentUimaBioCPassage(jCas);
+			UimaBioCPassage docP = UimaBioCUtils.readDocument(jCas);
 
 			List<Sentence> sentences = JCasUtil.selectCovered(Sentence.class, docP);
 			int sCount = 0;
 			SENTENCE_LOOP: for (Sentence s : sentences) {
 				
-				if( s.getEnd() - s.getBegin() > this.maxLength ) {
-					logger.warn("Sentence too long for " + uiD.getId() + ": '" + s.getCoveredText());
-					UimaBioCAnnotation otherClause = this.createClauseAnnotation(jCas, s.getBegin(), s.getEnd());
-					otherClause.addToIndexes();
+				
+				//
+				// Find the Stanford Parse for this sentence.
+				//
+				String p = "";
+				for (UimaBioCAnnotation uiA : JCasUtil.selectCovered(UimaBioCAnnotation.class, s)) {
+					Map<String, String> inf = UimaBioCUtils.convertInfons(uiA.getInfons());
+					if( inf.get("type") != null && 
+							inf.get("type").equals("stanford-parse") ) {
+						p = inf.get("value");
+						break;					
+					}
+				}
+				if( p.length() == 0 ) {
+					logger.warn("Stanford Parse not set for " + uiD.getId() 
+							+ ":" + s.getCoveredText());
 					continue SENTENCE_LOOP;
 				}
 
+				// 
+				// Build tokenized, indexed version of sentence.
+				//
 				Map<Integer, Token> tokPos = new HashMap<Integer, Token>();
 				String ss = "";
 				for (Token t : JCasUtil.selectCovered(Token.class, s)) {
@@ -137,69 +114,31 @@ public class SeparateClauses extends JCasAnnotator_ImplBase {
 					ss += t.getCoveredText();
 					tokPos.put(ss.length(), t);
 				}
-
-				/*
-				 * PrintStream sysout = System.out; PrintStream syserr =
-				 * System.err; StringOutputStream outputStream = new
-				 * StringOutputStream(); PrintStream out = new
-				 * PrintStream(outputStream);
-				 * 
-				 * System.setOut(out); System.setErr(nullStream);
-				 */
-
-				// pf.parseFiles(args, (args.length - 1), true, null, null,
-				// "\n", escaper, null);
-
-				DocumentPreprocessor documentPreprocessor = new DocumentPreprocessor(
-						new BufferedReader(new StringReader(ss)));
-				documentPreprocessor
-						.setSentenceFinalPuncWords(op.tlpParams.treebankLanguagePack().sentenceFinalPunctuationWords());
-				documentPreprocessor.setEscaper(escaper);
-				documentPreprocessor.setSentenceDelimiter("\n");
-				documentPreprocessor.setTagDelimiter(null);
-				documentPreprocessor.setElementDelimiter(null);
-				documentPreprocessor.setTokenizerFactory(null);
-
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				PrintWriter pwerr = new PrintWriter(System.err);
-				PrintWriter pwo = new PrintWriter(baos);
-				ParserQuery pq = lp.parserQuery();
-				for (List<HasWord> sentence : documentPreprocessor) {
-					int len = sentence.size();
-					pq.parseAndReport(sentence, pwerr);
-					try {
-						pf.processResults(pq, numProcessed++, pwo);
-					} catch (NoSuchParseException e) {
-						logger.warn("Parsing failed for " + uiD.getId() + ": '" + s.getCoveredText());
-						UimaBioCAnnotation otherClause = this.createClauseAnnotation(jCas, s.getBegin(), s.getEnd());
-						otherClause.addToIndexes();
-						continue SENTENCE_LOOP;
-					}
-				}
-				String p = baos.toString();
-
-				// System.setOut(sysout);
-				// System.setErr(syserr);
-
+				
 				PennTreeReader ptr = new PennTreeReader(new StringReader(p));
 				Tree tree = ptr.readTree();
 				ptr.close();
 
-				String satClauseStr = treeToString(extractSatClause(tree));
-
+				String satClauseStr = treeToString(extractSatClause(tree));				
+				
 				int ind = ss.indexOf(satClauseStr);
 				if (ind == -1) {
 					satClauseStr = satClauseStr.replaceAll("\\`\\`", "\"");
 					satClauseStr = satClauseStr.replaceAll("\\'\\'", "\"");
 					ind = ss.indexOf(satClauseStr);
-					if (ind == -1)
-						throw new Exception("Mismatch in clause splitting");
+					if (ind == -1) {
+						logger.error("Mismatch in clause splitting");
+						continue SENTENCE_LOOP;
+					}
 				}
 
 				if (satClauseStr.length() > 0) {
 					Token startTok = tokPos.get(ind);
 					Token endTok = tokPos.get(ind + satClauseStr.length());
 
+					if( startTok == null || endTok == null )
+						continue SENTENCE_LOOP;
+					
 					int begin = startTok.getBegin();
 					int end = endTok.getEnd();
 					if (end == s.getEnd() - 1)
@@ -208,15 +147,26 @@ public class SeparateClauses extends JCasAnnotator_ImplBase {
 					UimaBioCAnnotation satClause = this.createClauseAnnotation(jCas, begin, end);
 					satClause.addToIndexes();
 
-					if (s.getBegin() < begin) {
+					if ( s.getBegin() < begin 
+							&& s.getEnd() > end ) {
+
+						UimaBioCAnnotation otherClause1 = this.createClauseAnnotation(jCas, s.getBegin(), begin - 1);
+						otherClause1.addToIndexes();
+
+						UimaBioCAnnotation otherClause2 = this.createClauseAnnotation(jCas, end + 1, s.getEnd());
+						otherClause2.addToIndexes();
+
+						
+					} else if (s.getBegin() < begin) {
 
 						UimaBioCAnnotation otherClause = this.createClauseAnnotation(jCas, s.getBegin(), begin - 1);
 						otherClause.addToIndexes();
 
 					} else if (end < s.getEnd()) {
-
-						UimaBioCAnnotation otherClause = this.createClauseAnnotation(jCas, end + 1, s.getEnd());
-						otherClause.addToIndexes();
+						
+						// 
+						// Why 
+						//
 
 					}
 
@@ -347,4 +297,31 @@ public class SeparateClauses extends JCasAnnotator_ImplBase {
 
 	}
 
+	private UimaBioCAnnotation createStanfordParseAnnotation(JCas jCas, int begin, int end, String parse) {
+
+		UimaBioCAnnotation uiA = new UimaBioCAnnotation(jCas);
+
+		FSArray locations = new FSArray(jCas, 1);
+		uiA.setLocations(locations);
+		UimaBioCLocation uiL = new UimaBioCLocation(jCas);
+		uiL.setOffset(begin);
+		uiL.setLength(end - begin);
+		locations.set(0, uiL);
+
+		uiA.setBegin(uiL.getOffset());
+		uiA.setEnd(uiL.getOffset() + uiL.getLength());
+
+		uiL.setBegin(uiL.getOffset());
+		uiL.setEnd(uiL.getOffset() + uiL.getLength());
+
+		Map<String, String> infons = new HashMap<String, String>();
+		infons.put("type", "stanford-parse");
+		infons.put("value", parse);
+
+		uiA.setInfons(UimaBioCUtils.convertInfons(infons, jCas));
+
+		return uiA;
+
+	}
+		
 }

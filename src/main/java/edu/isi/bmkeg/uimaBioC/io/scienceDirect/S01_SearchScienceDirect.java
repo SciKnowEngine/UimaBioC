@@ -49,7 +49,7 @@ public class S01_SearchScienceDirect {
 		@Option(name = "-outFile", usage = "Output", required = true, metaVar = "OUTPUT")
 		public File outFile;
 
-		@Option(name = "-tryAgain", usage = "Keep Trying if there are exceptions", required = false, metaVar = "OUTPUT")
+		@Option(name = "-tryAgain", usage = "Keep Trying if there are exceptions", required = false)
 		public Boolean tryAgain = false;
 		
 	}

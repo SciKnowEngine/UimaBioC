@@ -1,17 +1,15 @@
 package edu.isi.bmkeg.uimaBioC.rubicon;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import org.apache.log4j.Logger;
 import org.apache.uima.UimaContext;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
 import org.apache.uima.jcas.JCas;
@@ -27,20 +25,16 @@ import bioc.type.UimaBioCDocument;
 import bioc.type.UimaBioCLocation;
 import bioc.type.UimaBioCPassage;
 import edu.isi.bmkeg.uimaBioC.UimaBioCUtils;
-import edu.stanford.nlp.ling.HasWord;
-import edu.stanford.nlp.parser.lexparser.LexicalizedParser;
+import edu.isi.bmkeg.uimaBioC.bin.rubicon.RUBICON_01_preprocessToBioC;
 import edu.stanford.nlp.parser.lexparser.Options;
 import edu.stanford.nlp.parser.lexparser.ParseFiles;
-import edu.stanford.nlp.parser.lexparser.ParserQuery;
-import edu.stanford.nlp.process.DocumentPreprocessor;
 import edu.stanford.nlp.process.PTBEscapingProcessor;
 import edu.stanford.nlp.tagger.maxent.MaxentTagger;
-import edu.stanford.nlp.trees.PennTreeReader;
-import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.trees.TreebankLanguagePack;
-import edu.stanford.nlp.util.ReflectionLoading;
 
 public class StanfordTag extends JCasAnnotator_ImplBase {
+
+	private static Logger logger = Logger.getLogger(StanfordTag.class);
 
 	private String[] args;
 
@@ -51,20 +45,26 @@ public class StanfordTag extends JCasAnnotator_ImplBase {
 	public Options op;
 	private ParseFiles pf;
 	private TreebankLanguagePack tlp;
-	
+
 	private int numProcessed = 0;
-	
+
+	private List<Pattern> removePatterns = new ArrayList<Pattern>();
+
 	@Override
 	public void initialize(UimaContext context) throws ResourceInitializationException {
 
 		super.initialize(context);
-			    
-        tagger = new MaxentTagger("edu/stanford/nlp/models/pos-tagger/english-bidirectional/english-bidirectional-distsim.tagger");
+
+		tagger = new MaxentTagger(
+				"edu/stanford/nlp/models/pos-tagger/english-bidirectional/english-bidirectional-distsim.tagger");
 
 		nullStream = (new PrintStream(new OutputStream() {
-		    public void write(int b) {
-		    }
+			public void write(int b) {
+			}
 		}));
+
+		removePatterns.add(Pattern.compile(",(\\d{3})"));
+		removePatterns.add(Pattern.compile("([a-zA-Z]+)\\."));
 
 	}
 
@@ -72,160 +72,101 @@ public class StanfordTag extends JCasAnnotator_ImplBase {
 	public void process(JCas jCas) throws AnalysisEngineProcessException {
 
 		try {
-			
+
 			UimaBioCDocument uiD = JCasUtil.selectSingle(jCas, UimaBioCDocument.class);
-			if( uiD.getId().equals("skip") )
+			if (uiD.getId().equals("skip"))
 				return;
-			
-			UimaBioCPassage docP = UimaBioCUtils.readDocumentUimaBioCPassage(jCas);
+
+			UimaBioCPassage docP = UimaBioCUtils.readDocument(jCas);
 
 			List<Sentence> sentences = JCasUtil.selectCovered(Sentence.class, docP);
 			int sCount = 0;
 			for (Sentence s : sentences) {
 
 				Map<Integer, Token> tokPos = new HashMap<Integer, Token>();
-				String ss = "";
-				for(Token t : JCasUtil.selectCovered(Token.class, s) )  {
-					if( ss.length() > 0 ) ss += " ";
-					tokPos.put(ss.length(), t);
-					ss += t.getCoveredText();
-					tokPos.put(ss.length(), t);
-				}
-				
-				// The tagged string
-		        String p = tagger.tagString(ss);
-		       
-		        String pauseHere = "";
-		        pauseHere += "no, pause HERE";
-		        
-				/* NEED TO DO SOMETHING HERE WITH THE TREE. 
-				 * 
-				 * String satClauseStr = treeToString(extractSatClause(tree));
-				
-				int ind = ss.indexOf(satClauseStr);
-				if( ind == -1 ) {
-					throw new Exception("Mismatch in clause splitting");
+				String ss = "", ns = "";
+				for (Token t : JCasUtil.selectCovered(Token.class, s)) {
+					if (ss.length() > 0)
+						ss += " ";
+
+					//
+					// Run fixes over the sentence to ensure correct running of
+					// the MaxEntTagger, but we can't be sure that this won't 
+					// change the tokenization. Need to build an 
+					//
+					String str = t.getCoveredText().replaceAll("_", "&underscore;");
+					str = runFixes(str);
+
+					//
+					// this is an index of the tokens in the string with no whitespace
+					tokPos.put(ns.length(), t); 
+					
+					ss += str;
+					ns += str;
 				}
 
-				if( satClauseStr.length() > 0 ) {
-					Token startTok = tokPos.get(ind);
-					Token endTok = tokPos.get(ind+satClauseStr.length());
+				//
+				// Linking the sentences in the document to the tagged sentences.
+				// 
+				String p = tagger.tagString(ss);
+				
+				String[] tokTagArray = p.split("\\s+");
+				String ns2 = "";
+				for(String tokTag : tokTagArray) {
+					String[] tokTagTuple = tokTag.split("_");
+					String tok = tokTagTuple[0];
+					String tag = tokTagTuple[1];
+					ns += tok;
+					if( !tokPos.containsKey(ns2.length()) ) {
+						logger.warn("Stanford tag mismatch (tokenization error): " + tokTag);
+						continue;
+					}
+					Token storedTok = tokPos.get(ns2.length());
 					
-					UimaBioCAnnotation satClause = this.createClauseAnnotation(
-							jCas, startTok, endTok);
-					satClause.addToIndexes();
-				}*/
-				
-				//
-				// Note, we only need to annotate the satClause within a sentence
-				// since we can easily infer the other clauses when they exist. 
-				//
-				
+					UimaBioCAnnotation uiA = new UimaBioCAnnotation(jCas);
+					FSArray locations = new FSArray(jCas, 1);
+					uiA.setLocations(locations);
+					UimaBioCLocation uiL = new UimaBioCLocation(jCas);
+					uiL.setOffset(storedTok.getBegin());
+					uiL.setLength(storedTok.getEnd() - storedTok.getBegin());
+					locations.set(0, uiL);
+
+					uiA.setBegin(uiL.getOffset());
+					uiA.setEnd(uiL.getOffset() + uiL.getLength());
+
+					uiL.setBegin(uiL.getOffset());
+					uiL.setEnd(uiL.getOffset() + uiL.getLength());
+
+					Map<String, String> infons = new HashMap<String, String>();
+					infons.put("type", "stanford-tag");
+					infons.put("value", tag);
+					uiA.setInfons(UimaBioCUtils.convertInfons(infons, jCas));
+
+					uiA.addToIndexes();
+
+				}
+
 				sCount++;
-				
+
 			}
 
 		} catch (Exception e) {
 
 			throw new AnalysisEngineProcessException(e);
-		
+
 		}
 
 	}
 
-	private Tree extractSatClause(Tree tree) {
-		return extractSatClause(tree, true);
-	}
-	
-	private Tree extractSatClause(Tree tree, Boolean isRoot) {
-		
-		if( tree.toString().length() == 0 ) {
-			return null;
-		} 
-		else if(tree.label().toString().equals("S") || 
-				tree.label().toString().equals("SBAR")) {
-			if( isRoot ) {
-				List<Tree> cands = new ArrayList<Tree>();
-				for( Tree t : tree.getChildrenAsList() ) {
-					cands.add(extractSatClause(t, false));
-				}
-				Tree l = this.getLongestCand(cands);
-				return l;
-			} else {
-				return tree;
-			}
-		} 
-		else {
-			List<Tree> cands = new ArrayList<Tree>();
-			for( Tree t : tree.getChildrenAsList() ) {
-				cands.add( extractSatClause(t, isRoot) );
-			}
-			Tree l = this.getLongestCand(cands);
-			return l;
+	private String runFixes(String str) {
+		for (Pattern patt : this.removePatterns) {
+			Matcher m = patt.matcher(str);
+			if (m.find())
+				str = m.replaceAll(m.group(1));
 		}
-		
+		str = str.replaceAll("\\\\", "");
+
+		return str;
 	}
-	
-	/** 
-	 * Ported From Pradeep Dasagi's Python Code.
-	 */	
-	private Tree getLongestCand(List<Tree> cands) {
-		int maxlen = 0;
-		Tree bestcand = null;
-		for(Tree cand : cands ) {
-		    if( cand != null && treeToString(cand).length() > maxlen ) {
-			      maxlen = treeToString(cand).length();
-			      bestcand = cand;
-		    }			
-		}
-		return bestcand;
-	}
-	
-	private String treeToString(Tree tree) {
-
-		if( tree == null )
-			return "";
-		
-		String phrase = "";
-	
-		for(Tree leaf : tree.getLeaves() ) {
-			phrase += leaf.toString() + " ";
-		}
-		phrase = phrase.substring(0, phrase.length()-1).replaceAll("-LRB-", "(");
-		phrase = phrase.replaceAll("-RRB-", ")");
-		phrase = phrase.replaceAll("-LSB-", "[");
-		phrase = phrase.replaceAll("-RSB-", "]");
-		phrase = phrase.replaceAll("\\\\", "");
-
-		return phrase;
-	
-	}
-	
-	private UimaBioCAnnotation createClauseAnnotation(JCas jCas, Token start, Token end) {
-
-		UimaBioCAnnotation uiA = new UimaBioCAnnotation(jCas);
-		
-		FSArray locations = new FSArray(jCas, 1);
-		uiA.setLocations(locations);
-		UimaBioCLocation uiL = new UimaBioCLocation(jCas);
-		uiL.setOffset(start.getBegin());
-		uiL.setLength(end.getEnd() - start.getBegin());
-		locations.set(0, uiL);
-
-		uiA.setBegin(uiL.getOffset());
-		uiA.setEnd(uiL.getOffset() + uiL.getLength());
-
-		uiL.setBegin(uiL.getOffset());
-		uiL.setEnd(uiL.getOffset() + uiL.getLength());
-
-		Map<String, String> infons = new HashMap<String, String>();
-		infons.put("type", "rubicon");
-		infons.put("value", "clause");
-		
-		return uiA;
-	
-	}
-
-	
 
 }

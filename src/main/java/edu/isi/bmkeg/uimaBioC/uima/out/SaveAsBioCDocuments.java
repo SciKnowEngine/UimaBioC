@@ -69,7 +69,7 @@ public class SaveAsBioCDocuments extends JCasAnnotator_ImplBase {
 					continue;
 				
 				BioCCollection c = new BioCCollection();
-				BioCDocument d = UimaBioCUtils.convertUimaBioCDocument(uiD);
+				BioCDocument d = UimaBioCUtils.convertUimaBioCDocument(uiD, jCas);
 				String relPath = d.getInfon("relative-source-path").replaceAll("\\.txt", "") 
 						+ outFileFormat;
 				File outFile = new File(outDirPath + "/" + relPath);

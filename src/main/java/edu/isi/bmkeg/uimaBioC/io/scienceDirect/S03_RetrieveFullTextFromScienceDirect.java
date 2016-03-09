@@ -35,14 +35,14 @@ public class S03_RetrieveFullTextFromScienceDirect {
 		@Option(name = "-searchFile", usage = "Input File", required = true, metaVar = "INPUT")
 		public File input;
 
+		@Option(name = "-columnNumber", usage = "Column Number", required = true, metaVar = "COL")
+		public int col;
+		
 		@Option(name = "-apiKey", usage = "API String", required = true, metaVar = "APIKEY")
 		public String apiKey;
 
 		@Option(name = "-outDir", usage = "Output", required = true, metaVar = "OUTPUT")
 		public File outDir;
-
-		@Option(name = "-dirSize", usage = "Directory Size", required = true, metaVar = "DIR-SIZE")
-		public int dirSize;
 		
 	}
 
@@ -85,11 +85,16 @@ public class S03_RetrieveFullTextFromScienceDirect {
 		String inputLine;
 		while ((inputLine = in.readLine()) != null) {
 			String[] fields = inputLine.split("\\t");
-			if( fields.length<6 || !fields[5].startsWith("http") )
+			if( fields.length<options.col ) 
 				continue;
+
+			String piiUrl = fields[options.col-1];
+			if( !piiUrl.startsWith("http") )
+				piiUrl = "http://api.elsevier.com/content/article/pii/" + piiUrl;
+				
 			
-			URL url = new URL(fields[5] + "?apiKey=" + options.apiKey);
-			String doi = fields[4];
+			URL url = new URL(piiUrl + "?apiKey=" + options.apiKey + "&httpAccept=text/xml");
+			String doi = fields[options.col-1];
 			doi = doi.replaceAll("\\/", "_slash_");
 			doi = doi.replaceAll("\\:", "_colon_");
 			doi = doi.replaceAll("\\(", "_bra_");
@@ -109,9 +114,7 @@ public class S03_RetrieveFullTextFromScienceDirect {
 			in2.close();
 			out.close();
 
-			logger.info("File Downloaded: " 
-					+ ((fields[0].length() > 20)?fields[0].substring(0,20):fields[0])
-					+ " (" + fields[2] + "), " + fields[4]);
+			logger.info("File Downloaded: " + piiUrl);
 			
 		}
 		in.close();

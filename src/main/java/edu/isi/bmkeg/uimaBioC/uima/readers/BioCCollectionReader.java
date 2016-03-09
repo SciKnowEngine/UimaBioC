@@ -83,7 +83,7 @@ public class BioCCollectionReader extends JCasCollectionReader_ImplBase {
 
 		try {
 			
-			String[] fileTypes = {"xml", "txt", "json"};
+			String[] fileTypes = {"xml", "txt", "json", "tsv"};
 			Collection<File> l = (Collection<File>) FileUtils.listFiles(
 					new File(inputDirectory), fileTypes, true);
 			
@@ -97,7 +97,7 @@ public class BioCCollectionReader extends JCasCollectionReader_ImplBase {
 					String fName = ((File) o).getName();
 					Matcher m = patt.matcher(fName);
 					if( m.find() ) {
-						this.existingFiles.add(m.group(1));						
+						this.existingFiles.add(m.group(1));
 					}
 				}
 			}
@@ -128,16 +128,14 @@ public class BioCCollectionReader extends JCasCollectionReader_ImplBase {
 			BioCDocument bioD = readBioCFile(bioCFile);
 			
 			while( this.existingFiles.contains(bioD.getID())) {
+				logger.debug("output file for " + bioCFile.getName() + " exists, skipping." );
 				bioCFile = bioCFileIt.next();
 				bioD = readBioCFile(bioCFile);
 			}
 					
 			UimaBioCUtils.addBioCDocumentToUimaCas(bioD, jcas);
 						
-		    pos++;
-		    if( (pos % 1000) == 0) {
-		    	System.out.println("Processing " + pos + "th document.");
-		    }
+			logger.debug("Processing " + bioCFile.getName() + "." );
 		    
 		} catch (Exception e) {
 			

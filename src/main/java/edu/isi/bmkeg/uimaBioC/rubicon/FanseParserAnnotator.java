@@ -183,7 +183,7 @@ public class FanseParserAnnotator extends JCasAnnotator_ImplBase {
 				return;
 			
 			UimaBioCPassage docP = UimaBioCUtils
-					.readDocumentUimaBioCPassage(jCas);
+					.readDocument(jCas);
 						
 			List<org.cleartk.token.type.Sentence> sentences = null;
 			if( sectionAnnotation != null ){

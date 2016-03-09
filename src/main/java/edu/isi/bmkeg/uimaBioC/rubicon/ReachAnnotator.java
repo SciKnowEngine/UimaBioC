@@ -28,6 +28,7 @@ import org.apache.uima.UimaContext;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
 import org.apache.uima.jcas.JCas;
 import org.apache.uima.resource.ResourceInitializationException;
+import org.cleartk.token.type.Sentence;
 import org.uimafit.component.JCasAnnotator_ImplBase;
 import org.uimafit.descriptor.ConfigurationParameter;
 import org.uimafit.factory.ConfigurationParameterFactory;
@@ -36,8 +37,14 @@ import org.uimafit.util.JCasUtil;
 import bioc.type.UimaBioCAnnotation;
 import bioc.type.UimaBioCDocument;
 import bioc.type.UimaBioCPassage;
+import edu.arizona.sista.odin.Mention;
+import edu.arizona.sista.processors.bionlp.BioNLPProcessor;
+import edu.arizona.sista.reach.ReachSystem;
+import edu.arizona.sista.reach.RuleReader.Rules;
 import edu.isi.bmkeg.uimaBioC.UimaBioCUtils;
-
+import scala.Option;
+import scala.collection.JavaConversions;
+import scala.collection.Seq;
 
 /**
  * 
@@ -59,15 +66,15 @@ public class ReachAnnotator extends JCasAnnotator_ImplBase {
 	@ConfigurationParameter(mandatory = true, description = "The place to put the parse files")
 	String outReachDirPath;
 		
-	//ReachSystem reach;
+	ReachSystem reach;
 	
 	public void initialize(UimaContext context) throws ResourceInitializationException {
 
 		super.initialize(context);
 				
-		/*scala.Option<Rules> x = scala.Option.apply(null);
+		Option<Rules> x = scala.Option.apply(null);
 		scala.Option<BioNLPProcessor> y = scala.Option.apply(null);
-		reach = new ReachSystem(x, y);*/
+		reach = new ReachSystem(x, y);
 		
 	}
 
@@ -82,7 +89,7 @@ public class ReachAnnotator extends JCasAnnotator_ImplBase {
 				return;
 			
 			UimaBioCPassage docP = UimaBioCUtils
-					.readDocumentUimaBioCPassage(jCas);
+					.readDocument(jCas);
 						
 			List<org.cleartk.token.type.Sentence> sentences = null;
 			if( sectionAnnotation != null ){
@@ -142,19 +149,11 @@ public class ReachAnnotator extends JCasAnnotator_ImplBase {
 			String docId = uiD.getId();
 			int chunkId = 0;
 
-			/*for (Sentence ss : sentences) {
+			for (Sentence ss : sentences) {
 				Seq<Mention> seq = reach.extractFrom(ss.getCoveredText(), docId, chunkId + "");
 				List<Mention> list = JavaConversions.seqAsJavaList(seq);
 				chunkId++;
-			}*/
-			
-			Map<String, String> docInfo = UimaBioCUtils.convertInfons(uiD.getInfons());
-			docInfo.put("crf_in_file", outFile);
-			
-			String crfModelFile = this.getClass().getResource("/rubicon/para_model.crf").getFile();
-			docInfo.put("crf_model_file", crfModelFile);
-			
-			uiD.setInfons(UimaBioCUtils.convertInfons(docInfo, jCas));
+			}
 			
 		} catch (Exception e) {
 

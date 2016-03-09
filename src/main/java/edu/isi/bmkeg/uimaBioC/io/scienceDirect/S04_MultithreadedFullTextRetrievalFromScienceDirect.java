@@ -31,6 +31,9 @@ public class S04_MultithreadedFullTextRetrievalFromScienceDirect {
 		@Option(name = "-apiKey", usage = "API String", required = true, metaVar = "APIKEY")
 		public String apiKey;
 
+		@Option(name = "-columnNumber", usage = "Column Number", required = true, metaVar = "COL")
+		public int col;
+		
 		@Option(name = "-outDir", usage = "Output", required = true, metaVar = "OUTPUT")
 		public File outDir;
 
@@ -81,13 +84,17 @@ public class S04_MultithreadedFullTextRetrievalFromScienceDirect {
 		String inputLine;
 		while ((inputLine = in.readLine()) != null) {
 			String[] fields = inputLine.split("\\t");
-			if( fields.length<6 || !fields[5].startsWith("http") )
+			if( fields.length<options.col ) 
 				continue;
+
+			String piiUrl = fields[options.col-1];
+			if( !piiUrl.startsWith("http") )
+				piiUrl = "http://api.elsevier.com/content/article/pii/" + piiUrl;			
 			
-			URL url = new URL(fields[5] 
+			URL url = new URL(piiUrl
 					+ "?apiKey=" + options.apiKey 
 					+ "&httpAccept=" + options.httpAccept);
-			String doi = fields[4];
+			String doi = fields[options.col-1];
 			doi = doi.replaceAll("\\/", "_slash_");
 			doi = doi.replaceAll("\\:", "_colon_");
 

@@ -31,7 +31,7 @@ import bioc.type.UimaBioCAnnotation;
 import bioc.type.UimaBioCDocument;
 import bioc.type.UimaBioCPassage;
 import edu.isi.bmkeg.uimaBioC.UimaBioCUtils;
-import edu.isi.bmkeg.uimaBioC.bin.rubicon.RUBICON_01_matchBioCAndFries;
+import edu.isi.bmkeg.uimaBioC.bin.rubicon.RUBICON_02_BioCToTsv;
 
 public class RemoveSentencesFromOtherSections extends JCasAnnotator_ImplBase {
 

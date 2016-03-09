@@ -1,12 +1,18 @@
 package edu.isi.bmkeg.uimaBioC;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 import org.apache.uima.jcas.JCas;
 import org.apache.uima.jcas.cas.FSArray;
+import org.cleartk.token.type.Sentence;
 import org.uimafit.util.JCasUtil;
 
 import bioc.BioCAnnotation;
@@ -27,99 +33,83 @@ import bioc.type.UimaBioCSentence;
 
 public class UimaBioCUtils {
 
-	public static BioCDocument convertUimaBioCDocument(UimaBioCDocument uiD) {
+	private static Logger logger = Logger.getLogger(UimaBioCUtils.class);
+
+	public static Pattern bra = Pattern.compile("(\\(.*?)$");
+	public static Pattern ket = Pattern.compile("^(.*?\\))");
+
+	public static BioCDocument convertUimaBioCDocument(UimaBioCDocument uiD, JCas jCas) {
 
 		BioCDocument d = new BioCDocument();
 		d.setID(uiD.getId());
 		d.setInfons(convertInfons(uiD.getInfons()));
 
-		FSArray passages = uiD.getPassages();
-		if (passages != null) {
-			for (int i = 0; i < passages.size(); i++) {
-				UimaBioCPassage uiP = (UimaBioCPassage) passages.get(i);
+		for (UimaBioCPassage uiP : JCasUtil.selectCovered(jCas, UimaBioCPassage.class, uiD)) {
 
-				BioCPassage p = new BioCPassage();
-				p.setInfons(convertInfons(uiP.getInfons()));
-				p.setOffset(uiP.getOffset());
-				d.addPassage(p);
+			BioCPassage p = new BioCPassage();
+			p.setInfons(convertInfons(uiP.getInfons()));
+			p.setOffset(uiP.getOffset());
+			d.addPassage(p);
 
-				Map<String, String> inf = p.getInfons();
-				if( (inf.containsKey("type") && inf.get("type").equals("document")) ||
-						(inf.containsKey("value") && inf.get("value").equals("document")))
-					p.setText(uiP.getCoveredText());
+			Map<String, String> inf = p.getInfons();
+			if ((inf.containsKey("type") && inf.get("type").equals("document"))
+					|| (inf.containsKey("value") && inf.get("value").equals("document")))
+				p.setText(uiP.getCoveredText());
 
-				FSArray annotations = uiP.getAnnotations();
-				if (annotations != null) {
-					for (int j = 0; j < annotations.size(); j++) {
-						UimaBioCAnnotation uiA = (UimaBioCAnnotation) annotations
-								.get(j);
+			for (UimaBioCAnnotation uiA : JCasUtil.selectCovered(jCas, UimaBioCAnnotation.class, uiP)) {
 
-						BioCAnnotation a = new BioCAnnotation();
-						a.setInfons(convertInfons(uiA.getInfons()));
-						a.setID(uiA.getId());
-						
-						inf = a.getInfons();
-						if( inf.containsKey("type") && !inf.get("type").equals("formatting") )
-							a.setText(uiA.getCoveredText());
+				BioCAnnotation a = new BioCAnnotation();
+				a.setInfons(convertInfons(uiA.getInfons()));
+				a.setID(uiA.getId());
 
-						p.addAnnotation(a);
+				inf = a.getInfons();
+				if (inf.containsKey("type") && !inf.get("type").equals("formatting"))
+					a.setText(uiA.getCoveredText());
 
-						FSArray locations = uiA.getLocations();
-						if (locations != null) {
-							for (int k = 0; k < locations.size(); k++) {
-								UimaBioCLocation uiL = (UimaBioCLocation) locations
-										.get(k);
+				p.addAnnotation(a);
 
-								BioCLocation l = new BioCLocation();
-								l.setOffset(uiL.getOffset());
-								l.setLength(uiL.getLength());
-								a.addLocation(l);
+				BioCLocation l = new BioCLocation();
+				l.setOffset(uiA.getBegin());
+				l.setLength(uiA.getEnd() - uiA.getBegin());
+				a.addLocation(l);
 
-							}
-						}
+			}
 
-					}
-				}
+			FSArray relations = uiP.getRelations();
+			if (relations != null) {
+				for (int j = 0; j < relations.size(); j++) {
+					UimaBioCRelation uiR = (UimaBioCRelation) relations.get(j);
 
-				FSArray relations = uiP.getRelations();
-				if (relations != null) {
-					for (int j = 0; j < relations.size(); j++) {
-						UimaBioCRelation uiR = (UimaBioCRelation) relations
-								.get(j);
+					BioCRelation r = new BioCRelation();
+					r.setID(uiR.getId());
+					p.addRelation(r);
 
-						BioCRelation r = new BioCRelation();
-						r.setID(uiR.getId());
-						p.addRelation(r);
+					FSArray nodes = uiR.getNodes();
+					for (int k = 0; k < nodes.size(); k++) {
+						UimaBioCNode uiN = (UimaBioCNode) nodes.get(k);
 
-						FSArray nodes = uiR.getNodes();
-						for (int k = 0; k < nodes.size(); k++) {
-							UimaBioCNode uiN = (UimaBioCNode) nodes.get(k);
-
-							BioCNode n = new BioCNode();
-							n.setRefid(uiN.getRefid());
-							n.setRole(uiN.getRole());
-							r.addNode(n);
-
-						}
+						BioCNode n = new BioCNode();
+						n.setRefid(uiN.getRefid());
+						n.setRole(uiN.getRole());
+						r.addNode(n);
 
 					}
+
 				}
+			}
 
-				FSArray sentences = uiP.getSentences();
-				if (sentences != null) {
-					for (int j = 0; j < sentences.size(); j++) {
-						UimaBioCSentence uiS = (UimaBioCSentence) sentences
-								.get(j);
+			FSArray sentences = uiP.getSentences();
+			if (sentences != null) {
+				for (int j = 0; j < sentences.size(); j++) {
+					UimaBioCSentence uiS = (UimaBioCSentence) sentences.get(j);
 
-						BioCSentence s = new BioCSentence();
-						s.setInfons(convertInfons(uiS.getInfons()));
-						s.setOffset(uiS.getOffset());
-						// s.setText(uiS.getCoveredText());
-						p.addSentence(s);
+					BioCSentence s = new BioCSentence();
+					s.setInfons(convertInfons(uiS.getInfons()));
+					s.setOffset(uiS.getOffset());
+					// s.setText(uiS.getCoveredText());
+					p.addSentence(s);
 
-					}
 				}
-
 			}
 
 		}
@@ -130,12 +120,10 @@ public class UimaBioCUtils {
 
 	public static void addBioCDocumentToUimaCas(BioCDocument d, JCas jcas) {
 
-		UimaBioCDocument uiD = new UimaBioCDocument(jcas);		
-		for( BioCPassage bioP : d.getPassages() ) {
-			if( (bioP.getInfons().containsKey("type")
-					&& bioP.getInfons().get("type").equals("document")) 
-				|| (bioP.getInfons().containsKey("value")
-						&& bioP.getInfons().get("value").equals("document") ) ) {
+		UimaBioCDocument uiD = new UimaBioCDocument(jcas);
+		for (BioCPassage bioP : d.getPassages()) {
+			if ((bioP.getInfons().containsKey("type") && bioP.getInfons().get("type").equals("document"))
+					|| (bioP.getInfons().containsKey("value") && bioP.getInfons().get("value").equals("document"))) {
 				uiD.setBegin(0);
 				uiD.setEnd(bioP.getText().length());
 				jcas.setDocumentText(bioP.getText());
@@ -143,7 +131,7 @@ public class UimaBioCUtils {
 		}
 
 		uiD.setInfons(UimaBioCUtils.convertInfons(d.getInfons(), jcas));
-		uiD.setId(d.getID());		
+		uiD.setId(d.getID());
 
 		if (d.getPassages() != null) {
 			FSArray passages = new FSArray(jcas, d.getPassages().size());
@@ -176,14 +164,13 @@ public class UimaBioCUtils {
 			uiP.setAnnotations(annotations);
 			int count = 0;
 			for (BioCAnnotation a : p.getAnnotations()) {
-				
+
 				// skip simple formatting information
 				String inf = a.getInfons().get("value");
-				if( inf.equals("bold") || inf.equals("italic") || 
-						inf.equals("sup") || inf.equals("sub") ) {
+				if (inf.equals("bold") || inf.equals("italic") || inf.equals("sup") || inf.equals("sub")) {
 					continue;
 				}
-				
+
 				UimaBioCAnnotation uiA = convertBioCAnnotation(a, jcas);
 				annotations.set(count, uiA);
 				count++;
@@ -196,8 +183,7 @@ public class UimaBioCUtils {
 
 	}
 
-	public static UimaBioCAnnotation convertBioCAnnotation(BioCAnnotation a,
-			JCas jcas) {
+	public static UimaBioCAnnotation convertBioCAnnotation(BioCAnnotation a, JCas jcas) {
 
 		UimaBioCAnnotation uiA = new UimaBioCAnnotation(jcas);
 
@@ -259,34 +245,137 @@ public class UimaBioCUtils {
 		}
 		return fsArray;
 	}
-	
-	
+
 	public static String readInfons(FSArray fsArray, String key) {
-		
+
 		Map<String, String> infons = UimaBioCUtils.convertInfons(fsArray);
-		if( infons.containsKey(key) )
+		if (infons.containsKey(key))
 			return infons.get(key);
-		else 
+		else
 			return null;
-	}	
-	
-	public static UimaBioCPassage readDocumentUimaBioCPassage(JCas jCas) {
+	}
 
-		UimaBioCDocument uiD = JCasUtil.selectSingle(jCas,
-				UimaBioCDocument.class);
-		UimaBioCPassage docPassage = null;
+	public static UimaBioCPassage readDocument(JCas jCas) {
 
-		FSArray passages = uiD.getPassages();
-		for(int i=0; i<passages.size(); i++) {
-			UimaBioCPassage uiP = (UimaBioCPassage) passages.get(i);
-			Map<String, String> infons = UimaBioCUtils.convertInfons(uiP
-					.getInfons());
-			if(infons.get("type").equals("document") || 
-					(infons.containsKey("value") && infons.get("value").equals("document")) ) {
-				docPassage = uiP;
+		UimaBioCDocument uiD = JCasUtil.selectSingle(jCas, UimaBioCDocument.class);
+		for (UimaBioCPassage p : JCasUtil.selectCovered(UimaBioCPassage.class, uiD)) {
+			Map<String, String> infons = UimaBioCUtils.convertInfons(p.getInfons());
+			if (infons.get("type").equals("document")) {
+				return p;
 			}
 		}
 
-		return docPassage;
+		return null;
+
 	}
+
+	public static UimaBioCAnnotation readArticleTitle(JCas jCas) {
+
+		UimaBioCDocument uiD = JCasUtil.selectSingle(jCas, UimaBioCDocument.class);
+		for (UimaBioCAnnotation a : JCasUtil.selectCovered(UimaBioCAnnotation.class, uiD)) {
+			Map<String, String> infons = UimaBioCUtils.convertInfons(a.getInfons());
+			if (infons.get("type").equals("formatting") && infons.get("value").equals("article-title")) {
+				return a;
+			}
+		}
+
+		return null;
+
+	}
+
+	public static UimaBioCAnnotation readAbstract(JCas jCas) {
+
+		UimaBioCDocument uiD = JCasUtil.selectSingle(jCas, UimaBioCDocument.class);
+		for (UimaBioCAnnotation a : JCasUtil.selectCovered(UimaBioCAnnotation.class, uiD)) {
+			Map<String, String> infons = UimaBioCUtils.convertInfons(a.getInfons());
+			if (infons.get("type").equals("formatting") && infons.get("value").equals("abstract")) {
+				return a;
+			}
+		}
+
+		return null;
+
+	}
+
+	public static List<UimaBioCAnnotation> readFloats(JCas jCas) {
+
+		UimaBioCDocument uiD = JCasUtil.selectSingle(jCas, UimaBioCDocument.class);
+		List<UimaBioCAnnotation> floats = new ArrayList<UimaBioCAnnotation>();
+		for (UimaBioCAnnotation a : JCasUtil.selectCovered(jCas, UimaBioCAnnotation.class, uiD)) {
+			Map<String, String> infons = UimaBioCUtils.convertInfons(a.getInfons());
+			if (infons.containsKey("position") && infons.get("position").equals("float")) {
+				floats.add(a);
+			}
+
+		}
+
+		return floats;
+
+	}
+
+	public static List<UimaBioCAnnotation> readParags(JCas jCas) {
+
+		UimaBioCDocument uiD = JCasUtil.selectSingle(jCas, UimaBioCDocument.class);
+		List<UimaBioCAnnotation> parags = new ArrayList<UimaBioCAnnotation>();
+		for (UimaBioCAnnotation a : JCasUtil.selectCovered(jCas, UimaBioCAnnotation.class, uiD)) {
+			Map<String, String> infons = UimaBioCUtils.convertInfons(a.getInfons());
+			if (infons.containsKey("value")
+					&& (infons.get("value").equals("p") || infons.get("value").equals("title"))) {
+				parags.add(a);
+			}
+
+		}
+
+		return parags;
+
+	}
+
+	public static String friesifySentence(JCas jCas, Sentence s) {
+
+		String text = s.getCoveredText();
+
+		UimaBioCDocument uiD = JCasUtil.selectSingle(jCas, UimaBioCDocument.class);
+		for (UimaBioCAnnotation a : JCasUtil.selectCovered(jCas, UimaBioCAnnotation.class, s)) {
+			Map<String, String> infons = UimaBioCUtils.convertInfons(a.getInfons());
+			if (infons.containsKey("value") && infons.get("value").equals("xref")) {
+				if (infons.containsKey("refType") && infons.get("refType").equals("fig")) {
+
+					String remove = "";
+
+					// Can we find enclosing brackets for Figures?
+					String s1 = text.substring(0, a.getBegin() - s.getBegin());
+					Matcher m1 = bra.matcher(s1);
+					if (m1.find()) {
+						String r1 = m1.group(1);
+						String s2 = text.substring(a.getEnd() - s.getBegin(), text.length());
+						Matcher m2 = ket.matcher(s2);
+						if (m2.find()) {
+							String r2 = m2.group(1);
+							text = s1.substring(0, s1.length()-r1.length()) +
+									StringUtils.leftPad("", a.getEnd() - a.getBegin(), ' ') +
+									s2.substring(r2.length(), s2.length());
+							
+						}
+					}
+
+				}
+			}
+		}
+
+		return text;
+
+	}
+
+	public static List<UimaBioCAnnotation> readAllReadableText(JCas jCas) {
+
+		List<UimaBioCAnnotation> passages = new ArrayList<UimaBioCAnnotation>();
+		passages.add( UimaBioCUtils.readArticleTitle(jCas) );
+		passages.add( UimaBioCUtils.readAbstract(jCas) );
+		passages.addAll( UimaBioCUtils.readParags(jCas) );
+		passages.addAll( UimaBioCUtils.readFloats(jCas) );
+		
+		return passages;
+
+	}
+
 }

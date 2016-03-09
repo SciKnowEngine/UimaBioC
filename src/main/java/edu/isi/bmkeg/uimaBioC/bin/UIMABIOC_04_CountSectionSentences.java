@@ -98,7 +98,7 @@ public class UIMABIOC_04_CountSectionSentences {
 					options.ann2Ext,
 					SaveExtractedAnnotations.PARAM_DIR_PATH,
 					options.outDir.getPath(),
-					SaveExtractedAnnotations.PARAM_HEADER_LINKS, 
+					SaveExtractedAnnotations.PARAM_CLAUSE_LEVEL, 
 					"true"));
 		} else {
 			builder.add(AnalysisEngineFactory.createPrimitiveDescription(
@@ -107,7 +107,7 @@ public class UIMABIOC_04_CountSectionSentences {
 					options.ann2Ext,
 					SaveExtractedAnnotations.PARAM_DIR_PATH,
 					options.outDir.getPath(), 
-					SaveExtractedAnnotations.PARAM_HEADER_LINKS, 
+					SaveExtractedAnnotations.PARAM_CLAUSE_LEVEL, 
 					"false"));
 		}
 		SimplePipeline.runPipeline(cr, builder.createAggregateDescription());

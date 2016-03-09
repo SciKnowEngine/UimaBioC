@@ -83,7 +83,7 @@ public class RunCRFAnnotator extends JCasAnnotator_ImplBase {
 				return;
 			
 			UimaBioCPassage docP = UimaBioCUtils
-					.readDocumentUimaBioCPassage(jCas);						
+					.readDocument(jCas);						
 
 			Map<String, String> docInfo = UimaBioCUtils.convertInfons(uiD.getInfons());
 			String crfIn = docInfo.get("crf_in_file");
