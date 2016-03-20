@@ -16,7 +16,7 @@ import org.uimafit.factory.CollectionReaderFactory;
 import org.uimafit.factory.TypeSystemDescriptionFactory;
 import org.uimafit.pipeline.SimplePipeline;
 
-import edu.isi.bmkeg.uimaBioC.uima.ae.core.AddAnnotationsFromNxmlFormatting;
+import edu.isi.bmkeg.uimaBioC.uima.ae.AddAnnotationsFromNxmlFormatting;
 import edu.isi.bmkeg.uimaBioC.uima.out.SaveAsBioCDocuments;
 import edu.isi.bmkeg.uimaBioC.uima.readers.Nxml2TxtFilesCollectionReader;
 
