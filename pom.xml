@@ -263,47 +263,10 @@
 			<artifactId>cleartk-type-system</artifactId>
 			<version>${cleartk.version}</version>
 		</dependency>
-		<!-- <dependency> <groupId>org.cleartk</groupId> <artifactId>cleartk-feature</artifactId> 
-			<version>${cleartk.version}</version> </dependency> <dependency> <groupId>org.cleartk</groupId> 
-			<artifactId>cleartk-test-util</artifactId> <version>${cleartk.version}</version> 
-			</dependency> -->
+		
 		<dependency>
 			<groupId>org.cleartk</groupId>
 			<artifactId>cleartk-util</artifactId>
-			<version>${cleartk.version}</version>
-		</dependency>
-
-		<!-- <dependency> <groupId>org.cleartk</groupId> <artifactId>cleartk-eval</artifactId> 
-			<version>${cleartk.version}</version> </dependency> <dependency> <groupId>org.cleartk</groupId> 
-			<artifactId>cleartk-ml</artifactId> <version>${cleartk.version}</version> 
-			</dependency> -->
-
-		<dependency>
-			<groupId>org.cleartk</groupId>
-			<artifactId>cleartk-ml-opennlp-maxent</artifactId>
-			<version>${cleartk.version}</version>
-		</dependency>
-
-		<!--<dependency> <groupId>org.cleartk</groupId> <artifactId>cleartk-ml-svmlight</artifactId> 
-			<version>${cleartk.version}</version> </dependency> <dependency> <groupId>org.cleartk</groupId> 
-			<artifactId>cleartk-ml-tksvmlight</artifactId> <version>${cleartk.version}</version> 
-			</dependency> <dependency> <groupId>org.cleartk</groupId> <artifactId>cleartk-corpus</artifactId> 
-			<version>${cleartk.version}</version> </dependency> <dependency> <groupId>org.cleartk</groupId> 
-			<artifactId>cleartk-ml-libsvm</artifactId> <version>${cleartk.version}</version> 
-			</dependency> <dependency> <groupId>org.cleartk</groupId> <artifactId>cleartk-ml-liblinear</artifactId> 
-			<version>${cleartk.version}</version> </dependency> <dependency> <groupId>org.cleartk</groupId> 
-			<artifactId>cleartk-ml-tksvmlight</artifactId> <version>${cleartk.version}</version> 
-			</dependency> <dependency> <groupId>org.cleartk</groupId> <artifactId>cleartk-ml-weka</artifactId> 
-			<version>${cleartk.version}</version> </dependency> -->
-
-		<dependency>
-			<groupId>org.cleartk</groupId>
-			<artifactId>cleartk-ml-mallet</artifactId>
-			<version>${cleartk.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.cleartk</groupId>
-			<artifactId>cleartk-ml-crfsuite</artifactId>
 			<version>${cleartk.version}</version>
 		</dependency>
 
@@ -323,29 +286,6 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-
-
-		<!-- <dependency> <groupId>org.cleartk</groupId> <artifactId>cleartk-berkeleyparser</artifactId> 
-			<version>${cleartk.version}</version> </dependency> <dependency> <groupId>org.cleartk</groupId> 
-			<artifactId>cleartk-clearnlp</artifactId> <version>${cleartk.version}</version> 
-			</dependency> <dependency> <groupId>org.cleartk</groupId> <artifactId>cleartk-maltparser</artifactId> 
-			<version>${cleartk.version}</version> </dependency> -->
-
-		<!-- <dependency>
-			<groupId>org.cleartk</groupId>
-			<artifactId>cleartk-stanford-corenlp</artifactId>
-			<version>${cleartk.version}</version>
-		</dependency> -->
-		<dependency>
-			<groupId>org.cleartk</groupId>
-			<artifactId>cleartk-snowball</artifactId>
-			<version>${cleartk.version}</version>
-		</dependency>
-
-		<!-- <dependency> <groupId>org.cleartk</groupId> <artifactId>cleartk-summarization</artifactId> 
-			<version>${cleartk.version}</version> </dependency> <dependency> <groupId>org.cleartk</groupId> 
-			<artifactId>cleartk-timeml</artifactId> <version>${cleartk.version}</version> 
-			</dependency> -->
 
 		<dependency>
 			<groupId>bioc</groupId>
@@ -439,18 +379,6 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.bigmech.fries</groupId>
-			<artifactId>vpdmf-fries-es</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
-		</dependency>
-
-		<dependency>
-			<groupId>tratz</groupId>
-			<artifactId>fanseparser</artifactId>
-			<version>0.2.2</version>
-		</dependency>
-
-		<dependency>
 			<groupId>com.google.code.gson</groupId>
 			<artifactId>gson</artifactId>
 			<version>2.5</version>
@@ -472,95 +400,6 @@
 			<artifactId>uimafit-spring</artifactId>
 			<groupId>org.apache.uima</groupId>
 			<version>2.0.0</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.hadoop</groupId>
-			<artifactId>hadoop-client</artifactId>
-			<version>${hadoop.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.hadoop</groupId>
-			<artifactId>hadoop-hdfs</artifactId>
-			<version>${hadoop.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.hadoop</groupId>
-			<artifactId>hadoop-mapreduce-client-core</artifactId>
-			<version>${hadoop.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.hadoop</groupId>
-			<artifactId>hadoop-mapreduce-client-jobclient</artifactId>
-			<version>${hadoop.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.hadoop</groupId>
-			<artifactId>hadoop-mapreduce-client-common</artifactId>
-			<version>${hadoop.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.clulab</groupId>
-			<artifactId>processors_2.11</artifactId>
-			<version>5.7.3</version>
-		</dependency>
-		<dependency>
-			<groupId>org.clulab</groupId>
-			<artifactId>reach_2.11</artifactId>
-			<version>1.2.1</version>
-		</dependency>
-
-		<dependency>
-			<groupId>de.tudarmstadt.ukp.dkpro.bigdata</groupId>
-			<artifactId>de.tudarmstadt.ukp.dkpro.bigdata.hadoop</artifactId>
-			<version>0.1.1-SNAPSHOT</version>
-		</dependency>
-
-		<dependency>
-			<groupId>de.tudarmstadt.ukp.dkpro.bigdata</groupId>
-			<artifactId>
-				de.tudarmstadt.ukp.dkpro.bigdata.io.hadoop
-			</artifactId>
-			<version>0.1.1-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<groupId>de.tudarmstadt.ukp.dkpro.core</groupId>
-			<artifactId>
-				de.tudarmstadt.ukp.dkpro.core.io.text-asl
-			</artifactId>
-			<version>1.7.0</version>
-		</dependency>
-		<dependency>
-			<groupId>de.tudarmstadt.ukp.dkpro.core</groupId>
-			<artifactId>
-				de.tudarmstadt.ukp.dkpro.core.api.segmentation-asl
-			</artifactId>
-			<version>1.7.0</version>
-		</dependency>
-
-		<dependency>
-			<groupId>de.tudarmstadt.ukp.dkpro.core</groupId>
-			<artifactId>
-				de.tudarmstadt.ukp.dkpro.core.dictionaryannotator-asl
-			</artifactId>
-			<version>1.7.0</version>
-		</dependency>
-
-		<dependency>
-			<groupId>de.tudarmstadt.ukp.dkpro.core</groupId>
-			<artifactId>
-				de.tudarmstadt.ukp.dkpro.core.tokit-asl
-			</artifactId>
-			<version>1.7.0</version>
-		</dependency>
-
-		<dependency>
-			<groupId>de.tudarmstadt.ukp.dkpro.core</groupId>
-			<artifactId>
-				de.tudarmstadt.ukp.dkpro.core.snowball-asl
-			</artifactId>
-			<version>1.7.0</version>
 		</dependency>
 
 	</dependencies>
