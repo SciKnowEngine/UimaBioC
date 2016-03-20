@@ -215,12 +215,6 @@
 		</dependency>
 
 		<dependency>
-			<groupId>edu.isi.bmkeg</groupId>
-			<artifactId>uimaBioC-fanseParser-models</artifactId>
-			<version>1.0</version>
-		</dependency>
-
-		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-io</artifactId>
 			<version>1.3.2</version>
