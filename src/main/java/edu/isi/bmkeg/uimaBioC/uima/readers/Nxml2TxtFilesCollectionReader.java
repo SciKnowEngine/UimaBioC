@@ -42,6 +42,8 @@ import edu.isi.bmkeg.uimaBioC.UimaBioCUtils;
 public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase {
 	
 	private Iterator<File> txtFileIt; 
+	private File txtFile;
+	private File soFile;
 	
 	private int pos = 0;
 	private int count = 0;
@@ -82,20 +84,7 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 
 		try {
 			
-			if(!txtFileIt.hasNext()) 
-				return;
-			
-			File txtFile = txtFileIt.next();
-			File soFile = new File(txtFile.getPath().replaceAll("\\.txt$", ".so"));
-
-			while( !txtFile.exists() || !soFile.exists() ) {
-
-				if(!txtFileIt.hasNext()) 
-					return;
-				txtFile = txtFileIt.next();
-				soFile = new File(txtFile.getPath().replaceAll("\\.txt$", ".so"));
-			
-			}
+			UimaBioCAnnotation articleTitle = null;
 
 			String txt = FileUtils.readFileToString(txtFile);
 			jcas.setDocumentText( txt );
@@ -189,7 +178,6 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 				// Paragraphs, titles, article-titles and abstracts. 
 				if( type.equals("p") || 
 						type.equals("title") || 
-						type.equals("article-title") || 
 						type.equals("abstract") ){					
 					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 					UimaBioCAnnotation uiA = new UimaBioCAnnotation(jcas);
@@ -209,6 +197,30 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 					uiL.setLength(end - begin);
 					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 				}
+				
+				// Only accept the first article title text
+				if( type.equals("article-title") && articleTitle  == null ){					
+					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+					UimaBioCAnnotation uiA = new UimaBioCAnnotation(jcas);
+					uiA.setBegin(begin);
+					uiA.setEnd(end);
+					Map<String,String> infons2 = new HashMap<String, String>();
+					infons2.put("type", "formatting");
+					infons2.put("value", type);
+					uiA.setInfons(UimaBioCUtils.convertInfons(infons2, jcas));
+					uiA.addToIndexes();
+					
+					FSArray locations = new FSArray(jcas, 1);
+					uiA.setLocations(locations);
+					UimaBioCLocation uiL = new UimaBioCLocation(jcas);
+					locations.set(0, uiL);
+					uiL.setOffset(begin);
+					uiL.setLength(end - begin);
+					articleTitle = uiA;
+					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				}
+
+				
 				
 				if( type.equals("fig") ){					
 					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -360,6 +372,10 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 				
 			}
 		
+			// At present, if a paper is not provided with a PubMed ID, then we skip it. 
+			if( uiD.getId() == null )
+				uiD.setId("skip");
+			
 			uiD.addToIndexes();
 			
 			pos++;
@@ -401,7 +417,24 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 
 	@Override
 	public boolean hasNext() throws IOException, CollectionException {
-		return txtFileIt.hasNext();
+		
+		if( !txtFileIt.hasNext() )
+			return false;
+		
+		this.txtFile = txtFileIt.next();
+		this.soFile = new File(txtFile.getPath().replaceAll("\\.txt$", ".so"));
+
+		while( !txtFile.exists() || !soFile.exists() ) {
+
+			if(!txtFileIt.hasNext()) 
+				return false;
+			txtFile = txtFileIt.next();
+			soFile = new File(txtFile.getPath().replaceAll("\\.txt$", ".so"));
+		
+		}
+		
+		return true;
+				
 	}
 
 }

@@ -19,7 +19,7 @@ import org.uimafit.factory.CpeBuilder;
 import org.uimafit.factory.TypeSystemDescriptionFactory;
 
 import edu.isi.bmkeg.uimaBioC.rubicon.MatchReachAndNxmlText;
-import edu.isi.bmkeg.uimaBioC.rubicon.RemoveSentencesNotInTitleAbstractBody;
+import edu.isi.bmkeg.uimaBioC.rubicon.RemoveSentencesFromOtherSections;
 import edu.isi.bmkeg.uimaBioC.rubicon.SeparateClauses;
 import edu.isi.bmkeg.uimaBioC.rubicon.StanfordParse;
 import edu.isi.bmkeg.uimaBioC.uima.ae.core.FixSentencesFromHeadings;
@@ -40,7 +40,7 @@ public class RUBICON_01_preprocessToBioC {
 		@Option(name = "-biocDir", usage = "Input Directory", required = true, metaVar = "IN-DIRECTORY")
 		public File biocDir;
 
-		@Option(name = "-friesDir", usage = "Fries Directory", required = true, metaVar = "FRIES-DATA")
+		@Option(name = "-friesDir", usage = "Fries Directory", required = false, metaVar = "FRIES-DATA")
 		public File friesDir;
 
 		@Option(name = "-ann2Extract", usage = "Annotation Type to Extract", required = false, metaVar = "ANNOTATION")
@@ -109,8 +109,8 @@ public class RUBICON_01_preprocessToBioC {
 		//
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(FixSentencesFromHeadings.class));
 
-		builder.add(AnalysisEngineFactory.createPrimitiveDescription(RemoveSentencesNotInTitleAbstractBody.class,
-				RemoveSentencesNotInTitleAbstractBody.PARAM_KEEP_FLOATING_BOXES, "true"));
+		//builder.add(AnalysisEngineFactory.createPrimitiveDescription(RemoveSentencesNotInTitleAbstractBody.class,
+		//		RemoveSentencesNotInTitleAbstractBody.PARAM_KEEP_FLOATING_BOXES, "true"));
 
 		if (options.friesDir != null) {
 			//builder.add(AnalysisEngineFactory.createPrimitiveDescription(AddReachAnnotations.class,
@@ -118,20 +118,19 @@ public class RUBICON_01_preprocessToBioC {
 			builder.add(AnalysisEngineFactory.createPrimitiveDescription(MatchReachAndNxmlText.class,
 					MatchReachAndNxmlText.PARAM_INPUT_DIRECTORY, options.friesDir.getPath()));
 		}
-		
+
 		//
 		// Strip out not results sections where we aren't interested in them
 		//
-		//if( options.ann2Ext != null ) {
-		//	builder.add(AnalysisEngineFactory.createPrimitiveDescription(RemoveSentencesFromOtherSections.class,
-		//			RemoveSentencesFromOtherSections.PARAM_ANNOT_2_EXTRACT, options.ann2Ext,
-		//			RemoveSentencesFromOtherSections.PARAM_KEEP_FLOATING_BOXES, "false"));
-		//} 
-		//
-
+		if( options.ann2Ext != null ) {
+			builder.add(AnalysisEngineFactory.createPrimitiveDescription(RemoveSentencesFromOtherSections.class,
+					RemoveSentencesFromOtherSections.PARAM_ANNOT_2_EXTRACT, options.ann2Ext,
+					RemoveSentencesFromOtherSections.PARAM_KEEP_FLOATING_BOXES, "true"));
+		} 
+		
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(StanfordParse.class,
 				StanfordParse.PARAM_MAX_LENGTH, options.maxSentenceLength));
-//		builder.add(AnalysisEngineFactory.createPrimitiveDescription(StanfordTag.class));
+		//builder.add(AnalysisEngineFactory.createPrimitiveDescription(StanfordTag.class));
 
 		if (options.clauseLevel) {
 			

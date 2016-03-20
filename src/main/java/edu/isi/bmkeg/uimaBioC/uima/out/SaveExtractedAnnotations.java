@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.log4j.Logger;
 import org.apache.uima.UimaContext;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
 import org.apache.uima.jcas.JCas;
@@ -30,8 +31,11 @@ import bioc.type.UimaBioCAnnotation;
 import bioc.type.UimaBioCDocument;
 import bioc.type.UimaBioCPassage;
 import edu.isi.bmkeg.uimaBioC.UimaBioCUtils;
+import edu.isi.bmkeg.uimaBioC.rubicon.MatchReachAndNxmlText;
 
 public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
+
+	private static Logger logger = Logger.getLogger(SaveExtractedAnnotations.class);
 
 	public final static String PARAM_ANNOT_2_EXTRACT = ConfigurationParameterFactory
 			.createConfigurationParameterName(SaveExtractedAnnotations.class, "annot2Extract");
@@ -147,30 +151,30 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 
 		List<UimaBioCAnnotation> outerAnnotations = JCasUtil.selectCovered(UimaBioCAnnotation.class, uiD);
 
-		if( this.annot2Extract != null ) {
-		
+		if (this.annot2Extract != null) {
+
 			Set<UimaBioCAnnotation> selectedAnnotations = new HashSet<UimaBioCAnnotation>();
 			for (UimaBioCAnnotation uiA1 : outerAnnotations) {
-	
+
 				Map<String, String> inf = UimaBioCUtils.convertInfons(uiA1.getInfons());
 				if (!inf.containsKey("type"))
 					continue;
-	
+
 				if (!(inf.get("type").equals("formatting") && inf.get("value").equals("sec"))) {
 					continue;
 				}
-	
+
 				if (this.patt != null) {
 					Matcher match = this.patt.matcher(inf.get("sectionHeading"));
 					if (!match.find()) {
 						continue;
 					}
 				}
-	
+
 				selectedAnnotations.add(uiA1);
-	
+
 			}
-	
+
 			int maxL = 0;
 			UimaBioCAnnotation bestA = null;
 			for (UimaBioCAnnotation uiA : selectedAnnotations) {
@@ -182,27 +186,31 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 			}
 
 			if (bestA != null) {
-	
-				File outFile = new File(this.outDir.getPath() + "/" + id + "_" + this.annot2Extract + "_" + bestA.getBegin()
-						+ "_" + bestA.getEnd() + ".tsv");
-	
+
+				File outFile = new File(this.outDir.getPath() + "/" + id + "_" + this.annot2Extract + "_"
+						+ bestA.getBegin() + "_" + bestA.getEnd() + ".tsv");
+
 				PrintWriter out;
 				try {
 					out = new PrintWriter(new BufferedWriter(new FileWriter(outFile, true)));
 				} catch (IOException e) {
 					throw (new AnalysisEngineProcessException(e));
 				}
-				
+
 				this.dumpSectionToFile(jCas, out, bestA.getBegin(), bestA.getEnd());
-	
+
 				out.close();
-				
+
+			} else {
+
+				logger.error("Couldn't find a section heading corresponding to " + this.annot2Extract + " in "
+						+ uiD.getId());
+
 			}
-			
+
 		} else {
 
-			File outFile = new File(
-					this.outDir.getPath() + "/" + id + "_fulltext.tsv");
+			File outFile = new File(this.outDir.getPath() + "/" + id + "_fulltext.tsv");
 			PrintWriter out;
 			try {
 				out = new PrintWriter(new BufferedWriter(new FileWriter(outFile, true)));
@@ -210,10 +218,10 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 				throw (new AnalysisEngineProcessException(e));
 			}
 
-			this.dumpSectionToFile(jCas, out , uiD.getBegin(), uiD.getEnd());
-		
+			this.dumpSectionToFile(jCas, out, uiD.getBegin(), uiD.getEnd());
+
 			out.close();
-		
+
 		}
 
 	}
@@ -223,7 +231,7 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 
 		List<UimaBioCAnnotation> floats = new ArrayList<UimaBioCAnnotation>();
 		List<UimaBioCAnnotation> parags = new ArrayList<UimaBioCAnnotation>();
-		for (UimaBioCAnnotation a : JCasUtil.selectCovered(jCas,UimaBioCAnnotation.class, start, end)) {
+		for (UimaBioCAnnotation a : JCasUtil.selectCovered(jCas, UimaBioCAnnotation.class, start, end)) {
 			Map<String, String> infons = UimaBioCUtils.convertInfons(a.getInfons());
 			if (infons.containsKey("position") && infons.get("position").equals("float")) {
 				floats.add(a);
@@ -324,63 +332,72 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 
 			if (this.clauseLevel) {
 
-				PHRASE_LOOP: for (UimaBioCAnnotation a : JCasUtil.selectCovered(jCas, UimaBioCAnnotation.class, s)) {
+				List<UimaBioCAnnotation> clauseList = new ArrayList<UimaBioCAnnotation>();
+				for (UimaBioCAnnotation a : JCasUtil.selectCovered(jCas, UimaBioCAnnotation.class, s)) {
 					Map<String, String> infons = UimaBioCUtils.convertInfons(a.getInfons());
-					if (infons.get("type").equals("rubicon") && infons.get("value").equals("clause")) {
+					if (infons.get("type").equals("rubicon") && infons.get("value").equals("clause"))
+						clauseList.add(a);
+				}
+				
+				if(clauseList.size() == 0) {
+					UimaBioCDocument uiD = JCasUtil.selectSingle(jCas, UimaBioCDocument.class);
+					logger.warn("No Clauses Found in "+uiD.getId()+"("+s.getBegin() +"-"+s.getEnd()+"): " + s.getCoveredText());
+				}
 
-						out.print(sNumber);
-						out.print("\t");
-						out.print(readTokenizedText(jCas, a));
-						out.print("\t");
-						out.print(codes.toString());
-						out.print("\t");
-						out.print(expts.toString());
-						out.print("\t");
-						out.print(pCode);
+				for (UimaBioCAnnotation clause : clauseList) {
 
-						if (addFries) {
+					out.print(sNumber);
+					out.print("\t");
+					out.print(readTokenizedText(jCas, clause));
+					out.print("\t");
+					out.print(codes.toString());
+					out.print("\t");
+					out.print(expts.toString());
+					out.print("\t");
+					out.print(pCode);
 
-							String friesSentenceId = "";
-							String friesEventsIds = "";
-							String friesEventsDetails = "";
-							String friesEventText = "";
+					if (addFries) {
 
-							for (UimaBioCAnnotation fa : JCasUtil.selectCovered(jCas, UimaBioCAnnotation.class, a)) {
-								Map<String, String> inf = UimaBioCUtils.convertInfons(fa.getInfons());
-								if (inf.get("type").equals("FRIES_EventMention")) {
+						String friesSentenceId = "";
+						String friesEventsIds = "";
+						String friesEventsDetails = "";
+						String friesEventText = "";
 
+						for (UimaBioCAnnotation fa : JCasUtil.selectCovered(jCas, UimaBioCAnnotation.class, clause)) {
+							Map<String, String> inf = UimaBioCUtils.convertInfons(fa.getInfons());
+							if (inf.get("type").equals("FRIES_EventMention")) {
+
+								if( friesSentenceId.length() == 0) 
 									friesSentenceId += inf.get("sentId") + ":" + inf.get("score");
 
-									if (friesEventsIds.length() > 0)
-										friesEventsIds += ",";
-									friesEventsIds += inf.get("eventId");
+								if (friesEventsIds.length() > 0)
+									friesEventsIds += ",";
+								friesEventsIds += inf.get("eventId");
 
-									if (friesEventsDetails.length() > 0)
-										friesEventsDetails += ",";
-									friesEventsDetails += inf.get("fType")
-											+ (inf.containsKey("fSubType") ? "." + inf.get("fSubType") : "")
-											+ inf.get("value");
+								if (friesEventsDetails.length() > 0)
+									friesEventsDetails += ",";
+								friesEventsDetails += inf.get("fType")
+										+ (inf.containsKey("fSubType") ? "." + inf.get("fSubType") : "")
+										+ inf.get("value");
 
-									if (friesEventText.length() > 0)
-										friesEventText += ",";
-									friesEventText += inf.get("friesEventText");
+								if (friesEventText.length() > 0)
+									friesEventText += ",";
+								friesEventText += inf.get("friesText");
 
-								}
 							}
-
-							out.print("\t");
-							out.print(friesSentenceId.length() > 0 ? friesSentenceId : "-");
-							out.print("\t");
-							out.print(friesEventsIds.length() > 0 ? friesEventsIds : "-");
-							out.print("\t");
-							out.print(friesEventsDetails.length() > 0 ? friesEventsDetails : "-");
-							out.print("\t");
-							out.print(friesEventText.length() > 0 ? friesEventText : "-");
-
 						}
-						out.print("\n");
+
+						out.print("\t");
+						out.print(friesSentenceId.length() > 0 ? friesSentenceId : "-");
+						out.print("\t");
+						out.print(friesEventsIds.length() > 0 ? friesEventsIds : "-");
+						out.print("\t");
+						out.print(friesEventsDetails.length() > 0 ? friesEventsDetails : "-");
+						out.print("\t");
+						out.print(friesEventText.length() > 0 ? friesEventText : "-");
 
 					}
+					out.print("\n");
 
 				}
 
@@ -401,11 +418,11 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 					String friesEventsIds = "";
 					String friesEventsDetails = "";
 					String friesEventText = "";
-					
+
 					for (UimaBioCAnnotation fa : JCasUtil.selectCovered(jCas, UimaBioCAnnotation.class, s)) {
 						Map<String, String> inf = UimaBioCUtils.convertInfons(fa.getInfons());
 						if (inf.get("type").equals("FRIES_EventMention")) {
-							
+
 							friesSentenceId += inf.get("sentId") + ":" + inf.get("score");
 
 							if (friesEventsIds.length() > 0)
@@ -415,8 +432,7 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 							if (friesEventsDetails.length() > 0)
 								friesEventsDetails += ",";
 							friesEventsDetails += inf.get("fType")
-									+ (inf.containsKey("fSubType") ? "." + inf.get("fSubType") : "")
-									+ inf.get("value");
+									+ (inf.containsKey("fSubType") ? "." + inf.get("fSubType") : "") + inf.get("value");
 
 							if (friesEventText.length() > 0)
 								friesEventText += ",";
@@ -433,7 +449,7 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 					out.print(friesEventsDetails.length() > 0 ? friesEventsDetails : "-");
 					out.print("\t");
 					out.print(friesEventText.length() > 0 ? friesEventText : "-");
-					
+
 				}
 
 				out.print("\n");
@@ -441,7 +457,7 @@ public class SaveExtractedAnnotations extends JCasAnnotator_ImplBase {
 			}
 
 		}
-		
+
 	}
 
 	private String readExptCodes(JCas jCas, UimaBioCAnnotation s) {

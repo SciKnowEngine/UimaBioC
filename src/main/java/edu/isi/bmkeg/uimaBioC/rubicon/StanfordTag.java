@@ -139,6 +139,7 @@ public class StanfordTag extends JCasAnnotator_ImplBase {
 
 					Map<String, String> infons = new HashMap<String, String>();
 					infons.put("type", "stanford-tag");
+					infons.put("text", tok);
 					infons.put("value", tag);
 					uiA.setInfons(UimaBioCUtils.convertInfons(infons, jCas));
 

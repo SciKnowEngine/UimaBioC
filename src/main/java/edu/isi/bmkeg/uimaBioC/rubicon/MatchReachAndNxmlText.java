@@ -25,6 +25,7 @@ import org.bigmech.fries.FRIES_EventMention;
 import org.bigmech.fries.FRIES_Frame;
 import org.bigmech.fries.FRIES_FrameCollection;
 import org.bigmech.fries.FRIES_Passage;
+import org.bigmech.fries.FRIES_Position;
 import org.bigmech.fries.FRIES_Sentence;
 import org.bigmech.fries.FRIES_XRef;
 import org.cleartk.ml.feature.extractor.CleartkExtractor;
@@ -73,7 +74,6 @@ public class MatchReachAndNxmlText extends JCasAnnotator_ImplBase {
 
 	private static Logger logger = Logger.getLogger(MatchReachAndNxmlText.class);
 
-	private List<Sentence> sentences = new ArrayList<Sentence>();
 	private Map<LapdftextXMLChunk, Integer> pgLookup = new HashMap<LapdftextXMLChunk, Integer>();
 
 	private Pattern wbDetect = Pattern.compile("(\\w\\W|\\W\\w)");
@@ -104,27 +104,11 @@ public class MatchReachAndNxmlText extends JCasAnnotator_ImplBase {
 			UimaBioCDocument uiD = JCasUtil.selectSingle(jCas, UimaBioCDocument.class);
 			if (uiD.getId().equals("skip"))
 				return;
+			
+			//UimaBioCUtils.debugSentences(jCas);
 
 			UimaBioCPassage docP = UimaBioCUtils.readDocument(jCas);
-
-			logger.info(uiD.getId());
-
-			// Want to locate the 'body' section.
-			UimaBioCAnnotation body = null;
-			List<UimaBioCAnnotation> annotations = JCasUtil.selectCovered(UimaBioCAnnotation.class, docP);
-			for (UimaBioCAnnotation uiA : annotations) {
-				Map<String, String> infons = UimaBioCUtils.convertInfons(uiA.getInfons());
-				if (infons.get("value").equals("body")) {
-					body = uiA;
-				}
-			}
-
-			if (body == null) {
-				logger.error("Can't find body section of paper.");
-				return;
-			}
-
-			List<Sentence> sentences = JCasUtil.selectCovered(Sentence.class, body);
+			logger.info("Matching " + uiD.getId());
 
 			Map<String, String> infons = UimaBioCUtils.convertInfons(uiD.getInfons());
 			String pmcDocId = "PMC" + infons.get("pmc");
@@ -193,13 +177,26 @@ public class MatchReachAndNxmlText extends JCasAnnotator_ImplBase {
 			}
 			
 			FRIES_FrameCollection fc3 = gson.fromJson(new FileReader(sentenceFrames), FRIES_FrameCollection.class);
-
+			List<UimaBioCAnnotation> passages = UimaBioCUtils.readAllReadablePassagesAndFloats(jCas);
+			passages.addAll( UimaBioCUtils.readFloats(jCas) );
+			
+			Map<String, FRIES_Passage> passageMap = new HashMap<String, FRIES_Passage>();
+			for (FRIES_Frame frame : fc3.getFrames()) {
+				if (frame instanceof FRIES_Passage) {
+					FRIES_Passage psg = (FRIES_Passage) frame;
+					passageMap.put(frame.getFrameId(), psg);
+				}
+			}
+			
 			FRIES_FRAMES: for (FRIES_Frame frame : fc3.getFrames()) {
 
 				if (frame instanceof FRIES_Sentence) {
 
 					FRIES_Sentence fs = (FRIES_Sentence) frame;
 
+					String passageId = fs.getPassage();
+					FRIES_Passage psg = passageMap.get(passageId);
+					
 					if ( !eventMap.containsKey(fs.getFrameId()) &&
 							!entityMap.containsKey(fs.getFrameId()))
 						continue;
@@ -208,60 +205,121 @@ public class MatchReachAndNxmlText extends JCasAnnotator_ImplBase {
 						continue;
 
 					float bestSim = 0.0f;
-					Sentence match = null;
-					for (Sentence s : sentences) {
-						float sim = cosineSimilarityMetric.compare(s.getCoveredText(), fs.getText());
+					UimaBioCAnnotation match = null;
+					for (UimaBioCAnnotation p : passages) {
+						float sim = cosineSimilarityMetric.compare(p.getCoveredText(), psg.getText());
 						if (sim > bestSim) {
-							match = s;
+							match = p;
 							bestSim = sim;
-						}
-						if (sim > 0.9) {
-							break;
 						}
 					}
 
 					if (match != null) {
-
-						//
-						// Check for the best match based on Levenshtein edit
-						// distance
-						// to make sure that it's correct.
-						// We also truncate the match to the length of the FRIES
-						// corpus'
-						// sentence to ignore errors from the FRIES sentence
-						// splitter.
-						//
+						
+						FRIES_Position startPos = fs.getStartPos();
+						int s = startPos.getOffset();
+						FRIES_Position endPos = fs.getEndPos();
+						int e = endPos.getOffset();
+						String sentTxt = psg.getText().substring(s, e);
 						String ss1 = fs.getText().replaceAll("\\s+", "");
-						String ss2 = match.getCoveredText().replaceAll("\\s+", "");
-						if (ss2.length() > ss1.length() + 5) {
-							ss2 = ss2.substring(0, ss1.length() + 5);
-						}
-						float sim = levenshteinSimilarityMetric.compare(ss1, ss2);
-						if (sim < 0.85)
-							continue FRIES_FRAMES;
+						
+						//
+						// Find the sentence that starts and ends at the closest point 
+						// to the current sentence. 
+						// 
+						// - Note that there are errors in both FRIES 
+						//   and our sentence splitting
+						//
+						int[] delts = {10000, 10000};
+						Sentence matchingSentence = null;
+						for (Sentence ss : JCasUtil.selectCovered(Sentence.class, match) ) {
+							
+							String ss2 = UimaBioCUtils.friesifySentence(jCas, ss);
+							ss2 = ss2.replaceAll("\\s+", "");
 
+							if( ss1.equals(ss2) ) {
+							
+								matchingSentence = ss;
+								break;
+							
+							} else {
+								
+								int l = Math.min(ss1.length(), ss2.length());
+								float sim1 = levenshteinSimilarityMetric.compare(
+										ss1.substring(0,l), ss2.substring(0,l));
+								float sim2 = levenshteinSimilarityMetric.compare(
+										ss1.substring(ss1.length()-l, ss1.length()),
+										ss2.substring(ss2.length()-l, ss2.length()));
+								
+								if ( sim1 > 0.8 ||
+										sim2 > 0.8 ) {
+									matchingSentence = ss;
+									
+									if ( sim1 < 0.8 || sim2 < 0.8 ) 
+										if(ss1.length()<ss2.length())
+											logger.warn("Likely error in ClearTk sentence splitting for '" 
+													+ matchingSentence.getCoveredText() + "'");
+										else 
+											logger.warn("Likely error in REACH sentence splitting for " + fs.getFrameId() + ": " + fs.getText());	
+									
+									break;
+								}
+								
+							}
+							
+							/*if( (ss.getEnd() - ss.getBegin()) < 10 )
+								continue;
+									
+							int d0 = Math.abs((ss.getBegin() - match.getBegin()) - s); 
+							int d1 = Math.abs((ss.getEnd() - match.getBegin()) - e); 
+							
+							if( d0 == 0 && d1 == 0 ) {
+								delts[0] = d0;
+								delts[1] = d1;
+								matchingSentence = ss;
+								break;
+							} else if( d0 < delts[0] && d1 < delts[1]  ) {
+								delts[0] = d0;
+								delts[1] = d1;
+								matchingSentence = ss;
+							}*/
+
+						}
+
+						//
+						// Check for the best match based on Levenshtein edit distance
+						// to make sure that it's correct. We also truncate the match 
+						// to the shorter of the two sentences to avoid errors 
+						// from sentence splitting.
+						//
+						if( matchingSentence == null ) {
+							logger.warn("A. Can't find a match for " + fs.getFrameId() + ": " + fs.getText());
+							continue FRIES_FRAMES;
+						}
+						
 						if (eventMap.containsKey(fs.getFrameId())) {
 							for (FRIES_EventMention em : eventMap.get(fs.getFrameId())) {
-								matchFriesEventToClearTkSentence(jCas, bestSim, match, em);
+								matchFriesEventToClearTkSentence(jCas, bestSim, matchingSentence, em);
+							}
+						} 
+						if (entityMap.containsKey(fs.getFrameId())) {
+							for (FRIES_EntityMention em : entityMap.get(fs.getFrameId())) {
+								matchFriesEventToClearTkSentence(jCas, bestSim, matchingSentence, em);
 							}
 						}
-						/*if (entityMap.containsKey(fs.getFrameId())) {
-							for (FRIES_EntityMention em : entityMap.get(fs.getFrameId())) {
-								matchFriesEventToClearTkSentence(jCas, bestSim, match, em);
-							}
-						}*/
 						
 					} else {
 						
-						logger.warn("Can't find a match for " + fs.getFrameId() + ": " + fs.getText());
+						logger.warn("C. Can't find a match for " + fs.getFrameId() + ": " + fs.getText());
 						// Need to track when we can't find these things. 
 						
-					}
-					
+					}int i=0;
 					
 				}
 				
 			}
+			
+			logger.info("Matching " + uiD.getId() + " - COMPLETED");
 
 		} catch (Exception e) {
 
@@ -273,19 +331,22 @@ public class MatchReachAndNxmlText extends JCasAnnotator_ImplBase {
 
 	private void matchFriesEventToClearTkSentence(JCas jCas, float bestSim, Sentence match, FRIES_Frame f) {
 		
+		UimaBioCDocument uiD = JCasUtil.selectSingle(jCas, UimaBioCDocument.class);
+		
 		UimaBioCAnnotation a = new UimaBioCAnnotation(jCas);
 		Map<String, String> inf = new HashMap<String, String>();
 		inf.put("eventId", f.getFrameId());
-		inf.put("sentId", f.getFrameId());
 		inf.put("score", bestSim + "");
 		
 		if( f instanceof FRIES_EventMention) {
 			
 			FRIES_EventMention em = (FRIES_EventMention) f;
+			inf.put("passId", em.getSentence());
+			inf.put("sentId", em.getSentence());
 			inf.put("type", "FRIES_EventMention");
 			inf.put("fType", em.getType());
 			inf.put("fSubType", em.getSubtype());
-			inf.put("friesEventText", em.getText());
+			inf.put("friesText", em.getText());
 			String code = "";
 			for (FRIES_Argument args : em.getArguments()) {
 				code += "[" + args.getText() + "]";
@@ -296,10 +357,11 @@ public class MatchReachAndNxmlText extends JCasAnnotator_ImplBase {
 		} else  if( f instanceof FRIES_EntityMention) {
 			
 			FRIES_EntityMention em = (FRIES_EntityMention) f;
-			inf.put("type", "FRIES_EventMention");
+			inf.put("sentId", em.getSentence());
+			inf.put("type", "FRIES_EntityMention");
 			inf.put("fType", em.getType());
 			inf.put("fSubType", em.getSubtype());
-			inf.put("friesEventText", em.getText());
+			inf.put("friesText", em.getText());
 			String code = "";
 			for (FRIES_XRef args : em.getXrefs()) {
 				code += "[" + args.getNamespace() + ":" + args.getId() + "]";
@@ -348,8 +410,8 @@ public class MatchReachAndNxmlText extends JCasAnnotator_ImplBase {
 				a.setBegin(match.getBegin() + startPos);
 				a.setEnd(match.getBegin() + endPos);
 				try {
-					logger.info("new: " + a.getCoveredText());
-					logger.info("old: " + f.getText());
+					logger.debug(uiD.getId() + " [whitespace] ClearTk: " + a.getCoveredText());
+					logger.debug(" [whitespace] FRIES: " + f.getText());
 					a.addToIndexes(jCas);
 				} catch( Exception e ) {
 					e.printStackTrace();
@@ -389,8 +451,8 @@ public class MatchReachAndNxmlText extends JCasAnnotator_ImplBase {
 					a.setBegin(match.getBegin() + offset);
 					a.setEnd(match.getBegin() + offset + len);
 					try {
-						logger.info("new: " + a.getCoveredText());
-						logger.info("old: " + f.getText());
+						logger.debug(uiD.getId() + " [align] ClearTk: " + a.getCoveredText());
+						logger.debug(" [align] FRIES: " + f.getText());
 						a.addToIndexes(jCas);
 					} catch( Exception e ) {
 						e.printStackTrace();
@@ -413,6 +475,7 @@ public class MatchReachAndNxmlText extends JCasAnnotator_ImplBase {
 			}
 			
 		}
+		
 	}
 
 	private int countChars(String s, String c) {

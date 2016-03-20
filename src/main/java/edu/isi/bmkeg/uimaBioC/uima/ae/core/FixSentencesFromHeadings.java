@@ -1,9 +1,13 @@
 package edu.isi.bmkeg.uimaBioC.uima.ae.core;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import org.apache.log4j.Logger;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
 import org.apache.uima.jcas.JCas;
 import org.apache.uima.jcas.cas.FSArray;
@@ -18,27 +22,16 @@ import edu.isi.bmkeg.uimaBioC.UimaBioCUtils;
 
 public class FixSentencesFromHeadings extends JCasAnnotator_ImplBase {
 
+	private static Logger logger = Logger.getLogger(FixSentencesFromHeadings.class);
+	
 	public void process(JCas jCas) throws AnalysisEngineProcessException {
 
 		UimaBioCDocument uiD = JCasUtil.selectSingle(jCas, UimaBioCDocument.class);
 		if( uiD.getId().equals("skip") )
 			return;
 		
-		UimaBioCPassage docPassage = null;
-
-		List<UimaBioCPassage> passages = JCasUtil.selectCovered(UimaBioCPassage.class, uiD);
-		FSArray psgArray = new FSArray(jCas, passages.size());
-		int passageCount = 0;
-		uiD.setPassages(psgArray);
-		for (UimaBioCPassage uiP : passages) {
-			psgArray.set(passageCount, uiP);
-			passageCount++;
-
-			Map<String, String> infons = UimaBioCUtils.convertInfons(uiP.getInfons());
-			if (infons.get("type").equals("document")) {
-				docPassage = uiP;
-			}
-		}
+		
+		UimaBioCPassage docPassage = UimaBioCUtils.readDocument(jCas);
 
 		if (docPassage == null)
 			throw new AnalysisEngineProcessException(new Exception("'Document' passage not set in BioC"));
@@ -105,10 +98,40 @@ public class FixSentencesFromHeadings extends JCasAnnotator_ImplBase {
 						s2.addToIndexes(jCas);
 				}
 
+			}		
+		
+		}
+		
+		//
+		// LOOK FOR SENTENCES THAT CONTAIN NEW-LINE CHARACTERS AND SPLIT THEM
+		//
+		
+		for (Sentence s : JCasUtil.selectCovered(Sentence.class, uiD)) {
+						
+			String[] lines = s.getCoveredText().split("\\n");
+			if( lines.length > 1 ) {
+				int pos = 0;
+				for( int i=0; i<lines.length; i++ ) {
+					String line = lines[i];
+					Sentence s1 = new Sentence(jCas);
+					s1.setBegin(s.getBegin() + pos);
+					s1.setEnd(s.getBegin() + pos + line.length());
+					s1.addToIndexes(jCas);
+					pos += line.length() + 1;
+				}
+				s.removeFromIndexes(jCas);
 			}
 
 		}
+		
+		//UimaBioCUtils.debugSentences(jCas);
+		//logger.debug("\n~~~~~~~~~~~~~~~~~~~\n");
+		
 
 	}
+	
+
+	
+	
 
 }

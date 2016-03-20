@@ -65,45 +65,15 @@ public class RemoveSentencesNotInTitleAbstractBody extends JCasAnnotator_ImplBas
 				UimaBioCDocument.class);
 		if( uiD.getId().equals("skip") )
 			return;
+
 		
-		UimaBioCAnnotation body = null;
-		List<UimaBioCAnnotation> annotations = JCasUtil.selectCovered(
-				UimaBioCAnnotation.class, uiD);
-
-		List<UimaBioCAnnotation> floats = new ArrayList<UimaBioCAnnotation>();
-		List<UimaBioCAnnotation> toKeep = new ArrayList<UimaBioCAnnotation>();
-		ANNOTATION_LOOP: for (UimaBioCAnnotation a : annotations) {
-			Map<String, String> infons = UimaBioCUtils.convertInfons(a.getInfons());
-
-			if( infons.containsKey("position") 
-					&& infons.get("position").equals("float") ){
-				floats.add(a);							
-			} else if( infons.containsKey("value") && 
-					(infons.get("value").equals("body") || 
-					infons.get("value").equals("article-title") ||
-					infons.get("value").equals("abstract") )) {
-				toKeep.add(a);							 
-			}
-			
-		}
-
-		List<Sentence> sentences = new ArrayList<Sentence>();
-		for( UimaBioCAnnotation a : toKeep ) {
-			sentences.addAll(JCasUtil.selectCovered(
-					org.cleartk.token.type.Sentence.class, a
-				));
-		}
+		List<UimaBioCAnnotation> floats = UimaBioCUtils.readFloats(jCas);
+		List<Sentence> sentences = UimaBioCUtils.readAllReadableSentences(jCas);
+		
+		if( this.keepFloats ) 
+			sentences.addAll(UimaBioCUtils.readAllFloatSentences(jCas));
 		
 		Set<Sentence> sentencesToKeep = new HashSet<Sentence>(sentences);
-		for(Sentence s : sentences) {
-			if( !this.keepFloats ) {
-				for( UimaBioCAnnotation f : floats ) {
-					if( s.getBegin()>=f.getBegin() && s.getEnd()<=f.getEnd() ) {
-						sentencesToKeep.remove(s);
-					}
-				}
-			}
-		}
 		
 		List<Sentence> allSentences = JCasUtil.selectCovered(
 					org.cleartk.token.type.Sentence.class, uiD

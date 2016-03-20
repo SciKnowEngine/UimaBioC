@@ -27,7 +27,7 @@ import edu.isi.bmkeg.uimaBioC.uima.out.SaveExtractedAnnotations;
 import edu.isi.bmkeg.uimaBioC.uima.readers.BioCCollectionReader;
 import edu.isi.bmkeg.uimaBioC.utils.StatusCallbackListenerImpl;
 
-public class RUBICON_03_classifyDiscourseSegments {
+public class RUBICON_03_prepareData {
 
 	public static class Options {
 
@@ -40,12 +40,12 @@ public class RUBICON_03_classifyDiscourseSegments {
 		@Option(name = "-outDir", usage = "Output Directory", required = true, metaVar = "OUT-FILE")
 		public File outDir;
 
-		@Option(name = "-execPath", usage = "Path to the python executable", required = true, metaVar = "PATH")
-		public String execPath;
+		//@Option(name = "-execPath", usage = "Path to the python executable", required = true, metaVar = "PATH")
+		//public String execPath;
 		
 	}
 
-	private static Logger logger = Logger.getLogger(RUBICON_03_classifyDiscourseSegments.class);
+	private static Logger logger = Logger.getLogger(RUBICON_03_prepareData.class);
 
 	/**
 	 * @param args
@@ -98,8 +98,11 @@ public class RUBICON_03_classifyDiscourseSegments {
 		// Execute Pradeep's Python code. 
 		//
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(TagPassagesAnnotator.class,
-				TagPassagesAnnotator.PARAM_OUT_DIR_PATH, options.outDir.getPath(),
-				TagPassagesAnnotator.PARAM_PYTHON_EXEC_PATH, options.execPath));
+				TagPassagesAnnotator.PARAM_OUT_DIR_PATH, options.outDir.getPath()));
+		
+//		builder.add(AnalysisEngineFactory.createPrimitiveDescription(TagPassagesAnnotator.class,
+//				TagPassagesAnnotator.PARAM_OUT_DIR_PATH, options.outDir.getPath(),
+//				TagPassagesAnnotator.PARAM_PYTHON_EXEC_PATH, options.execPath));
 		
 		cpeBuilder.setAnalysisEngine(builder.createAggregateDescription());
 

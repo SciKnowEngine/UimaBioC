@@ -75,7 +75,7 @@ public class ParagraphTfIdfAnnotator extends CleartkAnnotator<String> {
 			if (uiD.getId().equals("skip"))
 				return;
 
-			List<UimaBioCAnnotation> passages = UimaBioCUtils.readAllReadableText(jCas);
+			List<UimaBioCAnnotation> passages = UimaBioCUtils.readAllReadablePassagesAndFloats(jCas);
 			
 			if (this.isTraining()) {
 				

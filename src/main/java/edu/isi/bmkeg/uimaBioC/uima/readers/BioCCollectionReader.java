@@ -44,6 +44,8 @@ import edu.isi.bmkeg.uimaBioC.UimaBioCUtils;
 public class BioCCollectionReader extends JCasCollectionReader_ImplBase {
 	
 	private Iterator<File> bioCFileIt; 
+	private File bioCFile; 
+	private BioCDocument bioD;	
 	
 	private int pos = 0;
 	private int count = 0;
@@ -120,20 +122,8 @@ public class BioCCollectionReader extends JCasCollectionReader_ImplBase {
 	public void getNext(JCas jcas) throws IOException, CollectionException {
 
 		try {
-			
-			if(!bioCFileIt.hasNext()) 
-				return;
-			
-			File bioCFile = bioCFileIt.next();
-			BioCDocument bioD = readBioCFile(bioCFile);
-			
-			while( this.existingFiles.contains(bioD.getID())) {
-				logger.debug("output file for " + bioCFile.getName() + " exists, skipping." );
-				bioCFile = bioCFileIt.next();
-				bioD = readBioCFile(bioCFile);
-			}
-					
-			UimaBioCUtils.addBioCDocumentToUimaCas(bioD, jcas);
+						
+			UimaBioCUtils.addBioCDocumentToUimaCas(this.bioD, jcas);
 						
 			logger.debug("Processing " + bioCFile.getName() + "." );
 		    
@@ -148,19 +138,8 @@ public class BioCCollectionReader extends JCasCollectionReader_ImplBase {
 
 	private BioCDocument readBioCFile(File bioCFile)
 			throws AnalysisEngineProcessException, FileNotFoundException, XMLStreamException, IOException {
-		while( !bioCFile.exists() ||
-				this.existingFiles.contains(bioCFile.getName()) ) {
-			
-			if(!bioCFileIt.hasNext()) 
-				throw new AnalysisEngineProcessException(
-						new Exception("Output directory contains all required files: " + 
-								outputDirectory ) );
-			
-			bioCFile = bioCFileIt.next();
 		
-		}
 		
-		BioCDocument bioD;
 		if (inFileFormat.equals(XML)) {
 			
 			BioCDocumentReader reader = BioCFactory.newFactory(
@@ -211,7 +190,31 @@ public class BioCCollectionReader extends JCasCollectionReader_ImplBase {
 
 	@Override
 	public boolean hasNext() throws IOException, CollectionException {
-		return bioCFileIt.hasNext();
+
+		try {
+
+			if( !bioCFileIt.hasNext() )
+				return false;
+
+			this.bioCFile = bioCFileIt.next();
+			this.bioD = readBioCFile(bioCFile);
+			
+			while( this.existingFiles.contains(bioD.getID())) {
+				logger.debug("output file for " + bioCFile.getName() + " exists, skipping." );
+				
+				if( !bioCFileIt.hasNext() )
+					return false;
+				
+				bioCFile = bioCFileIt.next();
+				bioD = readBioCFile(bioCFile);
+			}
+			
+			return true;
+		
+		} catch (Exception e) {
+			throw new CollectionException(e);
+		} 
+
 	}
 
 }

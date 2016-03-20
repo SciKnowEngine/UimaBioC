@@ -37,24 +37,24 @@ public class TagPassagesAnnotator extends JCasAnnotator_ImplBase {
 
 	private static Logger logger = Logger.getLogger(TagPassagesAnnotator.class);
 
-	public final static String PARAM_PYTHON_EXEC_PATH = ConfigurationParameterFactory
+/*	public final static String PARAM_PYTHON_EXEC_PATH = ConfigurationParameterFactory
 			.createConfigurationParameterName(TagPassagesAnnotator.class, "pythonExecPath");
 	@ConfigurationParameter(mandatory = true, description = "Where the python executable is")
-	String pythonExecPath;
+	String pythonExecPath;*/
 	
 	public final static String PARAM_OUT_DIR_PATH = ConfigurationParameterFactory
 			.createConfigurationParameterName(TagPassagesAnnotator.class, "outDirPath");
 	@ConfigurationParameter(mandatory = true, description = "The place to put the output files")
 	String outDirPath;
 	
-	File tempDir;
+	//File tempDir;
 
 	public void initialize(UimaContext context) throws ResourceInitializationException {
 
 		super.initialize(context);
 		
-		tempDir = Files.createTempDir();
-		tempDir.deleteOnExit();
+		//tempDir = Files.createTempDir();
+		//tempDir.deleteOnExit();
 
 	}
 
@@ -70,7 +70,7 @@ public class TagPassagesAnnotator extends JCasAnnotator_ImplBase {
 			//
 			// DUMP THESE DATA TO A LOCAL DIRECTORY.
 			//
-			File outFile = new File(tempDir.getPath() + "/" + uiD.getId() + ".txt" );
+			File outFile = new File(outDirPath + "/" + uiD.getId() + ".txt" );
 			PrintWriter out;
 			try {
 				out = new PrintWriter(new BufferedWriter(new FileWriter(outFile, true)));
@@ -104,7 +104,7 @@ public class TagPassagesAnnotator extends JCasAnnotator_ImplBase {
 			out.close();
 			
 			// RUN PYTHON TO CLASSIFY DISCOURSE SEGMENT TYPES.
-			if(!pythonExecPath.endsWith("/"))
+			/*if(!pythonExecPath.endsWith("/"))
 				pythonExecPath += "/";
 			String command = "python " + pythonExecPath + "statement_classification/tag_passages.py \"" + outFile.getPath() + "\"";
 
@@ -142,7 +142,7 @@ public class TagPassagesAnnotator extends JCasAnnotator_ImplBase {
 				in.close();
 			}
 			
-			int i = 1;
+			int i = 1;*/
 			
 			// THEN WHAT TO DO?
 

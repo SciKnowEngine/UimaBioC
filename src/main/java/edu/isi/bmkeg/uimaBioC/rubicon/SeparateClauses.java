@@ -77,12 +77,14 @@ public class SeparateClauses extends JCasAnnotator_ImplBase {
 			if (uiD.getId().equals("skip"))
 				return;
 
+			logger.debug("Separating clauses for " + uiD.getId() );
+			
+			
 			UimaBioCPassage docP = UimaBioCUtils.readDocument(jCas);
 
 			List<Sentence> sentences = JCasUtil.selectCovered(Sentence.class, docP);
 			int sCount = 0;
-			SENTENCE_LOOP: for (Sentence s : sentences) {
-				
+			SENTENCE_LOOP: for (Sentence s : sentences) {	
 				
 				//
 				// Find the Stanford Parse for this sentence.
@@ -143,30 +145,23 @@ public class SeparateClauses extends JCasAnnotator_ImplBase {
 					int end = endTok.getEnd();
 					if (end == s.getEnd() - 1)
 						end = s.getEnd();
-
-					UimaBioCAnnotation satClause = this.createClauseAnnotation(jCas, begin, end);
-					satClause.addToIndexes();
-
-					if ( s.getBegin() < begin 
-							&& s.getEnd() > end ) {
-
-						UimaBioCAnnotation otherClause1 = this.createClauseAnnotation(jCas, s.getBegin(), begin - 1);
-						otherClause1.addToIndexes();
-
-						UimaBioCAnnotation otherClause2 = this.createClauseAnnotation(jCas, end + 1, s.getEnd());
-						otherClause2.addToIndexes();
-
-						
-					} else if (s.getBegin() < begin) {
+					
+					if ( s.getBegin() < begin ) {
 
 						UimaBioCAnnotation otherClause = this.createClauseAnnotation(jCas, s.getBegin(), begin - 1);
 						otherClause.addToIndexes();
 
-					} else if (end < s.getEnd()) {
+						UimaBioCAnnotation satClause = this.createClauseAnnotation(jCas, begin, s.getEnd());
+						satClause.addToIndexes();
+
 						
-						// 
-						// Why 
-						//
+					} else {
+
+						UimaBioCAnnotation otherClause = this.createClauseAnnotation(jCas, s.getBegin(), end);
+						otherClause.addToIndexes();
+
+						UimaBioCAnnotation satClause = this.createClauseAnnotation(jCas, end+1, s.getEnd());
+						satClause.addToIndexes();
 
 					}
 
@@ -183,9 +178,23 @@ public class SeparateClauses extends JCasAnnotator_ImplBase {
 				// since we can easily infer the other clauses when they exist.
 				//
 
+				// Check this to make sure it's working correctly. 
+				List<UimaBioCAnnotation> clauseList = new ArrayList<UimaBioCAnnotation>();
+				for (UimaBioCAnnotation a : JCasUtil.selectCovered(jCas, UimaBioCAnnotation.class, s)) {
+					Map<String, String> infons = UimaBioCUtils.convertInfons(a.getInfons());
+					if (infons.get("type").equals("rubicon") && infons.get("value").equals("clause"))
+						clauseList.add(a);
+				}
+				
+				if(clauseList.size() == 0) {
+					logger.warn("No Clauses Found in "+uiD.getId()+"("+s.getBegin() +"-"+s.getEnd()+"): " + s.getCoveredText());
+				}
+				
 				sCount++;
 
 			}
+			
+			logger.debug("Separating clauses for " + uiD.getId() + " - COMPELETED");
 
 		} catch (Exception e) {
 
