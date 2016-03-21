@@ -48,8 +48,16 @@
 		<repository>
 			<id>maven-central</id>
 			<name>maven</name>
-			<url>http://central.maven.org/maven2/</url>
+			<url>http://repo1.maven.org/maven2/</url>
 		</repository>
+
+		<!-- SpringSource -->
+		<repository>
+			<id>maven-central</id>
+			<name>maven</name>
+			<url>http://repo1.maven.org/maven2/</url>
+		</repository>
+
 
 	</repositories>
 
