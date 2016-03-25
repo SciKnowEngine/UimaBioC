@@ -281,6 +281,12 @@
 		</dependency>
 
 		<dependency>
+			<groupId>org.cleartk</groupId>
+			<artifactId>cleartk-ml-opennlp-maxent</artifactId>
+			<version>${cleartk.version}</version>
+		</dependency>
+
+		<dependency>
 			<groupId>bioc</groupId>
 			<artifactId>BioC_Java</artifactId>
 			<version>1.0</version>
