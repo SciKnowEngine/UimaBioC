@@ -27,14 +27,6 @@ import edu.isi.bmkeg.uimaBioC.uima.ae.core.FixSentencesFromHeadings;
 import edu.isi.bmkeg.uimaBioC.uima.readers.BioCCollectionReader;
 
 
-/** 
- * 
- * REQUIRES UIMA FIT SPRING AND DOES NOT WORK
- * 
- * @author Gully
- *
- */
-
 @Component
 public class S15_runTagger {
 
