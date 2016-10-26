@@ -1,4 +1,4 @@
-package edu.isi.bmkeg.uimaBioC.bin.rubicon;
+package edu.isi.bmkeg.uimaBioC.bin;
 
 import java.io.File;
 
@@ -7,7 +7,6 @@ import org.apache.uima.collection.CollectionProcessingEngine;
 import org.apache.uima.collection.CollectionReaderDescription;
 import org.apache.uima.collection.StatusCallbackListener;
 import org.apache.uima.resource.metadata.TypeSystemDescription;
-import org.cleartk.opennlp.tools.SentenceAnnotator;
 import org.cleartk.token.tokenizer.TokenAnnotator;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -18,16 +17,18 @@ import org.uimafit.factory.CollectionReaderFactory;
 import org.uimafit.factory.CpeBuilder;
 import org.uimafit.factory.TypeSystemDescriptionFactory;
 
+import edu.isi.bmkeg.uimaBioC.refactoredCleartk.SentenceAnnotator;
 import edu.isi.bmkeg.uimaBioC.rubicon.MatchReachAndNxmlText;
 import edu.isi.bmkeg.uimaBioC.rubicon.RemoveSentencesNotInTitleAbstractBody;
 import edu.isi.bmkeg.uimaBioC.rubicon.SeparateClauses;
 import edu.isi.bmkeg.uimaBioC.rubicon.StanfordParse;
+import edu.isi.bmkeg.uimaBioC.uima.ae.core.AddFeaturesToClauses;
 import edu.isi.bmkeg.uimaBioC.uima.ae.core.FixSentencesFromHeadings;
 import edu.isi.bmkeg.uimaBioC.uima.out.SaveAsBioCDocuments;
 import edu.isi.bmkeg.uimaBioC.uima.readers.BioCCollectionReader;
 import edu.isi.bmkeg.uimaBioC.utils.StatusCallbackListenerImpl;
 
-public class RUBICON_01_preprocessToBioC {
+public class UIMABIOC_02_preprocessToBioC {
 
 	public static class Options {
 
@@ -42,19 +43,16 @@ public class RUBICON_01_preprocessToBioC {
 
 		@Option(name = "-friesDir", usage = "Fries Directory", required = false, metaVar = "FRIES-DATA")
 		public File friesDir;
-
+		
 		@Option(name = "-outDir", usage = "Output Directory", required = true, metaVar = "OUT-FILE")
 		public File outDir;
 
 		@Option(name = "-outFormat", usage = "Output Format", required = true, metaVar = "OUT-FORMAT")
 		public String outFormat;
 		
-		@Option(name = "-clauseLevel", usage = "Output Directory", required = false, metaVar = "CLAUSE-LEVEL")
-		public Boolean clauseLevel = false;
-
 	}
 
-	private static Logger logger = Logger.getLogger(RUBICON_01_preprocessToBioC.class);
+	private static Logger logger = Logger.getLogger(UIMABIOC_02_preprocessToBioC.class);
 
 	/**
 	 * @param args
@@ -99,15 +97,14 @@ public class RUBICON_01_preprocessToBioC {
 		
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(TokenAnnotator.class,
 				TokenAnnotator.PARAM_TOKENIZER_NAME, 
-				"edu.isi.bmkeg.uimaBioC.rubicon.tokenizer.PennTreebankTokenizer")); // Tokenization
+				"edu.isi.bmkeg.uimaBioC.refactoredCleartk.PennTreebankTokenizer")); // Tokenization
 
 		//
 		// Some sentences include headers that don't end in periods
 		//
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(FixSentencesFromHeadings.class));
 
-		//builder.add(AnalysisEngineFactory.createPrimitiveDescription(RemoveSentencesNotInTitleAbstractBody.class,
-		//		RemoveSentencesNotInTitleAbstractBody.PARAM_KEEP_FLOATING_BOXES, "true"));
+		builder.add(AnalysisEngineFactory.createPrimitiveDescription(RemoveSentencesNotInTitleAbstractBody.class));
 
 		if (options.friesDir != null) {
 			//builder.add(AnalysisEngineFactory.createPrimitiveDescription(AddReachAnnotations.class,
@@ -115,23 +112,14 @@ public class RUBICON_01_preprocessToBioC {
 			builder.add(AnalysisEngineFactory.createPrimitiveDescription(MatchReachAndNxmlText.class,
 					MatchReachAndNxmlText.PARAM_INPUT_DIRECTORY, options.friesDir.getPath()));
 		}
-
-		//
-		// Strip out not results sections where we aren't interested in them
-		//
-		builder.add(AnalysisEngineFactory.createPrimitiveDescription(RemoveSentencesNotInTitleAbstractBody.class));
 		
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(StanfordParse.class,
 				StanfordParse.PARAM_MAX_LENGTH, options.maxSentenceLength));
 		//builder.add(AnalysisEngineFactory.createPrimitiveDescription(StanfordTag.class));
 
-		if (options.clauseLevel) {
-			
-			//
-			// Run Pradeep's system to create clauses from the text
-			//
-			builder.add(AnalysisEngineFactory.createPrimitiveDescription(SeparateClauses.class));
-		}
+		builder.add(AnalysisEngineFactory.createPrimitiveDescription(SeparateClauses.class));
+
+		builder.add(AnalysisEngineFactory.createPrimitiveDescription(AddFeaturesToClauses.class));
 
 		String outFormat = null;
 		if( options.outFormat.toLowerCase().equals("xml") ) 

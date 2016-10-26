@@ -17,6 +17,8 @@ import org.uimafit.factory.TypeSystemDescriptionFactory;
 import org.uimafit.pipeline.SimplePipeline;
 
 import edu.isi.bmkeg.uimaBioC.uima.ae.core.AddAnnotationsFromNxmlFormatting;
+import edu.isi.bmkeg.uimaBioC.uima.ae.core.AddFeaturesToClauses;
+import edu.isi.bmkeg.uimaBioC.uima.ae.core.FixSentencesFromHeadings;
 import edu.isi.bmkeg.uimaBioC.uima.out.SaveAsBioCDocuments;
 import edu.isi.bmkeg.uimaBioC.uima.readers.Nxml2TxtFilesCollectionReader;
 
@@ -87,10 +89,15 @@ public class UIMABIOC_01_Nxml2txt_to_BioC {
 				AddAnnotationsFromNxmlFormatting.class));		
 		
 		builder.add(SentenceAnnotator.getDescription()); // Sentence
-													    // segmentation
+														// segmentation
 		
 		builder.add(TokenAnnotator.getDescription()); // Tokenization
 
+		//
+		// Some sentences include headers that don't end in periods
+		//
+		builder.add(AnalysisEngineFactory.createPrimitiveDescription(FixSentencesFromHeadings.class));
+		
 		String outFormat = null;
 		if( options.outFormat.toLowerCase().equals("xml") ) 
 			outFormat = SaveAsBioCDocuments.XML;

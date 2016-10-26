@@ -35,13 +35,6 @@ import edu.isi.bmkeg.uimaBioC.bin.rubicon.RUBICON_02_BioCToTsv;
 
 public class RemoveSentencesNotInTitleAbstractBody extends JCasAnnotator_ImplBase {
 
-	public final static String PARAM_KEEP_FLOATING_BOXES = ConfigurationParameterFactory
-			.createConfigurationParameterName(
-					RemoveSentencesNotInTitleAbstractBody.class, "keepFloatsStr");
-	@ConfigurationParameter(mandatory = true, description = "Should we include floating boxes in the output.")
-	String keepFloatsStr;
-	Boolean keepFloats = false;
-
 	Map<String,Map<String,Integer>> table = new HashMap<String, Map<String, Integer>>();
 	
 	private static Logger logger = Logger.getLogger(RemoveSentencesNotInTitleAbstractBody.class);
@@ -50,12 +43,6 @@ public class RemoveSentencesNotInTitleAbstractBody extends JCasAnnotator_ImplBas
 			throws ResourceInitializationException {
 
 		super.initialize(context);
-
-		if(this.keepFloatsStr != null && this.keepFloatsStr.toLowerCase().equals("true") ) {
-			keepFloats = true;
-		} else {
-			keepFloats = false;
-		} 
 		
 	}
 
@@ -65,14 +52,10 @@ public class RemoveSentencesNotInTitleAbstractBody extends JCasAnnotator_ImplBas
 				UimaBioCDocument.class);
 		if( uiD.getId().equals("skip") )
 			return;
-
 		
 		List<UimaBioCAnnotation> floats = UimaBioCUtils.readFloats(jCas);
 		List<Sentence> sentences = UimaBioCUtils.readAllReadableSentences(jCas);
-		
-		if( this.keepFloats ) 
-			sentences.addAll(UimaBioCUtils.readAllFloatSentences(jCas));
-		
+				
 		Set<Sentence> sentencesToKeep = new HashSet<Sentence>(sentences);
 		
 		List<Sentence> allSentences = JCasUtil.selectCovered(

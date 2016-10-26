@@ -3,14 +3,11 @@ package edu.isi.bmkeg.uimaBioC.bin.rubicon;
 import java.io.File;
 
 import org.apache.log4j.Logger;
+import org.apache.uima.collection.CollectionProcessingEngine;
 import org.apache.uima.collection.CollectionReaderDescription;
+import org.apache.uima.collection.StatusCallbackListener;
 import org.apache.uima.resource.metadata.TypeSystemDescription;
-import org.cleartk.ml.CleartkAnnotator;
-import org.cleartk.ml.feature.transform.InstanceDataWriter;
-import org.cleartk.ml.jar.DefaultDataWriterFactory;
-import org.cleartk.ml.jar.DirectoryDataWriterFactory;
 import org.cleartk.opennlp.tools.SentenceAnnotator;
-import org.cleartk.snowball.DefaultSnowballStemmer;
 import org.cleartk.token.tokenizer.TokenAnnotator;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -20,33 +17,29 @@ import org.uimafit.factory.AnalysisEngineFactory;
 import org.uimafit.factory.CollectionReaderFactory;
 import org.uimafit.factory.CpeBuilder;
 import org.uimafit.factory.TypeSystemDescriptionFactory;
-import org.uimafit.pipeline.SimplePipeline;
 
-import edu.isi.bmkeg.uimaBioC.rubicon.RemoveSentencesNotInTitleAbstractBody;
-import edu.isi.bmkeg.uimaBioC.rubicon.dev.ParagraphTfIdfAnnotator;
 import edu.isi.bmkeg.uimaBioC.uima.ae.core.FixSentencesFromHeadings;
+import edu.isi.bmkeg.uimaBioC.uima.out.SaveLinksBetweenFiguresAndParagraphs;
 import edu.isi.bmkeg.uimaBioC.uima.readers.BioCCollectionReader;
+import edu.isi.bmkeg.uimaBioC.utils.StatusCallbackListenerImpl;
 
-
-/**
- * Extract features for paragraphs for matching.
- * 
- * @author Gully
- *
- */
-public class RUBICON_00_pretrain {
+public class RUBICON_04_BioCToFigParag {
 
 	public static class Options {
+
+		@Option(name = "-nThreads", usage = "Number of threads", required = true, metaVar = "IN-DIRECTORY")
+		public int nThreads;
 
 		@Option(name = "-biocDir", usage = "Input Directory", required = true, metaVar = "IN-DIRECTORY")
 		public File biocDir;
 
-		@Option(name = "-modelDir", usage = "Output Directory", required = true, metaVar = "OUT-FILE")
-		public File modelDir;
+		@Option(name = "-outDir", usage = "Output Directory", required = true, metaVar = "OUT-FILE")
+		public File outDir;
 
+		
 	}
 
-	private static Logger logger = Logger.getLogger(RUBICON_00_pretrain.class);
+	private static Logger logger = Logger.getLogger(RUBICON_04_BioCToFigParag.class);
 
 	/**
 	 * @param args
@@ -78,8 +71,9 @@ public class RUBICON_00_pretrain {
 		TypeSystemDescription typeSystem = TypeSystemDescriptionFactory.createTypeSystemDescription("bioc.TypeSystem");
 
 		CollectionReaderDescription crDesc = CollectionReaderFactory.createDescription(BioCCollectionReader.class,
-				typeSystem, BioCCollectionReader.INPUT_DIRECTORY, options.biocDir.getPath(), 
-				BioCCollectionReader.PARAM_FORMAT, BioCCollectionReader.JSON);
+				typeSystem, BioCCollectionReader.INPUT_DIRECTORY, options.biocDir.getPath(),
+				BioCCollectionReader.OUTPUT_DIRECTORY, options.outDir.getPath(), BioCCollectionReader.PARAM_FORMAT,
+				BioCCollectionReader.JSON);
 
 		CpeBuilder cpeBuilder = new CpeBuilder();
 		cpeBuilder.setReader(crDesc);
@@ -87,27 +81,43 @@ public class RUBICON_00_pretrain {
 		AggregateBuilder builder = new AggregateBuilder();
 
 		builder.add(SentenceAnnotator.getDescription()); // Sentence
-		
-		builder.add(AnalysisEngineFactory.createPrimitiveDescription(TokenAnnotator.class,
-				TokenAnnotator.PARAM_TOKENIZER_NAME, 
-				"edu.isi.bmkeg.uimaBioC.rubicon.tokenizer.PennTreebankTokenizer")); // Tokenization that we can modify if we need to.
+		builder.add(TokenAnnotator.getDescription()); // Tokenization
 
 		//
 		// Some sentences include headers that don't end in periods
 		//
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(FixSentencesFromHeadings.class));
 
-		builder.add(AnalysisEngineFactory.createPrimitiveDescription(RemoveSentencesNotInTitleAbstractBody.class));
-
-		builder.add(DefaultSnowballStemmer.getDescription("English"));
-
-		builder.add(AnalysisEngineFactory.createPrimitiveDescription(ParagraphTfIdfAnnotator.class,
-				CleartkAnnotator.PARAM_IS_TRAINING, true,
-				DefaultDataWriterFactory.PARAM_DATA_WRITER_CLASS_NAME, InstanceDataWriter.class.getName(),
-				DirectoryDataWriterFactory.PARAM_OUTPUT_DIRECTORY, options.modelDir.getPath()));
+		builder.add(AnalysisEngineFactory.createPrimitiveDescription(SaveLinksBetweenFiguresAndParagraphs.class,
+				SaveLinksBetweenFiguresAndParagraphs.PARAM_DIR_PATH, options.outDir.getPath(),
+				SaveLinksBetweenFiguresAndParagraphs.PARAM_CLAUSE_LEVEL, "false"));
 		
-		SimplePipeline.runPipeline(crDesc, builder.createAggregateDescription());
-		
+		cpeBuilder.setAnalysisEngine(builder.createAggregateDescription());
+
+		cpeBuilder.setMaxProcessingUnitThreatCount(options.nThreads);
+		StatusCallbackListener callback = new StatusCallbackListenerImpl();
+		CollectionProcessingEngine cpe = cpeBuilder.createCpe(callback);
+		System.out.println("Running CPE");
+		cpe.process();
+
+		try {
+			Thread.sleep(500);
+		} catch (InterruptedException e) {
+		}
+
+		while (cpe.isProcessing())
+			try {
+				Thread.sleep(200);
+			} catch (InterruptedException e) {
+			}
+
+		System.out.println("\n\n ------------------ PERFORMANCE REPORT ------------------\n");
+		System.out.println(cpe.getPerformanceReport().toString());
+
+		long endTime = System.currentTimeMillis();
+		float duration = (float) (endTime - startTime);
+		System.out.format("\n\nTOTAL EXECUTION TIME: %.3f s", duration / 1000);
+
 	}
 
 }

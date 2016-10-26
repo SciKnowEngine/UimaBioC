@@ -30,7 +30,7 @@ import org.xml.sax.InputSource;
  * @author Gully
  * 
  */
-public class S01_SearchScienceDirect {
+public class SciDir01_SearchScienceDirect {
 
 	public static class Options {
 
@@ -57,7 +57,7 @@ public class S01_SearchScienceDirect {
 	static String SEARCH_URL = "http://api.elsevier.com/content/search/scidir?";
 
 	private static Logger logger = Logger
-			.getLogger(S01_SearchScienceDirect.class);
+			.getLogger(SciDir01_SearchScienceDirect.class);
 
 	/**
 	 * @param args
@@ -88,14 +88,14 @@ public class S01_SearchScienceDirect {
 
 		}
 
-		S01_SearchScienceDirect readScienceDirect = new S01_SearchScienceDirect();
+		SciDir01_SearchScienceDirect readScienceDirect = new SciDir01_SearchScienceDirect();
 
 		SearchXmlHandler h1 = new SearchXmlHandler();
 
 		String urlString = SEARCH_URL + "apiKey=" + options.apiKey + "&query="
 				+ options.query 
 				+ "&content=" + options.content
-				+ "&subscribed=true&sort=coverDate"
+				+ "&sort=coverDate"
 				+ "&httpAccept=application/xml&count=200";
 
 		if (options.subj != null) {
@@ -103,7 +103,7 @@ public class S01_SearchScienceDirect {
 		}
 
 		List<Map<String, String>> entries = new ArrayList<Map<String,String>>();
-		while( year > 1970 ) {
+		while( year > 2000 ) {
 			
 			URL url = new URL(urlString + "&date=" + year );
 	

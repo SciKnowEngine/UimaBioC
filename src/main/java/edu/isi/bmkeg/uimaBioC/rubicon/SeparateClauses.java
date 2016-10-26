@@ -101,6 +101,7 @@ public class SeparateClauses extends JCasAnnotator_ImplBase {
 				if( p.length() == 0 ) {
 					logger.warn("Stanford Parse not set for " + uiD.getId() 
 							+ ":" + s.getCoveredText());
+					this.createClauseAnnotation(jCas, s.getBegin(), s.getEnd()).addToIndexes();
 					continue SENTENCE_LOOP;
 				}
 
@@ -187,7 +188,8 @@ public class SeparateClauses extends JCasAnnotator_ImplBase {
 				}
 				
 				if(clauseList.size() == 0) {
-					logger.warn("No Clauses Found in "+uiD.getId()+"("+s.getBegin() +"-"+s.getEnd()+"): " + s.getCoveredText());
+					logger.warn("No Clauses Found in "+uiD.getId()+"("+s.getBegin() +"-"+s.getEnd()+"), adding sentence as a single clause:" + s.getCoveredText());
+					this.createClauseAnnotation(jCas, s.getBegin(), s.getEnd());
 				}
 				
 				sCount++;

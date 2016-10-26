@@ -29,7 +29,7 @@ import org.xml.sax.InputSource;
  * @author Gully
  * 
  */
-public class S05_SearchSCOPUS {
+public class SciDir05_SearchSCOPUS {
 
 	public static class Options {
 
@@ -56,7 +56,7 @@ public class S05_SearchSCOPUS {
 	static String SCOPUS_URL = "http://api.elsevier.com/content/search/index:SCOPUS";
 
 	private static Logger logger = Logger
-			.getLogger(S05_SearchSCOPUS.class);
+			.getLogger(SciDir05_SearchSCOPUS.class);
 
 	/**
 	 * @param args

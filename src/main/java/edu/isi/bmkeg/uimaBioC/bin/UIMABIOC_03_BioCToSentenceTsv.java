@@ -1,4 +1,4 @@
-package edu.isi.bmkeg.uimaBioC.bin.rubicon;
+package edu.isi.bmkeg.uimaBioC.bin;
 
 import java.io.File;
 
@@ -18,12 +18,13 @@ import org.uimafit.factory.CollectionReaderFactory;
 import org.uimafit.factory.CpeBuilder;
 import org.uimafit.factory.TypeSystemDescriptionFactory;
 
+import edu.isi.bmkeg.uimaBioC.rubicon.RemoveSentencesNotInTitleAbstractBody;
 import edu.isi.bmkeg.uimaBioC.uima.ae.core.FixSentencesFromHeadings;
-import edu.isi.bmkeg.uimaBioC.uima.out.SaveLinksBetweenFiguresAndParagraphs;
+import edu.isi.bmkeg.uimaBioC.uima.out.SaveAsSentenceSpreadsheets;
 import edu.isi.bmkeg.uimaBioC.uima.readers.BioCCollectionReader;
 import edu.isi.bmkeg.uimaBioC.utils.StatusCallbackListenerImpl;
 
-public class RUBICON_03_BioCToFigParag {
+public class UIMABIOC_03_BioCToSentenceTsv {
 
 	public static class Options {
 
@@ -35,11 +36,13 @@ public class RUBICON_03_BioCToFigParag {
 
 		@Option(name = "-outDir", usage = "Output Directory", required = true, metaVar = "OUT-FILE")
 		public File outDir;
-
 		
+		@Option(name = "-pmcFileNames", usage = "Use PMC-encoded Filenames?", required = false, metaVar = "PMC")
+		public Boolean pmcFileNames = false;
+
 	}
 
-	private static Logger logger = Logger.getLogger(RUBICON_03_BioCToFigParag.class);
+	private static Logger logger = Logger.getLogger(UIMABIOC_03_BioCToSentenceTsv.class);
 
 	/**
 	 * @param args
@@ -88,10 +91,13 @@ public class RUBICON_03_BioCToFigParag {
 		//
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(FixSentencesFromHeadings.class));
 
-		builder.add(AnalysisEngineFactory.createPrimitiveDescription(SaveLinksBetweenFiguresAndParagraphs.class,
-				SaveLinksBetweenFiguresAndParagraphs.PARAM_DIR_PATH, options.outDir.getPath(),
-				SaveLinksBetweenFiguresAndParagraphs.PARAM_CLAUSE_LEVEL, "false"));
+		builder.add(AnalysisEngineFactory.createPrimitiveDescription(RemoveSentencesNotInTitleAbstractBody.class));
 		
+		builder.add(AnalysisEngineFactory.createPrimitiveDescription(SaveAsSentenceSpreadsheets.class,
+				SaveAsSentenceSpreadsheets.PARAM_DIR_PATH, options.outDir.getPath(),
+				SaveAsSentenceSpreadsheets.PARAM_ADD_FRIES_CODES, "false",
+				SaveAsSentenceSpreadsheets.PARAM_PMC_FILE_NAMES, options.pmcFileNames.toString().toLowerCase()));
+
 		cpeBuilder.setAnalysisEngine(builder.createAggregateDescription());
 
 		cpeBuilder.setMaxProcessingUnitThreatCount(options.nThreads);

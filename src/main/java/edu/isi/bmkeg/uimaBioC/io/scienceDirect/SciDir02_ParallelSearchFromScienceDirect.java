@@ -24,7 +24,7 @@ import org.kohsuke.args4j.Option;
  * @author Gully
  * 
  */
-public class S02_ParallelSearchFromScienceDirect {
+public class SciDir02_ParallelSearchFromScienceDirect {
 
 	public static class Options {
 
@@ -51,7 +51,7 @@ public class S02_ParallelSearchFromScienceDirect {
 	static String SEARCH_URL = "http://api.elsevier.com/content/search/scidir?";
 
 	private static Logger logger = Logger
-			.getLogger(S02_ParallelSearchFromScienceDirect.class);
+			.getLogger(SciDir02_ParallelSearchFromScienceDirect.class);
 
 	/**
 	 * @param args
@@ -81,7 +81,7 @@ public class S02_ParallelSearchFromScienceDirect {
 
 		}
 
-		S02_ParallelSearchFromScienceDirect readScienceDirect = new S02_ParallelSearchFromScienceDirect();
+		SciDir02_ParallelSearchFromScienceDirect readScienceDirect = new SciDir02_ParallelSearchFromScienceDirect();
 
 		SearchXmlHandler h1 = new SearchXmlHandler();
 

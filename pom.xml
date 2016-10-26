@@ -500,16 +500,23 @@
 			<version>${hadoop.version}</version>
 		</dependency>
 
-		<dependency>
+<!-- 		<dependency>
 			<groupId>org.clulab</groupId>
 			<artifactId>processors_2.11</artifactId>
 			<version>5.7.3</version>
 		</dependency>
+		
 		<dependency>
 			<groupId>org.clulab</groupId>
 			<artifactId>reach_2.11</artifactId>
 			<version>1.2.1</version>
-		</dependency>
+			<exclusions>
+				<exclusion>
+					<artifactId>lucene-core</artifactId>
+					<groupId>org.apache.lucene</groupId>
+				</exclusion>
+			</exclusions>
+		</dependency> -->
 
 		<dependency>
 			<groupId>de.tudarmstadt.ukp.dkpro.bigdata</groupId>

@@ -18,7 +18,7 @@ import org.uimafit.pipeline.SimplePipeline;
 
 import edu.isi.bmkeg.uimaBioC.rubicon.ReachAnnotator;
 import edu.isi.bmkeg.uimaBioC.uima.ae.core.FixSentencesFromHeadings;
-import edu.isi.bmkeg.uimaBioC.uima.out.SaveExtractedAnnotations;
+import edu.isi.bmkeg.uimaBioC.uima.out.SaveAsClauseSpreadsheets;
 import edu.isi.bmkeg.uimaBioC.uima.readers.BioCCollectionReader;
 
 public class S09_runReach {
@@ -31,8 +31,6 @@ public class S09_runReach {
 		@Option(name = "-outDir", usage = "Output Directory", required = true, metaVar = "OUT-DIRECTORY")
 		public File outDir;
 
-		@Option(name = "-ann2Extract", usage = "Annotation Type to Extract", required = false, metaVar = "ANNOTATION")
-		public String ann2Ext;
 	}
 
 	private static Logger logger = Logger.getLogger(S09_runReach.class);
@@ -82,10 +80,7 @@ public class S09_runReach {
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
 					ReachAnnotator.class,
 					ReachAnnotator.PARAM_OUT_REACH_DIR_PATH, 
-					options.outDir,					
-					ReachAnnotator.PARAM_SECTION_ANNOTATION,
-					options.ann2Ext
-					));
+					options.outDir));
 
 		SimplePipeline.runPipeline(cr, builder.createAggregateDescription());
 

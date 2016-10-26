@@ -1,16 +1,11 @@
 package edu.isi.bmkeg.uimaBioC.uima.ae.core;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.log4j.Logger;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
 import org.apache.uima.jcas.JCas;
-import org.apache.uima.jcas.cas.FSArray;
 import org.cleartk.token.type.Sentence;
 import org.uimafit.component.JCasAnnotator_ImplBase;
 import org.uimafit.util.JCasUtil;
@@ -127,7 +122,6 @@ public class FixSentencesFromHeadings extends JCasAnnotator_ImplBase {
 		//UimaBioCUtils.debugSentences(jCas);
 		//logger.debug("\n~~~~~~~~~~~~~~~~~~~\n");
 		
-
 	}
 	
 

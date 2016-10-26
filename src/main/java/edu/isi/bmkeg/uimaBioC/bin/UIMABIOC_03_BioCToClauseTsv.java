@@ -1,4 +1,4 @@
-package edu.isi.bmkeg.uimaBioC.bin.rubicon;
+package edu.isi.bmkeg.uimaBioC.bin;
 
 import java.io.File;
 
@@ -18,16 +18,13 @@ import org.uimafit.factory.CollectionReaderFactory;
 import org.uimafit.factory.CpeBuilder;
 import org.uimafit.factory.TypeSystemDescriptionFactory;
 
-import edu.isi.bmkeg.uimaBioC.rubicon.MatchReachAndNxmlText;
-import edu.isi.bmkeg.uimaBioC.rubicon.RemoveSentencesFromOtherSections;
-import edu.isi.bmkeg.uimaBioC.rubicon.SeparateClauses;
-import edu.isi.bmkeg.uimaBioC.rubicon.TagPassagesAnnotator;
+import edu.isi.bmkeg.uimaBioC.rubicon.RemoveSentencesNotInTitleAbstractBody;
 import edu.isi.bmkeg.uimaBioC.uima.ae.core.FixSentencesFromHeadings;
-import edu.isi.bmkeg.uimaBioC.uima.out.SaveExtractedAnnotations;
+import edu.isi.bmkeg.uimaBioC.uima.out.SaveAsClauseSpreadsheets;
 import edu.isi.bmkeg.uimaBioC.uima.readers.BioCCollectionReader;
 import edu.isi.bmkeg.uimaBioC.utils.StatusCallbackListenerImpl;
 
-public class RUBICON_03_prepareData {
+public class UIMABIOC_03_BioCToClauseTsv {
 
 	public static class Options {
 
@@ -39,13 +36,13 @@ public class RUBICON_03_prepareData {
 
 		@Option(name = "-outDir", usage = "Output Directory", required = true, metaVar = "OUT-FILE")
 		public File outDir;
-
-		//@Option(name = "-execPath", usage = "Path to the python executable", required = true, metaVar = "PATH")
-		//public String execPath;
 		
+		@Option(name = "-pmcFileNames", usage = "Use PMC-encoded Filenames?", required = false, metaVar = "PMC")
+		public Boolean pmcFileNames = false;
+
 	}
 
-	private static Logger logger = Logger.getLogger(RUBICON_03_prepareData.class);
+	private static Logger logger = Logger.getLogger(UIMABIOC_03_BioCToClauseTsv.class);
 
 	/**
 	 * @param args
@@ -94,16 +91,13 @@ public class RUBICON_03_prepareData {
 		//
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(FixSentencesFromHeadings.class));
 
-		//
-		// Execute Pradeep's Python code. 
-		//
-		builder.add(AnalysisEngineFactory.createPrimitiveDescription(TagPassagesAnnotator.class,
-				TagPassagesAnnotator.PARAM_OUT_DIR_PATH, options.outDir.getPath()));
+		builder.add(AnalysisEngineFactory.createPrimitiveDescription(RemoveSentencesNotInTitleAbstractBody.class));
 		
-//		builder.add(AnalysisEngineFactory.createPrimitiveDescription(TagPassagesAnnotator.class,
-//				TagPassagesAnnotator.PARAM_OUT_DIR_PATH, options.outDir.getPath(),
-//				TagPassagesAnnotator.PARAM_PYTHON_EXEC_PATH, options.execPath));
-		
+		builder.add(AnalysisEngineFactory.createPrimitiveDescription(SaveAsClauseSpreadsheets.class,
+					SaveAsClauseSpreadsheets.PARAM_DIR_PATH, options.outDir.getPath(),
+					SaveAsClauseSpreadsheets.PARAM_ADD_FRIES_CODES, "false",
+					SaveAsClauseSpreadsheets.PARAM_PMC_FILE_NAMES, options.pmcFileNames.toString().toLowerCase()));
+
 		cpeBuilder.setAnalysisEngine(builder.createAggregateDescription());
 
 		cpeBuilder.setMaxProcessingUnitThreatCount(options.nThreads);

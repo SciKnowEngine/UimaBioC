@@ -37,14 +37,14 @@ import org.uimafit.util.JCasUtil;
 import bioc.type.UimaBioCAnnotation;
 import bioc.type.UimaBioCDocument;
 import bioc.type.UimaBioCPassage;
-import edu.arizona.sista.odin.Mention;
+/*import edu.arizona.sista.odin.Mention;
 import edu.arizona.sista.processors.bionlp.BioNLPProcessor;
 import edu.arizona.sista.reach.ReachSystem;
 import edu.arizona.sista.reach.RuleReader.Rules;
 import edu.isi.bmkeg.uimaBioC.UimaBioCUtils;
 import scala.Option;
 import scala.collection.JavaConversions;
-import scala.collection.Seq;
+import scala.collection.Seq;*/
 
 /**
  * 
@@ -66,22 +66,22 @@ public class ReachAnnotator extends JCasAnnotator_ImplBase {
 	@ConfigurationParameter(mandatory = true, description = "The place to put the parse files")
 	String outReachDirPath;
 		
-	ReachSystem reach;
+	//ReachSystem reach;
 	
 	public void initialize(UimaContext context) throws ResourceInitializationException {
 
 		super.initialize(context);
 				
-		Option<Rules> x = scala.Option.apply(null);
+		/*Option<Rules> x = scala.Option.apply(null);
 		scala.Option<BioNLPProcessor> y = scala.Option.apply(null);
-		reach = new ReachSystem(x, y);
+		reach = new ReachSystem(x, y);*/
 		
 	}
 
 	@Override
 	public void process(JCas jCas) throws AnalysisEngineProcessException {
 
-		try {
+/*		try {
 			
 			UimaBioCDocument uiD = JCasUtil.selectSingle(jCas,
 					UimaBioCDocument.class);
@@ -159,7 +159,7 @@ public class ReachAnnotator extends JCasAnnotator_ImplBase {
 
 			throw new AnalysisEngineProcessException(e);
 
-		}		
+		}		*/
 		
 	}
 	

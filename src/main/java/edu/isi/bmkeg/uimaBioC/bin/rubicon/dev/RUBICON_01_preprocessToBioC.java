@@ -59,9 +59,6 @@ public class RUBICON_01_preprocessToBioC {
 		@Option(name = "-friesDir", usage = "Fries Directory", required = true, metaVar = "FRIES-DATA")
 		public File friesDir;
 
-		@Option(name = "-ann2Extract", usage = "Annotation Type to Extract", required = false, metaVar = "ANNOTATION")
-		public File ann2Ext;
-
 		@Option(name = "-outDir", usage = "Output Directory", required = true, metaVar = "OUT-FILE")
 		public File outDir;
 
@@ -125,8 +122,7 @@ public class RUBICON_01_preprocessToBioC {
 		// Some sentences include headers that don't end in periods
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(FixSentencesFromHeadings.class));
 
-		builder.add(AnalysisEngineFactory.createPrimitiveDescription(RemoveSentencesNotInTitleAbstractBody.class,
-				RemoveSentencesNotInTitleAbstractBody.PARAM_KEEP_FLOATING_BOXES, "true"));
+		builder.add(AnalysisEngineFactory.createPrimitiveDescription(RemoveSentencesNotInTitleAbstractBody.class));
 
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(ParagraphTfIdfAnnotator.class,
 				CleartkAnnotator.PARAM_IS_TRAINING, true,
@@ -199,8 +195,7 @@ public class RUBICON_01_preprocessToBioC {
 		//
 		builder2.add(AnalysisEngineFactory.createPrimitiveDescription(FixSentencesFromHeadings.class));
 
-		builder2.add(AnalysisEngineFactory.createPrimitiveDescription(RemoveSentencesNotInTitleAbstractBody.class,
-				RemoveSentencesNotInTitleAbstractBody.PARAM_KEEP_FLOATING_BOXES, "true"));
+		builder2.add(AnalysisEngineFactory.createPrimitiveDescription(RemoveSentencesNotInTitleAbstractBody.class));
 
 		if (options.friesDir != null) {
 			builder2.add(AnalysisEngineFactory.createPrimitiveDescription(AddReachAnnotations.class,

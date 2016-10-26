@@ -18,13 +18,9 @@ import org.uimafit.factory.CollectionReaderFactory;
 import org.uimafit.factory.CpeBuilder;
 import org.uimafit.factory.TypeSystemDescriptionFactory;
 
-import edu.isi.bmkeg.uimaBioC.rubicon.MatchReachAndNxmlText;
-import edu.isi.bmkeg.uimaBioC.rubicon.RemoveSentencesFromOtherSections;
 import edu.isi.bmkeg.uimaBioC.rubicon.RemoveSentencesNotInTitleAbstractBody;
-import edu.isi.bmkeg.uimaBioC.rubicon.SeparateClauses;
-import edu.isi.bmkeg.uimaBioC.rubicon.StanfordParse;
 import edu.isi.bmkeg.uimaBioC.uima.ae.core.FixSentencesFromHeadings;
-import edu.isi.bmkeg.uimaBioC.uima.out.SaveExtractedAnnotations;
+import edu.isi.bmkeg.uimaBioC.uima.out.SaveAsClauseSpreadsheets;
 import edu.isi.bmkeg.uimaBioC.uima.readers.BioCCollectionReader;
 import edu.isi.bmkeg.uimaBioC.utils.StatusCallbackListenerImpl;
 
@@ -43,9 +39,6 @@ public class RUBICON_02_BioCToTsv {
 
 		@Option(name = "-clauseLevel", usage = "Output Directory", required = false, metaVar = "CLAUSE-LEVEL")
 		public Boolean clauseLevel = false;
-
-		@Option(name = "-ann2Extract", usage = "Annotation Type to Extract", required = false, metaVar = "ANNOTATION")
-		public File ann2Ext;
 		
 	}
 
@@ -101,46 +94,12 @@ public class RUBICON_02_BioCToTsv {
 		//
 		// Strip out not results sections where we aren't interested in them
 		//
-		if( options.ann2Ext != null ) {
-			builder.add(AnalysisEngineFactory.createPrimitiveDescription(RemoveSentencesFromOtherSections.class,
-					RemoveSentencesFromOtherSections.PARAM_ANNOT_2_EXTRACT, options.ann2Ext,
-					RemoveSentencesFromOtherSections.PARAM_KEEP_FLOATING_BOXES, "false"));
-		} else {
-			builder.add(AnalysisEngineFactory.createPrimitiveDescription(RemoveSentencesNotInTitleAbstractBody.class,
-					RemoveSentencesNotInTitleAbstractBody.PARAM_KEEP_FLOATING_BOXES, "false"));
-		}
+		builder.add(AnalysisEngineFactory.createPrimitiveDescription(RemoveSentencesNotInTitleAbstractBody.class));
 		
-		
-		if (options.clauseLevel ) 
-			if( options.ann2Ext != null) 			
-				builder.add(AnalysisEngineFactory.createPrimitiveDescription(SaveExtractedAnnotations.class,
-						SaveExtractedAnnotations.PARAM_DIR_PATH, options.outDir.getPath(),
-						SaveExtractedAnnotations.PARAM_KEEP_FLOATING_BOXES, "false",
-						SaveExtractedAnnotations.PARAM_ANNOT_2_EXTRACT, options.ann2Ext,
-						SaveExtractedAnnotations.PARAM_ADD_FRIES_CODES, "true", 
-						SaveExtractedAnnotations.PARAM_CLAUSE_LEVEL, "true"));
-			else 
-				builder.add(AnalysisEngineFactory.createPrimitiveDescription(SaveExtractedAnnotations.class,
-						SaveExtractedAnnotations.PARAM_DIR_PATH, options.outDir.getPath(),
-						SaveExtractedAnnotations.PARAM_KEEP_FLOATING_BOXES, "false",
-						SaveExtractedAnnotations.PARAM_ADD_FRIES_CODES, "true", 
-						SaveExtractedAnnotations.PARAM_CLAUSE_LEVEL, "true"));
-		else 
-			if( options.ann2Ext != null) 			
-				builder.add(AnalysisEngineFactory.createPrimitiveDescription(SaveExtractedAnnotations.class,
-						SaveExtractedAnnotations.PARAM_DIR_PATH, options.outDir.getPath(),
-						SaveExtractedAnnotations.PARAM_ANNOT_2_EXTRACT, options.ann2Ext,
-						SaveExtractedAnnotations.PARAM_KEEP_FLOATING_BOXES, "false",
-						SaveExtractedAnnotations.PARAM_ADD_FRIES_CODES, "true", 
-						SaveExtractedAnnotations.PARAM_CLAUSE_LEVEL, "false"));
-			else 
-				builder.add(AnalysisEngineFactory.createPrimitiveDescription(SaveExtractedAnnotations.class,
-						SaveExtractedAnnotations.PARAM_DIR_PATH, options.outDir.getPath(),
-						SaveExtractedAnnotations.PARAM_KEEP_FLOATING_BOXES, "false",
-						SaveExtractedAnnotations.PARAM_ADD_FRIES_CODES, "true", 
-						SaveExtractedAnnotations.PARAM_CLAUSE_LEVEL, "false"));
-		
-	
+		builder.add(AnalysisEngineFactory.createPrimitiveDescription(SaveAsClauseSpreadsheets.class,
+					SaveAsClauseSpreadsheets.PARAM_DIR_PATH, options.outDir.getPath(),
+					SaveAsClauseSpreadsheets.PARAM_ADD_FRIES_CODES, "true"));
+
 		cpeBuilder.setAnalysisEngine(builder.createAggregateDescription());
 
 		cpeBuilder.setMaxProcessingUnitThreatCount(options.nThreads);

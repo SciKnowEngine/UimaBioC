@@ -175,10 +175,11 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 				}
 				
-				// Paragraphs, titles, article-titles and abstracts. 
+				// Paragraphs, titles, article-titles, abstracts, figure labels and captions. 
 				if( type.equals("p") || 
 						type.equals("title") || 
-						type.equals("abstract") ){					
+						type.equals("label") || 
+						type.equals("caption") ){					
 					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 					UimaBioCAnnotation uiA = new UimaBioCAnnotation(jcas);
 					uiA.setBegin(begin);
@@ -220,9 +221,12 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 				}
 
-				
-				
-				if( type.equals("fig") ){					
+				//
+				// Detecting and preserving floating boxes from the text but only read text from 
+				// labels and captions from within them.
+				//
+				if( type.equals("fig") ||
+						type.equals("supplementary-material") ){					
 					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 					UimaBioCAnnotation uiA = new UimaBioCAnnotation(jcas);
 					uiA.setBegin(begin);
@@ -346,7 +350,8 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 					
 					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 					if( refType.length() > 0 && refId.length() > 0 && 
-							( refType.equals("bibr") || refType.equals("fig") ) 
+							( refType.equals("bibr") || refType.equals("fig") || 
+								refType.equals("supplementary-material") ) 
 							) {
 						UimaBioCAnnotation uiA = new UimaBioCAnnotation(jcas);
 						uiA.setBegin(begin);

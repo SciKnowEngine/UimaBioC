@@ -2,7 +2,6 @@ package edu.isi.bmkeg.uimaBioC.rubicon;
 
 import java.io.File;
 import java.io.FileReader;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,6 +19,7 @@ import org.apache.uima.jcas.JCas;
 import org.apache.uima.jcas.tcas.DocumentAnnotation;
 import org.apache.uima.resource.ResourceInitializationException;
 import org.bigmech.fries.FRIES_Argument;
+import org.bigmech.fries.FRIES_Context;
 import org.bigmech.fries.FRIES_EntityMention;
 import org.bigmech.fries.FRIES_EventMention;
 import org.bigmech.fries.FRIES_Frame;
@@ -146,7 +146,7 @@ public class MatchReachAndNxmlText extends JCasAnnotator_ImplBase {
 			final RuntimeTypeAdapterFactory<FRIES_Frame> typeFactory = RuntimeTypeAdapterFactory
 					.of(FRIES_Frame.class, "frame-type").registerSubtype(FRIES_EntityMention.class, "entity-mention")
 					.registerSubtype(FRIES_Sentence.class, "sentence").registerSubtype(FRIES_Passage.class, "passage")
-					.registerSubtype(FRIES_EventMention.class, "event-mention");
+					.registerSubtype(FRIES_EventMention.class, "event-mention").registerSubtype(FRIES_Context.class, "context");
 
 			Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_DASHES)
 					.registerTypeAdapterFactory(typeFactory).create();

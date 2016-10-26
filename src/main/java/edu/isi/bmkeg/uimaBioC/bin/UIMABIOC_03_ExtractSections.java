@@ -18,7 +18,7 @@ import org.uimafit.pipeline.SimplePipeline;
 
 import edu.isi.bmkeg.uimaBioC.uima.ae.core.FixSentencesFromHeadings;
 import edu.isi.bmkeg.uimaBioC.uima.out.SaveBody;
-import edu.isi.bmkeg.uimaBioC.uima.out.SaveExtractedAnnotations;
+import edu.isi.bmkeg.uimaBioC.uima.out.SaveAsClauseSpreadsheets;
 import edu.isi.bmkeg.uimaBioC.uima.readers.BioCCollectionReader;
 
 /**
@@ -35,14 +35,8 @@ public class UIMABIOC_03_ExtractSections {
 		@Option(name = "-inDir", usage = "Input Directory", required = true, metaVar = "IN-DIRECTORY")
 		public File inDir;
 
-		@Option(name = "-ann2Extract", usage = "Annotation Type to Extract", required = true, metaVar = "ANNOTATION")
-		public File ann2Ext;
-
 		@Option(name = "-outDir", usage = "Output Directory", required = true, metaVar = "OUT-FILE")
 		public File outDir;
-
-		@Option(name = "-headerLink", usage = "Output Directory", required = true, metaVar = "OUT-FILE")
-		public Boolean headerLink = false;
 
 	}
 
@@ -92,29 +86,12 @@ public class UIMABIOC_03_ExtractSections {
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
 				FixSentencesFromHeadings.class));		
 
-		if( options.headerLink ) {
-			builder.add(AnalysisEngineFactory.createPrimitiveDescription(
-					SaveExtractedAnnotations.class, 
-					SaveExtractedAnnotations.PARAM_ANNOT_2_EXTRACT,
-					options.ann2Ext,
-					SaveExtractedAnnotations.PARAM_DIR_PATH,
-					options.outDir.getPath(),
-					SaveExtractedAnnotations.PARAM_KEEP_FLOATING_BOXES, 
-					"false",
-					SaveExtractedAnnotations.PARAM_CLAUSE_LEVEL, 
-					"true"));
-		} else {
-			builder.add(AnalysisEngineFactory.createPrimitiveDescription(
-					SaveExtractedAnnotations.class, 
-					SaveExtractedAnnotations.PARAM_ANNOT_2_EXTRACT,
-					options.ann2Ext,
-					SaveExtractedAnnotations.PARAM_DIR_PATH,
-					options.outDir.getPath(), 
-					SaveExtractedAnnotations.PARAM_KEEP_FLOATING_BOXES, 
-					"false",
-					SaveExtractedAnnotations.PARAM_CLAUSE_LEVEL, 
-					"false"));
-		}
+		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
+					SaveAsClauseSpreadsheets.class, 
+					SaveAsClauseSpreadsheets.PARAM_DIR_PATH,
+					options.outDir.getPath()
+					));
+
 		SimplePipeline.runPipeline(cr, builder.createAggregateDescription());
 
 	}

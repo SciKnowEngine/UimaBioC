@@ -21,7 +21,7 @@ import org.uimafit.factory.TypeSystemDescriptionFactory;
 import org.uimafit.pipeline.SimplePipeline;
 
 import edu.isi.bmkeg.uimaBioC.elasticSearch.BioCRepository;
-import edu.isi.bmkeg.uimaBioC.rubicon.RemoveSentencesFromOtherSections;
+import edu.isi.bmkeg.uimaBioC.rubicon.RemoveSentencesNotInTitleAbstractBody;
 import edu.isi.bmkeg.uimaBioC.rubicon.StanfordTag;
 import edu.isi.bmkeg.uimaBioC.uima.ae.core.FixSentencesFromHeadings;
 import edu.isi.bmkeg.uimaBioC.uima.readers.BioCCollectionReader;
@@ -37,9 +37,6 @@ public class S15_runTagger {
 		
 		@Option(name = "-biocDir", usage = "Input Directory", required = true, metaVar = "IN-DIRECTORY")
 		public File biocDir;
-		
-		@Option(name = "-ann2Extract", usage = "Annotation Type to Extract", required = true, metaVar = "ANNOTATION")
-		public File ann2Ext;
 	
 	}
 	private static Logger logger = Logger.getLogger(S15_runTagger.class);
@@ -87,12 +84,8 @@ public class S15_runTagger {
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(FixSentencesFromHeadings.class));
 
 		// Strip out not results sections where we aren't interested in them
-		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
-				RemoveSentencesFromOtherSections.class,
-				RemoveSentencesFromOtherSections.PARAM_ANNOT_2_EXTRACT,
-				options.ann2Ext,					
-				RemoveSentencesFromOtherSections.PARAM_KEEP_FLOATING_BOXES, 
-				"false"));
+		builder.add(AnalysisEngineFactory.createPrimitiveDescription(RemoveSentencesNotInTitleAbstractBody.class));
+
 
 		// Rerun Pradeep's system to create clauses from the text
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(

@@ -57,7 +57,7 @@ public class SaveLinksBetweenFiguresAndParagraphs extends JCasAnnotator_ImplBase
 	public final static String PARAM_KEEP_FLOATING_BOXES = ConfigurationParameterFactory
 			.createConfigurationParameterName(SaveLinksBetweenFiguresAndParagraphs.class, "keepFloatsStr");
 	@ConfigurationParameter(mandatory = false, description = "Should we include floating boxes in the output.")
-	String keepFloatsStr;
+	String keepFloatsStr = "false";
 	Boolean keepFloats = false;
 
 	private File outDir;
