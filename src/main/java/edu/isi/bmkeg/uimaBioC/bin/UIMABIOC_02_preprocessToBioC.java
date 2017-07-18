@@ -24,6 +24,7 @@ import edu.isi.bmkeg.uimaBioC.rubicon.SeparateClauses;
 import edu.isi.bmkeg.uimaBioC.rubicon.StanfordParse;
 import edu.isi.bmkeg.uimaBioC.uima.ae.core.AddFeaturesToClauses;
 import edu.isi.bmkeg.uimaBioC.uima.ae.core.FixSentencesFromHeadings;
+import edu.isi.bmkeg.uimaBioC.uima.ae.core.RemoveRepeatedBioCAnnotations;
 import edu.isi.bmkeg.uimaBioC.uima.out.SaveAsBioCDocuments;
 import edu.isi.bmkeg.uimaBioC.uima.readers.BioCCollectionReader;
 import edu.isi.bmkeg.uimaBioC.utils.StatusCallbackListenerImpl;
@@ -41,9 +42,6 @@ public class UIMABIOC_02_preprocessToBioC {
 		@Option(name = "-biocDir", usage = "Input Directory", required = true, metaVar = "IN-DIRECTORY")
 		public File biocDir;
 
-		@Option(name = "-friesDir", usage = "Fries Directory", required = false, metaVar = "FRIES-DATA")
-		public File friesDir;
-		
 		@Option(name = "-outDir", usage = "Output Directory", required = true, metaVar = "OUT-FILE")
 		public File outDir;
 
@@ -106,20 +104,15 @@ public class UIMABIOC_02_preprocessToBioC {
 
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(RemoveSentencesNotInTitleAbstractBody.class));
 
-		if (options.friesDir != null) {
-			//builder.add(AnalysisEngineFactory.createPrimitiveDescription(AddReachAnnotations.class,
-			//		AddReachAnnotations.PARAM_INPUT_DIRECTORY, options.friesDir.getPath()));
-			builder.add(AnalysisEngineFactory.createPrimitiveDescription(MatchReachAndNxmlText.class,
-					MatchReachAndNxmlText.PARAM_INPUT_DIRECTORY, options.friesDir.getPath()));
-		}
-		
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(StanfordParse.class,
 				StanfordParse.PARAM_MAX_LENGTH, options.maxSentenceLength));
 		//builder.add(AnalysisEngineFactory.createPrimitiveDescription(StanfordTag.class));
 
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(SeparateClauses.class));
-
+		
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(AddFeaturesToClauses.class));
+
+		builder.add(AnalysisEngineFactory.createPrimitiveDescription(RemoveRepeatedBioCAnnotations.class));
 
 		String outFormat = null;
 		if( options.outFormat.toLowerCase().equals("xml") ) 

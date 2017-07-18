@@ -94,7 +94,15 @@ public class StanfordParse extends JCasAnnotator_ImplBase {
 					logger.warn("Sentence too long for " + uiD.getId() + ": '" + s.getCoveredText());
 					continue SENTENCE_LOOP;
 				}
-
+				
+				for (UimaBioCAnnotation a : JCasUtil.selectCovered(jCas, UimaBioCAnnotation.class, s.getBegin(), s.getEnd())) {
+					Map<String, String> inf = UimaBioCUtils.convertInfons(a.getInfons());
+					if( inf.containsKey("type") && inf.get("type").equals("stanford-parse") ) {
+						logger.info("Already Parsed: " + uiD.getId() + " - '" + s.getCoveredText() + "'");
+						continue SENTENCE_LOOP;
+					}
+				}
+				
 				Map<Integer, Token> tokPos = new HashMap<Integer, Token>();
 				String ss = "";
 				for(Token t : JCasUtil.selectCovered(Token.class, s) )  {

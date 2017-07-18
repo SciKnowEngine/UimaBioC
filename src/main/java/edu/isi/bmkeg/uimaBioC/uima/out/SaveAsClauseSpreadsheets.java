@@ -199,8 +199,6 @@ public class SaveAsClauseSpreadsheets extends JCasAnnotator_ImplBase {
 	private List<UimaBioCAnnotation> printOutSentence(JCas jCas, PrintWriter out, Sentence s, boolean floater)
 			throws Exception, StackOverflowError {
 		
-		
-		
 		List<UimaBioCAnnotation> clauseList = new ArrayList<UimaBioCAnnotation>();
 		for (UimaBioCAnnotation a : JCasUtil.selectCovered(jCas, UimaBioCAnnotation.class, s)) {
 			Map<String, String> infons = UimaBioCUtils.convertInfons(a.getInfons());
@@ -230,7 +228,7 @@ public class SaveAsClauseSpreadsheets extends JCasAnnotator_ImplBase {
 			for(String c : codes ) {
 				if( cStr.length() > 0 ) 
 					cStr += "|";
-				cStr += c;	
+				cStr += "f" + c;	
 			}
 			out.print(cStr);
 			out.print("\t");

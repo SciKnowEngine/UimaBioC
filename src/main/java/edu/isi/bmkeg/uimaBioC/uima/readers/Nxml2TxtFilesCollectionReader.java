@@ -44,6 +44,7 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 	private Iterator<File> txtFileIt; 
 	private File txtFile;
 	private File soFile;
+	private Pattern patt;
 	
 	private int pos = 0;
 	private int count = 0;
@@ -68,6 +69,7 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 			Collection<File> l = (Collection<File>) FileUtils.listFiles(new File(inputDirectory), fileTypes, true);
 			this.txtFileIt = l.iterator();
 			this.count = l.size();
+			this.patt = Pattern.compile("(\\d+)\\.txt");
 			
 		} catch (Exception e) {
 
@@ -99,6 +101,12 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 			uiD.setBegin(0);
 			uiD.setEnd(txt.length());
 						
+			String fileStem = this.txtFile.getName().substring(0,this.txtFile.getName().lastIndexOf("."));
+			
+			Matcher m = this.patt.matcher(this.txtFile.getName());
+			if(m.find())
+				uiD.setId(m.group(1));
+			
 			int passageCount = 0;
 			int nSkip = 0;
 			
@@ -343,14 +351,15 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 					try {
 						String[] lc = codes.split(" ");
 						refType = lc[0].substring(lc[0].indexOf("=")+2, lc[0].length()-1);
-						refId = lc[1].substring(lc[1].indexOf("=")+2, lc[1].length()-1);					
+						if( lc.length > 1 )
+							refId = lc[1].substring(lc[1].indexOf("=")+2, lc[1].length()-1);					
 					} catch (ArrayIndexOutOfBoundsException e) {
 						System.err.println("XREF not formatted correctly (" + codes + "), skipping XREF annotation");
 					}
 					
 					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 					if( refType.length() > 0 && refId.length() > 0 && 
-							( refType.equals("bibr") || refType.equals("fig") || 
+							( refType.startsWith("bib") || refType.equals("fig") || 
 								refType.equals("supplementary-material") ) 
 							) {
 						UimaBioCAnnotation uiA = new UimaBioCAnnotation(jcas);
@@ -376,7 +385,7 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 				}
 				
 			}
-		
+				
 			// At present, if a paper is not provided with a PubMed ID, then we skip it. 
 			if( uiD.getId() == null )
 				uiD.setId("skip");

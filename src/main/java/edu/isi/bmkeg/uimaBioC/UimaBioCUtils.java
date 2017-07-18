@@ -118,18 +118,12 @@ public class UimaBioCUtils {
 				}
 			}
 
-			FSArray sentences = uiP.getSentences();
-			if (sentences != null) {
-				for (int j = 0; j < sentences.size(); j++) {
-					UimaBioCSentence uiS = (UimaBioCSentence) sentences.get(j);
-
-					BioCSentence s = new BioCSentence();
-					s.setInfons(convertInfons(uiS.getInfons()));
-					s.setOffset(uiS.getOffset());
-					// s.setText(uiS.getCoveredText());
-					p.addSentence(s);
-
-				}
+			for (UimaBioCSentence uiS : JCasUtil.selectCovered(jCas, UimaBioCSentence.class, uiP)) {
+				BioCSentence s = new BioCSentence();
+				s.setInfons(convertInfons(uiS.getInfons()));
+				s.setOffset(uiS.getBegin());
+				s.setText(uiS.getCoveredText());
+				p.addSentence(s);	
 			}
 
 		}
@@ -266,6 +260,24 @@ public class UimaBioCUtils {
 				count++;
 			}
 		}
+		
+		if (p.getSentences() != null) {
+			FSArray sentences = new FSArray(jcas, p.getSentences().size());
+			uiP.setSentences(sentences);
+			int count = 0;
+			for (BioCSentence s : p.getSentences()) {
+
+				// skip simple formatting information
+				String inf = s.getInfons().get("value");
+				if (inf.equals("bold") || inf.equals("italic") || inf.equals("sup") || inf.equals("sub")) {
+					continue;
+				}
+
+				UimaBioCSentence uiS = convertBioCSentence(s, jcas);
+				sentences.set(count, uiS);
+				count++;
+			}
+		}
 
 		uiP.addToIndexes();
 
@@ -308,7 +320,22 @@ public class UimaBioCUtils {
 		return uiA;
 
 	}
+	
+	
+	public static UimaBioCSentence convertBioCSentence(BioCSentence s, JCas jcas) {
 
+		UimaBioCSentence uiS = new UimaBioCSentence(jcas);
+
+		uiS.setInfons(convertInfons(s.getInfons(), jcas));
+		uiS.setOffset(s.getOffset());
+		uiS.setText(s.getText());
+		
+		uiS.addToIndexes();
+
+		return uiS;
+
+	}
+	
 	public static Map<String, String> convertInfons(FSArray fsArray) {
 		Map<String, String> map = new HashMap<String, String>();
 		if (fsArray != null) {
@@ -431,39 +458,13 @@ public class UimaBioCUtils {
 					infons.containsKey("value") && 
 					infons.get("value").equals("xref")) {
 				if (infons.get("refType").equals("fig") ||
-						infons.get("refType").equals("bibr")) {
+						infons.get("refType").startsWith("bib")) {
 					
 					// Can we find enclosing brackets for Figures?
 					String s1 = text.substring(0, a.getBegin() - s.getBegin());
-					/*Matcher m1 = bra.matcher(s1);
-
-					if (m1.find()) {
+					String s2 = text.substring(a.getEnd() - s.getBegin(), text.length());
+					text = s1 + StringUtils.leftPad("", a.getEnd() - a.getBegin(), ' ') + s2;
 						
-						String r1 = m1.group(1);
-						if( s1.endsWith("(") )
-							r1 = "(";
-
-						String s2 = text.substring(a.getEnd() - s.getBegin(), text.length());
-						Matcher m2 = ket.matcher(s2);
-						if (m2.find()) {
-							String r2 = m2.group(1);
-							if( s2.startsWith(")") )
-								r2 = ")";
-
-							int gapLength = r1.length() + r2.length() + a.getEnd() - a.getBegin();
-							text = s1.substring(0, s1.length()-r1.length()) +
-									StringUtils.leftPad("", gapLength, ' ') +
-									s2.substring(r2.length(), s2.length());
-							
-						}
-						
-					} else {*/
-						
-						String s2 = text.substring(a.getEnd() - s.getBegin(), text.length());
-						text = s1 + StringUtils.leftPad("", a.getEnd() - a.getBegin(), ' ') + s2;
-						
-					//}
-
 				}
 			}
 		}
@@ -605,9 +606,38 @@ public class UimaBioCUtils {
 	
 	public static String readTokenizedText(JCas jCas, Annotation a) {
 		String txt = "";
-		for (Token t : JCasUtil.selectCovered(jCas, Token.class, a)) {
-			txt += t.getCoveredText() + " ";
+
+		// Look for exLinks  
+		List<UimaBioCAnnotation> bibRefs = new ArrayList<UimaBioCAnnotation>();
+		for (UimaBioCAnnotation a1 : JCasUtil.selectCovered(jCas, UimaBioCAnnotation.class, 
+				a.getBegin(), a.getEnd())) {
+			Map<String, String> infons = UimaBioCUtils.convertInfons(a1.getInfons());
+			if (infons.containsKey("refType") && infons.get("refType").startsWith("bib")) {
+				bibRefs.add(a1);
+			}
 		}
+
+		String lastToken = "";
+		for (Token t : JCasUtil.selectCovered(jCas, Token.class, a)) {
+			
+			boolean noRef = true;
+			for(UimaBioCAnnotation bibRef : bibRefs) {
+				if( t.getBegin() >= bibRef.getBegin() && t.getEnd() <= bibRef.getEnd() ) {
+					noRef = false;
+					break;
+				}
+			}
+
+			if( noRef ) {
+				txt += t.getCoveredText() + " ";
+			 	lastToken = t.getCoveredText();
+			} else if(lastToken != "exLink" ) {
+				txt += "exLink" + " ";
+				lastToken = "exLink";
+			}
+				
+		}
+		
 		if (txt.length() == 0)
 			return txt;
 		return txt.substring(0, txt.length() - 1);
@@ -686,5 +716,23 @@ public class UimaBioCUtils {
 		return null;
 		
 	}
+	
+	public static String stringify(UimaBioCAnnotation a){
+		Map<String, String> infons = UimaBioCUtils.convertInfons(a.getInfons());
+		String s = infons.toString();
+		s += "[" + a.getBegin() + ":" + a.getEnd() + "]"; 
+		return s;
+	}
+	
+	public static String stringify(BioCAnnotation a){
+		String s = a.getInfons().toString();
+		BioCLocation loc = a.getLocations().get(0);
+		int start = loc.getOffset();
+		int end = loc.getOffset() + loc.getLength();
+		s += "[" + start + ":" + end + "]"; 
+		return s;
+	}
+	
+	
 	
 }

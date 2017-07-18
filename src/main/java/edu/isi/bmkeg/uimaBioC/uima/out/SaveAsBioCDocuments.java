@@ -65,9 +65,10 @@ public class SaveAsBioCDocuments extends JCasAnnotator_ImplBase {
 				UimaBioCDocument.class)) {
 			
 			try {
-				if( uiD.getId().equals("skip") )
-					continue;
-				
+				if( uiD.getId().equals("skip") ){
+					continue;					
+				}
+					
 				BioCCollection c = new BioCCollection();
 				BioCDocument d = UimaBioCUtils.convertUimaBioCDocument(uiD, jCas);
 				String relPath = d.getInfon("relative-source-path").replaceAll("\\.txt", "") 

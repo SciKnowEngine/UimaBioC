@@ -210,7 +210,7 @@ public class SubFigureNumberExtractor {
 						Set<String> cleanedUpCodes = cleanUpFigureReference(exptCodes);
 						expts.addAll(cleanedUpCodes);
 					}
-					System.err.println(expts.toString() + "\t" + a.getCoveredText() + "\t" + clause.getCoveredText());
+					//System.err.println(expts.toString() + "\t" + a.getCoveredText() + "\t" + clause.getCoveredText());
 				}
 			} 
 		}

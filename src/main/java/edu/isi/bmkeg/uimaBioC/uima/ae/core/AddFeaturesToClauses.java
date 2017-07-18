@@ -250,7 +250,7 @@ public class AddFeaturesToClauses extends JCasAnnotator_ImplBase {
 		Set<String> codes = new HashSet<String>();
 		for (UimaBioCAnnotation a : JCasUtil.selectCovered(UimaBioCAnnotation.class, clause)) {
 			Map<String, String> infons = UimaBioCUtils.convertInfons(a.getInfons());
-			if (infons.containsKey("refType") && infons.get("refType").equals("bibr")) {
+			if (infons.containsKey("refType") && infons.get("refType").startsWith("bib")) {
 				codes.add("exLink");
 			} else if (infons.containsKey("refType") && infons.get("refType").equals("fig")) {
 				codes.add("inLink");

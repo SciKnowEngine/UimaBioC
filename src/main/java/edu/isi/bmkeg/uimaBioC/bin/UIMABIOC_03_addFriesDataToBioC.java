@@ -7,7 +7,6 @@ import org.apache.uima.collection.CollectionProcessingEngine;
 import org.apache.uima.collection.CollectionReaderDescription;
 import org.apache.uima.collection.StatusCallbackListener;
 import org.apache.uima.resource.metadata.TypeSystemDescription;
-import org.cleartk.opennlp.tools.SentenceAnnotator;
 import org.cleartk.token.tokenizer.TokenAnnotator;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -18,13 +17,19 @@ import org.uimafit.factory.CollectionReaderFactory;
 import org.uimafit.factory.CpeBuilder;
 import org.uimafit.factory.TypeSystemDescriptionFactory;
 
+import edu.isi.bmkeg.uimaBioC.refactoredCleartk.SentenceAnnotator;
+import edu.isi.bmkeg.uimaBioC.rubicon.MatchReachAndNxmlText;
 import edu.isi.bmkeg.uimaBioC.rubicon.RemoveSentencesNotInTitleAbstractBody;
+import edu.isi.bmkeg.uimaBioC.rubicon.SeparateClauses;
+import edu.isi.bmkeg.uimaBioC.rubicon.StanfordParse;
+import edu.isi.bmkeg.uimaBioC.uima.ae.core.AddFeaturesToClauses;
 import edu.isi.bmkeg.uimaBioC.uima.ae.core.FixSentencesFromHeadings;
-import edu.isi.bmkeg.uimaBioC.uima.out.SaveAsSentenceSpreadsheets;
+import edu.isi.bmkeg.uimaBioC.uima.ae.core.RemoveRepeatedBioCAnnotations;
+import edu.isi.bmkeg.uimaBioC.uima.out.SaveAsBioCDocuments;
 import edu.isi.bmkeg.uimaBioC.uima.readers.BioCCollectionReader;
 import edu.isi.bmkeg.uimaBioC.utils.StatusCallbackListenerImpl;
 
-public class UIMABIOC_03_BioCToSentenceTsv {
+public class UIMABIOC_03_addFriesDataToBioC {
 
 	public static class Options {
 
@@ -34,18 +39,18 @@ public class UIMABIOC_03_BioCToSentenceTsv {
 		@Option(name = "-biocDir", usage = "Input Directory", required = true, metaVar = "IN-DIRECTORY")
 		public File biocDir;
 
-		@Option(name = "-friesDir", usage = "FRIES Data Directory", required = false, metaVar = "FRIES-DIRECTORY")
+		@Option(name = "-friesDir", usage = "Fries Directory", required = false, metaVar = "FRIES-DATA")
 		public File friesDir;
 		
 		@Option(name = "-outDir", usage = "Output Directory", required = true, metaVar = "OUT-FILE")
 		public File outDir;
-		
-		@Option(name = "-pmcFileNames", usage = "Use PMC-encoded Filenames?", required = false, metaVar = "PMC")
-		public Boolean pmcFileNames = false;
 
+		@Option(name = "-outFormat", usage = "Output Format", required = true, metaVar = "OUT-FORMAT")
+		public String outFormat;
+		
 	}
 
-	private static Logger logger = Logger.getLogger(UIMABIOC_03_BioCToSentenceTsv.class);
+	private static Logger logger = Logger.getLogger(UIMABIOC_03_addFriesDataToBioC.class);
 
 	/**
 	 * @param args
@@ -87,7 +92,10 @@ public class UIMABIOC_03_BioCToSentenceTsv {
 		AggregateBuilder builder = new AggregateBuilder();
 
 		builder.add(SentenceAnnotator.getDescription()); // Sentence
-		builder.add(TokenAnnotator.getDescription()); // Tokenization
+		
+		builder.add(AnalysisEngineFactory.createPrimitiveDescription(TokenAnnotator.class,
+				TokenAnnotator.PARAM_TOKENIZER_NAME, 
+				"edu.isi.bmkeg.uimaBioC.refactoredCleartk.PennTreebankTokenizer")); // Tokenization
 
 		//
 		// Some sentences include headers that don't end in periods
@@ -95,12 +103,28 @@ public class UIMABIOC_03_BioCToSentenceTsv {
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(FixSentencesFromHeadings.class));
 
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(RemoveSentencesNotInTitleAbstractBody.class));
-		
-		builder.add(AnalysisEngineFactory.createPrimitiveDescription(SaveAsSentenceSpreadsheets.class,
-				SaveAsSentenceSpreadsheets.PARAM_DIR_PATH, options.outDir.getPath(),
-				SaveAsSentenceSpreadsheets.PARAM_FRIES_DIR, options.friesDir,
-				SaveAsSentenceSpreadsheets.PARAM_PMC_FILE_NAMES, options.pmcFileNames.toString().toLowerCase()));
 
+		//builder.add(AnalysisEngineFactory.createPrimitiveDescription(AddReachAnnotations.class,
+		//		AddReachAnnotations.PARAM_INPUT_DIRECTORY, options.friesDir.getPath()));
+		
+		builder.add(AnalysisEngineFactory.createPrimitiveDescription(MatchReachAndNxmlText.class,
+				MatchReachAndNxmlText.PARAM_INPUT_DIRECTORY, options.friesDir.getPath()));
+
+		String outFormat = null;
+		if( options.outFormat.toLowerCase().equals("xml") ) 
+			outFormat = SaveAsBioCDocuments.XML;
+		else if( options.outFormat.toLowerCase().equals("json") ) 
+			outFormat = SaveAsBioCDocuments.JSON;
+		else 
+			throw new Exception("Output format " + options.outFormat + " not recognized");
+
+		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
+				SaveAsBioCDocuments.class, 
+				SaveAsBioCDocuments.PARAM_FILE_PATH,
+				options.outDir.getPath(),
+				SaveAsBioCDocuments.PARAM_FORMAT,
+				outFormat));
+		
 		cpeBuilder.setAnalysisEngine(builder.createAggregateDescription());
 
 		cpeBuilder.setMaxProcessingUnitThreatCount(options.nThreads);
