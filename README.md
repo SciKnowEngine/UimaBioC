@@ -1,6 +1,6 @@
 # UimaBioC
 
-This project provides code that permits the use BioC structures as a UIMA type and provide support for it's use in text mining applications based on the CleartTk UIMA system. Note that our processing uses *either* BioC data formatted as XML or as JSON.
+This project provides code that uses BioC structures as a UIMA type and provide support for it's use in text mining applications based on the CleartTk UIMA system. Note that our processing uses *either* BioC data formatted as XML or as JSON.
 
 ## The BioC Data Model
 
@@ -30,5 +30,6 @@ Other indexing processes use infons to construct BioC annotations for other elem
 ## Additional BioC Processing Libraries
 
 * [Core Java Code Cloned from Sourceforge site](https://github.com/openbiocuration/BioC_Java)
-* [Python library](https://github.com/2mh/PyBioC)
+* ['Standard' Python library](https://github.com/2mh/PyBioC)
+* [Our 'Extended' Python library (forked from 2mh/PyBioC)](https://github.com/SciKnowEngine/PyBioC)
 
