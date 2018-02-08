@@ -1,40 +1,42 @@
-package bioc.esViews.BioCDocumentView;
+package bioc.esViews.BioCDocument;
+
+import bioc.esViews.BioCDocument.BioCDocument__BioCLocation;
 
 import java.util.*;
 import org.springframework.data.annotation.*;
 import org.springframework.data.elasticsearch.annotations.*;
-
-import bioc.esViews.BioCDocumentView.BioCDocumentView__BioCLocation;
-
 import static org.springframework.data.elasticsearch.annotations.FieldIndex.*;
 
 import lombok.Data;
+
 /**
  * Stand off annotation. The connection to the original text can be made through the {@code location} and the {@code text} fields.
 */
 @Data
-public class BioCDocumentView__BioCAnnotation {
-	@Id
+public class BioCDocument__BioCAnnotation {
+	/**
+	 * Id used to identify this annotation in a {@link Relation}.
+	*/
 	private String id;
-
-	private Map<String,String> infons = new HashMap<String,String>();
 
 	/**
 	 * The annotated text.
 	*/
 	private String text;
 
+	private Map<String, String>  infons;
+
 	@Field(type = FieldType.Nested)
-	private List<BioCDocumentView__BioCLocation> locations = new ArrayList<BioCDocumentView__BioCLocation>();
+	private List<BioCDocument__BioCLocation> locations = new ArrayList<BioCDocument__BioCLocation>();
 
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-	public BioCDocumentView__BioCAnnotation() {}
-	public BioCDocumentView__BioCAnnotation(String id, Map<String,String> infons, String text, List<BioCDocumentView__BioCLocation> locations) {
+	public BioCDocument__BioCAnnotation() {}
+	public BioCDocument__BioCAnnotation(String id, String text, Map<String, String>  infons, List<BioCDocument__BioCLocation> locations) {
 		this.id = id;
-		this.infons = infons;
 		this.text = text;
+		this.infons = infons;
 		this.locations = locations;
 	}
 

@@ -30,7 +30,7 @@ public class UIMABIOC_00_SimpleRunNxml2Txt {
 		@Option(name = "-inDir", usage = "Input Directory", required = true, metaVar = "INPUT")
 		public File inDir;
 
-		@Option(name = "-outDir", usage = "Output", required = true, metaVar = "OUTPUT")
+		@Option(name = "-outDir", usage = "Output", metaVar = "OUTPUT")
 		public File outDir;
 
 		@Option(name = "-execPath", usage = "Path to the nxml2text executable", required = true, metaVar = "PATH")
@@ -69,6 +69,9 @@ public class UIMABIOC_00_SimpleRunNxml2Txt {
 
 		}
 
+		if( options.outDir == null )
+			options.outDir = options.inDir;
+		
 		if( !options.outDir.exists() )
 			options.outDir.mkdirs();
 
@@ -83,12 +86,13 @@ public class UIMABIOC_00_SimpleRunNxml2Txt {
 		@SuppressWarnings("unchecked")
 		Iterator<File> it = FileUtils.iterateFiles(options.inDir, fileTypes, true);
 		
+		int pos = 0;
 		while( it.hasNext() ) {
 			File f = it.next();
 			
 			if( !f.getName().endsWith(options.suffix) )
 				continue;
-				
+							
 			String newPath = f.getPath().replaceAll(
 					options.inDir.getPath(),
 					options.outDir.getPath());
@@ -98,6 +102,11 @@ public class UIMABIOC_00_SimpleRunNxml2Txt {
 			File logFile = new File(newPath.replaceAll(s, "_nxml2txt.log"));
 			txtFile.getParentFile().mkdirs();
 
+			System.out.print((pos++) + "\r");
+			
+			if( txtFile.exists() ) 
+				continue;
+			
 			String command = "python " + options.execPath.getPath() + " " + f.getPath() 
 					+ " " + txtFile.getPath()
 					+ " " + annFile.getPath() + "";

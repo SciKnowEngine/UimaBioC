@@ -33,7 +33,7 @@ public class UIMABIOC_03_RunFanseParserOnBioASQ {
 	private static final Logger logger = LoggerFactory.getLogger(UIMABIOC_03_RunFanseParserOnBioASQ.class);
 
 	//@Autowired
-	//BioCRepository biocRepo;
+	//BioCDocumentRepository biocRepo;
 
 	public static class Options {
 

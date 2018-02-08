@@ -135,35 +135,6 @@ public class BioCCollectionReader extends JCasCollectionReader_ImplBase {
 		}
 
 	}
-
-	private BioCDocument readBioCFile(File bioCFile)
-			throws AnalysisEngineProcessException, FileNotFoundException, XMLStreamException, IOException {
-		
-		
-		if (inFileFormat.equals(XML)) {
-			
-			BioCDocumentReader reader = BioCFactory.newFactory(
-					BioCFactory.STANDARD).createBioCDocumentReader(
-							new FileReader(bioCFile));
-
-			bioD = reader.readDocument();
-
-			reader.close();
-
-		} else if (inFileFormat.equals(JSON)) {
-
-			Gson gson = new Gson();
-			bioD = gson.fromJson(new FileReader(bioCFile), BioCDocument.class);
-			
-		} else {
-			
-			throw new AnalysisEngineProcessException(
-					new Exception("Please write to an *.xml or a *.json file")
-					);
-		
-		}
-		return bioD;
-	}
 		
 	protected void error(String message) {
 		logger.error(message);
@@ -197,7 +168,7 @@ public class BioCCollectionReader extends JCasCollectionReader_ImplBase {
 				return false;
 
 			this.bioCFile = bioCFileIt.next();
-			this.bioD = readBioCFile(bioCFile);
+			this.bioD = UimaBioCUtils.readBioCFile(bioCFile);
 			
 			while( this.existingFiles.contains(bioD.getID())) {
 				logger.debug("output file for " + bioCFile.getName() + " exists, skipping." );
@@ -206,7 +177,7 @@ public class BioCCollectionReader extends JCasCollectionReader_ImplBase {
 					return false;
 				
 				bioCFile = bioCFileIt.next();
-				bioD = readBioCFile(bioCFile);
+				bioD = UimaBioCUtils.readBioCFile(bioCFile);
 			}
 			
 			return true;

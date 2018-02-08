@@ -40,9 +40,6 @@ public class AddFeaturesToClauses extends JCasAnnotator_ImplBase {
 
 	private BioCCollection collection;
 
-	private List<Pattern> figPatt = new ArrayList<Pattern>();
-	private List<Pattern> figsPatt = new ArrayList<Pattern>();
-
 	Map<String, Map<String, Integer>> table = new HashMap<String, Map<String, Integer>>();
 
 	public void initialize(UimaContext context) throws ResourceInitializationException {
@@ -50,45 +47,6 @@ public class AddFeaturesToClauses extends JCasAnnotator_ImplBase {
 
 		this.collection = new BioCCollection();
 
-		//
-		// A List of regular expressions to recognize
-		// all figure legend codes appearing in text.
-		// Include 'S' to denote supplemental figures 
-		// included as well
-		//
-		String b = "\\s*[Ff]ig(ure|.){0,1}";
-		String e = "\\s*(\\)|\\w{2,}|\\p{Punct})";
-		//
-		// 0. No alphanumeric codes at all
-		this.figPatt.add(Pattern.compile(b + "\\s*(\\d+)\\s*\\p{Punct}*\\s*\\w{2,}"));
-		//
-		// 1. Delineated by brackets
-		this.figPatt.add(Pattern.compile("\\(" + b + "\\s*(S{0,1}\\d+.*?)\\)"));
-		
-		//
-		// 2. Simple single alphanumeric codes, followed by punctuation.
-		this.figPatt.add(Pattern.compile(b + "\\s*(S{0,1}\\d+\\s*[A-Za-z])\\p{Punct}"));
-
-		//
-		// 3. Single Alphanumeric codes, followed by words.
-		this.figPatt.add(Pattern.compile(b + "\\s*(S{0,1}\\d+\\s*[A-Za-z])\\s+\\w{2,}"));
-
-		//
-		// 4. Fig 8, a and b).
-		this.figPatt.add(Pattern.compile(b + "\\s*(S{0,1}\\d[\\s\\p{Punct}]*[A-Za-z] and [A-Za-z])" + e));
-
-		//
-		// 5. Fig. 3, a-c).
-		this.figPatt.add(Pattern.compile(b + "\\s*(S{0,1}\\d[\\s\\p{Punct}]*[A-Z\\-a-z])" + e));
-
-		//
-		// 6. Fig. c).
-		this.figPatt.add(Pattern.compile(b + "\\s*([\\s\\p{Punct}]*[A-Z\\-a-z])" + e));
-
-		// Multiple Figures in sequence
-		b = "\\s*[Ff]ig(ures|s.{0,1}|.){0,1}";
-		// 1. Fig. c).
-		this.figsPatt.add(Pattern.compile(b + "\\s*([\\s\\p{Punct}]*[A-Z\\-a-z])" + e));
 	}
 
 	public void process(JCas jCas) throws AnalysisEngineProcessException {
@@ -102,7 +60,6 @@ public class AddFeaturesToClauses extends JCasAnnotator_ImplBase {
 		List<UimaBioCAnnotation> outerAnnotations = JCasUtil.selectCovered(UimaBioCAnnotation.class, uiD);
 
 		this.buildDataStructures(jCas, uiD.getBegin(), uiD.getEnd());
-
 		
 	}
 
@@ -119,7 +76,7 @@ public class AddFeaturesToClauses extends JCasAnnotator_ImplBase {
 					&& (infons.get("value").equals("p") || 
 							infons.get("value").equals("title") || 
 							infons.get("value").equals("label") || 
-							infons.get("value").equals("article-t"))) {
+							infons.get("value").equals("article-title"))) {
 				parags.add(a);
 			}
 
@@ -143,7 +100,7 @@ public class AddFeaturesToClauses extends JCasAnnotator_ImplBase {
 					s.getEnd())) {
 				Map<String, String> infons = UimaBioCUtils.convertInfons(a.getInfons());
 				if (infons.get("value").equals("title")) {
-					UimaBioCAnnotation secAnn = this.readSectionHeading(jCas, a);
+					UimaBioCAnnotation secAnn = UimaBioCUtils.readSectionHeading(jCas, a);
 					if (secAnn == null) {
 						UimaBioCDocument uiD = JCasUtil.selectSingle(jCas, UimaBioCDocument.class);
 						System.err.println(uiD.getId() + " has title sentence '" + s.getCoveredText()
@@ -154,7 +111,7 @@ public class AddFeaturesToClauses extends JCasAnnotator_ImplBase {
 
 					int level = 99;
 					try {
-						level = readHeadingLevel(jCas, secAnn, 0);
+						level = UimaBioCUtils.readHeadingLevel(jCas, secAnn, 0);
 					} catch (StackOverflowError e) {
 						e.printStackTrace();
 					}
@@ -207,10 +164,10 @@ public class AddFeaturesToClauses extends JCasAnnotator_ImplBase {
 
 			for (UimaBioCAnnotation clause : clauseList) {
 				
-				Set<String> expts = extractExptsFromClause(jCas, clause);
-				Set<String> newCodes = extractCodesFromClause(jCas, clause);
+				Set<String> expts = UimaBioCUtils.extractExptsFromClause(jCas, clause);
+				Set<String> newCodes = UimaBioCUtils.extractCodesFromClause(jCas, clause);
 				newCodes.addAll(codes);
-				String headingString = this.readHeadingString(jCas, clause, "");
+				String headingString = UimaBioCUtils.readHeadingString(jCas, clause, "");
 				
 				Map<String,String> infons = UimaBioCUtils.convertInfons(clause.getInfons());
 				infons.put("scidp-heading-string", headingString);
@@ -226,163 +183,7 @@ public class AddFeaturesToClauses extends JCasAnnotator_ImplBase {
 		}
 		
 		// Checking features for every clause annotation.
-		
-		
 
-	}
-	
-	private Set<String> extractExptsFromClause(JCas jCas, Annotation clause) {
-		Set<String> expts = new HashSet<String>();
-		for (UimaBioCAnnotation a : JCasUtil.selectCovered(UimaBioCAnnotation.class, clause)) {
-			Map<String, String> infons = UimaBioCUtils.convertInfons(a.getInfons());
-			if( infons.containsKey("refType") ) {
-				if( infons.get("refType").equals("fig") || 
-						infons.get("refType").equals("supplementary-material")) {
-					String exptCodes = readExptCodes(jCas, a);
-					expts.add(exptCodes);
-				}
-			} 
-		}
-		return expts;
-	}
-	
-	private Set<String> extractCodesFromClause(JCas jCas, Annotation clause) {
-		Set<String> codes = new HashSet<String>();
-		for (UimaBioCAnnotation a : JCasUtil.selectCovered(UimaBioCAnnotation.class, clause)) {
-			Map<String, String> infons = UimaBioCUtils.convertInfons(a.getInfons());
-			if (infons.containsKey("refType") && infons.get("refType").startsWith("bib")) {
-				codes.add("exLink");
-			} else if (infons.containsKey("refType") && infons.get("refType").equals("fig")) {
-				codes.add("inLink");
-			} else if (infons.containsKey("refType") && infons.get("refType").equals("supplementary-material")) {
-				codes.add("inLink");
-			} else if (infons.get("value").equals("label")) {
-				codes.add("label");
-			}
-		}
-		return codes;
-	}
-
-	private String readExptCodes(JCas jCas, UimaBioCAnnotation s) {
-
-		String exptCode = s.getCoveredText();
-		int offset = 2;
-		if (exptCode.toLowerCase().startsWith("fig")) {
-			offset = 1;
-		}
-
-		List<Token> l = JCasUtil.selectCovered(Token.class, s);
-		List<Token> f = JCasUtil.selectFollowing(jCas, Token.class, s, 10);
-		List<Token> p = JCasUtil.selectPreceding(jCas, Token.class, s, offset);
-
-		Token start = p.get(0);
-		Token end = f.get(9);
-		String figFrag = jCas.getDocumentText().substring(start.getBegin(), end.getEnd());
-
-		for (Pattern patt : this.figPatt) {
-			Matcher m = patt.matcher(figFrag);
-			if (m.find()) {
-				
-				// use group 2 since all
-				exptCode = m.group(2).replaceAll("\\n", "");
-				return exptCode;
-				
-			}
-		}
-
-		return exptCode;
-	}
-
-	private UimaBioCAnnotation readSectionHeading(JCas jCas, UimaBioCAnnotation a) {
-
-		// Looking for section headings
-		for (UimaBioCAnnotation a1 : JCasUtil.selectCovering(jCas, UimaBioCAnnotation.class, a.getBegin(),
-				a.getEnd())) {
-			Map<String, String> infons = UimaBioCUtils.convertInfons(a1.getInfons());
-			if (infons.containsKey("sectionHeading") && a1.getBegin() == a.getBegin()) {
-				return a1;
-			}
-		}
-
-		return null;
-
-	}
-
-	private int readHeadingLevel(JCas jCas, UimaBioCAnnotation a, int level) throws StackOverflowError {
-
-		// Looking for section headings
-		for (UimaBioCAnnotation a1 : JCasUtil.selectCovering(jCas, UimaBioCAnnotation.class, a.getBegin(),
-				a.getEnd())) {
-			if (a1.equals(a))
-				continue;
-			Map<String, String> infons = UimaBioCUtils.convertInfons(a1.getInfons());
-			if (infons.containsKey("sectionHeading")) {
-				level = readHeadingLevel(jCas, a1, level + 1);
-				return level;
-			}
-		}
-
-		return level;
-
-	}
-	
-	private String readHeadingString(JCas jCas, UimaBioCAnnotation a, String heading) throws StackOverflowError {
-
-		// Looking for section headings
-		for (UimaBioCAnnotation a1 : JCasUtil.selectCovering(jCas, UimaBioCAnnotation.class, a.getBegin(),
-				a.getEnd())) {
-			if (a1.equals(a))
-				continue;
-			Map<String, String> infons = UimaBioCUtils.convertInfons(a1.getInfons());
-			if (infons.containsKey("sectionHeading")) {
-				if( !heading.equals("") )
-					heading += "|";
-				return heading + infons.get("sectionHeading");
-			}
-		}
-
-		return heading;
-
-	}
-
-	private String readHeadingString(JCas jCas, Sentence a, String heading) throws StackOverflowError {
-
-		// Looking for section headings
-		for (UimaBioCAnnotation a1 : JCasUtil.selectCovering(jCas, UimaBioCAnnotation.class, a.getBegin(),
-				a.getEnd())) {
-			if (a1.equals(a))
-				continue;
-			Map<String, String> infons = UimaBioCUtils.convertInfons(a1.getInfons());
-			if (infons.containsKey("sectionHeading")) {
-				if( !heading.equals("") )
-					heading += "|";
-				return heading + infons.get("sectionHeading");
-			}
-		}
-
-		return heading;
-
-	}
-	
-	
-	private String readTokenizedText(JCas jCas, Sentence s) {
-		String txt = "";
-		for (Token t : JCasUtil.selectCovered(jCas, Token.class, s)) {
-			txt += t.getCoveredText() + " ";
-		}
-		if (txt.length() == 0)
-			return txt;
-		return txt.substring(0, txt.length() - 1);
-	}
-
-	private String readTokenizedText(JCas jCas, UimaBioCAnnotation a) {
-		String txt = "";
-		for (Token t : JCasUtil.selectCovered(jCas, Token.class, a)) {
-			txt += t.getCoveredText() + " ";
-		}
-		if (txt.length() == 0)
-			return txt;
-		return txt.substring(0, txt.length() - 1);
 	}
 	
 	private UimaBioCAnnotation createClauseAnnotation(JCas jCas, int begin, int end) {

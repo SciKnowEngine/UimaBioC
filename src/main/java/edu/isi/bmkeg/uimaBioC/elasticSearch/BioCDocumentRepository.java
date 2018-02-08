@@ -15,19 +15,13 @@
  */
 package edu.isi.bmkeg.uimaBioC.elasticSearch;
 
-import java.util.List;
-
-import org.bigmech.fries.esViews.FRIES_SentenceView.FRIES_SentenceView__FRIES_Sentence;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 
-import bioc.esViews.BioCDocumentView.BioCDocumentView__BioCDocument;
+import bioc.esViews.BioCDocument.BioCDocument__BioCDocument;
 
 /**
  * @author Artur Konczak
  * @author Oliver Gierke
  */
-public interface BioCRepository extends ElasticsearchRepository<BioCDocumentView__BioCDocument, String> {
-	
-	
-	
+public interface BioCDocumentRepository extends ElasticsearchRepository<BioCDocument__BioCDocument, String> {
 }

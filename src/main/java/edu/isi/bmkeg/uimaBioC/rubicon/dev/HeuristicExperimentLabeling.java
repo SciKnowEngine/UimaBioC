@@ -45,7 +45,7 @@ public class HeuristicExperimentLabeling extends JCasAnnotator_ImplBase {
 	private Pattern patt;
 
 	public final static String PARAM_DIR_PATH = ConfigurationParameterFactory
-			.createConfigurationParameterName(HeuristicExperimentLabeling.class, "outDirPath");
+			.createConfigurationParameterName(HeuristicExperimentLabeling.class, "outFilePath");
 	@ConfigurationParameter(mandatory = true, description = "The path to the output directory.")
 	String outDirPath;
 	

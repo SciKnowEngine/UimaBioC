@@ -29,7 +29,7 @@ public class SaveBody extends JCasAnnotator_ImplBase {
 
 	public final static String PARAM_DIR_PATH = ConfigurationParameterFactory
 			.createConfigurationParameterName(
-					SaveBody.class, "outDirPath");
+					SaveBody.class, "outFilePath");
 	@ConfigurationParameter(mandatory = true, description = "The path to the output directory.")
 	String outDirPath;
 

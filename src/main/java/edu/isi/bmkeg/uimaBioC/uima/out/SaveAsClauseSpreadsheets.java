@@ -6,7 +6,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -153,6 +155,8 @@ public class SaveAsClauseSpreadsheets extends JCasAnnotator_ImplBase {
 		out.print("\t");
 		out.print("ExperimentValues");
 		out.print("\t");
+		out.print("ExternalRef");
+		out.print("\t");
 		out.print("Paragraph");
 		out.print("\t");
 		out.print("Headings");
@@ -232,6 +236,20 @@ public class SaveAsClauseSpreadsheets extends JCasAnnotator_ImplBase {
 			}
 			out.print(cStr);
 			out.print("\t");
+			
+			Set<String> pmidSet = new HashSet<String>();
+			for (UimaBioCAnnotation a : JCasUtil.selectCovered(UimaBioCAnnotation.class, clause)) {
+				Map<String, String> inf = UimaBioCUtils.convertInfons(a.getInfons());
+				if( inf.containsKey("pmid") ) 
+					pmidSet.add(inf.get("pmid"));
+			}
+			List<String> pmidList = new ArrayList<String>(pmidSet);
+			Collections.sort(pmidList);
+			String pmidStr = "";
+			for(String pmid : pmidList) {
+				pmidStr += "["+pmid+"]";
+			}
+			out.print(pmidStr + "\t");
 			
 			out.print(infons.get("scidp-paragraph-number"));
 

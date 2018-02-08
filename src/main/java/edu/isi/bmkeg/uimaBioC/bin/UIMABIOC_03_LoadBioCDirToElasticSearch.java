@@ -21,13 +21,13 @@ import org.springframework.stereotype.Component;
 import com.google.gson.Gson;
 
 import bioc.BioCDocument;
-import bioc.esViews.BioCDocumentView.BioCDocumentView__BioCAnnotation;
-import bioc.esViews.BioCDocumentView.BioCDocumentView__BioCDocument;
-import bioc.esViews.BioCDocumentView.BioCDocumentView__BioCLocation;
-import bioc.esViews.BioCDocumentView.BioCDocumentView__BioCPassage;
+import bioc.esViews.BioCDocument.BioCDocument__BioCAnnotation;
+import bioc.esViews.BioCDocument.BioCDocument__BioCDocument;
+import bioc.esViews.BioCDocument.BioCDocument__BioCLocation;
+import bioc.esViews.BioCDocument.BioCDocument__BioCPassage;
 import bioc.io.BioCDocumentReader;
 import bioc.io.BioCFactory;
-import edu.isi.bmkeg.uimaBioC.elasticSearch.BioCRepository;
+import edu.isi.bmkeg.uimaBioC.elasticSearch.BioCDocumentRepository;
 
 @Component
 public class UIMABIOC_03_LoadBioCDirToElasticSearch {
@@ -35,7 +35,7 @@ public class UIMABIOC_03_LoadBioCDirToElasticSearch {
 	private static final Logger logger = LoggerFactory.getLogger(UIMABIOC_03_LoadBioCDirToElasticSearch.class);
 
 	@Autowired
-	BioCRepository biocRepo;
+	BioCDocumentRepository biocRepo;
 
 	public static class Options {
 
@@ -92,7 +92,7 @@ public class UIMABIOC_03_LoadBioCDirToElasticSearch {
 				reader.close();
 			}
 
-			BioCDocumentView__BioCDocument esBioD = main.convertToES(bioD);
+			BioCDocument__BioCDocument esBioD = main.convertToES(bioD);
 
 			main.biocRepo.index(esBioD);
 
@@ -100,14 +100,14 @@ public class UIMABIOC_03_LoadBioCDirToElasticSearch {
 
 	}
 
-	public BioCDocumentView__BioCDocument convertToES(bioc.BioCDocument d) {
+	public BioCDocument__BioCDocument convertToES(bioc.BioCDocument d) {
 		
-		BioCDocumentView__BioCDocument esBioD = new BioCDocumentView__BioCDocument();
+		BioCDocument__BioCDocument esBioD = new BioCDocument__BioCDocument();
 		esBioD.setId( d.getID() );
 		esBioD.setInfons(d.getInfons());
 	
 		for( bioc.BioCPassage p : d.getPassages() ) {
-			BioCDocumentView__BioCPassage pp = new BioCDocumentView__BioCPassage();
+			BioCDocument__BioCPassage pp = new BioCDocument__BioCPassage();
 			esBioD.getPassages().add(pp);
 			
 			pp.setOffset(p.getOffset());
@@ -115,7 +115,7 @@ public class UIMABIOC_03_LoadBioCDirToElasticSearch {
 			pp.setInfons(p.getInfons());
 	
 			for( bioc.BioCAnnotation a : p.getAnnotations() ) {
-				BioCDocumentView__BioCAnnotation aa = new BioCDocumentView__BioCAnnotation();
+				BioCDocument__BioCAnnotation aa = new BioCDocument__BioCAnnotation();
 				pp.getAnnotations().add(aa);
 				
 				aa.setId(a.getID());
@@ -123,7 +123,7 @@ public class UIMABIOC_03_LoadBioCDirToElasticSearch {
 				aa.setText(a.getText());
 	
 				for( bioc.BioCLocation l : a.getLocations() ) {
-					BioCDocumentView__BioCLocation ll = new BioCDocumentView__BioCLocation();
+					BioCDocument__BioCLocation ll = new BioCDocument__BioCLocation();
 					aa.getLocations().add(ll);
 					
 					ll.setLength(l.getLength());

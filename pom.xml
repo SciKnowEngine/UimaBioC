@@ -4,10 +4,12 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>edu.isi.bmkeg</groupId>
 	<artifactId>UimaBioC</artifactId>
-	<version>0.1.1-SNAPSHOT</version>
+	<version>0.1.2-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<properties>
+		<java.version>1.8</java.version>
+		<start-class>edu.isi.sciknowengine.kefed.io.KefedIoApplication</start-class>
 		<slf4j.version>1.7.5</slf4j.version>
 		<trove.version>3.0.3</trove.version>
 		<log4j.version>1.2.17</log4j.version>
@@ -15,6 +17,9 @@
 		<es.version>1.5.2</es.version>
 		<hadoop.version>2.7.1</hadoop.version>
 		<dkpro.version>0.1.1-SNAPSHOT</dkpro.version>
+		<jena.version>3.0.0</jena.version>
+    	<maven.compiler.source>1.8</maven.compiler.source>
+	    <maven.compiler.target>1.8</maven.compiler.target>
 	</properties>
 
 	<name>UIMA BioC Integrated NLP</name>
@@ -331,11 +336,8 @@
 			</dependency> <dependency> <groupId>org.cleartk</groupId> <artifactId>cleartk-maltparser</artifactId> 
 			<version>${cleartk.version}</version> </dependency> -->
 
-		<!-- <dependency>
-			<groupId>org.cleartk</groupId>
-			<artifactId>cleartk-stanford-corenlp</artifactId>
-			<version>${cleartk.version}</version>
-		</dependency> -->
+		<!-- <dependency> <groupId>org.cleartk</groupId> <artifactId>cleartk-stanford-corenlp</artifactId> 
+			<version>${cleartk.version}</version> </dependency> -->
 		<dependency>
 			<groupId>org.cleartk</groupId>
 			<artifactId>cleartk-snowball</artifactId>
@@ -376,7 +378,7 @@
 			<artifactId>simmetrics-taglink</artifactId>
 			<version>2.0.0</version>
 		</dependency>
-
+		
 		<dependency>
 			<groupId>log4j</groupId>
 			<artifactId>log4j</artifactId>
@@ -451,6 +453,19 @@
 		</dependency>
 
 		<dependency>
+			<groupId>org.apache.jena</groupId>
+			<artifactId>apache-jena-libs</artifactId>
+			<type>pom</type>
+			<version>${jena.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.jena</groupId>
+			<artifactId>jena-text</artifactId>
+			<version>${jena.version}</version>
+		</dependency>
+
+		<dependency>
 			<groupId>com.google.code.gson</groupId>
 			<artifactId>gson</artifactId>
 			<version>2.5</version>
@@ -499,7 +514,7 @@
 			<artifactId>hadoop-mapreduce-client-common</artifactId>
 			<version>${hadoop.version}</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.clulab</groupId>
 			<artifactId>reach_2.11</artifactId>

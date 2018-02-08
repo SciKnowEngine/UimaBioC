@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -137,6 +138,7 @@ public class SaveAsSentenceSpreadsheets extends JCasAnnotator_ImplBase {
 				this.loadFriesData(friesDir, uiD);
 			}
 			
+			
 			Map<String, String> infons = UimaBioCUtils.convertInfons(uiD.getInfons());
 			String pmcID = "PMC" + infons.get("pmc");
 			if (infons.containsKey("pmcid"))
@@ -144,11 +146,17 @@ public class SaveAsSentenceSpreadsheets extends JCasAnnotator_ImplBase {
 			if (infons.containsKey("accession"))
 				pmcID = infons.get("accession");
 
-			File outFile = null;
-			if( this.pmcFileNames) 
+			Map<String, String> inf = UimaBioCUtils.convertInfons(uiD.getInfons());
+			String relPath = inf.get("relative-source-path").replaceAll("\\.txt", "") + ".tsv";
+			File outFile = new File(outDirPath + "/" + relPath);
+			if( !outFile.getParentFile().exists() ) {
+				outFile.getParentFile().mkdirs();
+			}
+	
+			/*if( this.pmcFileNames) 
 				outFile = new File(this.outDir.getPath() + "/" + pmcID + ".scidp.discourse.tsv");
 			else 
-				outFile = new File(this.outDir.getPath() + "/" + id + ".tsv");
+				outFile = new File(this.outDir.getPath() + "/" + id + ".tsv");*/
 
 			PrintWriter out;
 			try {
@@ -160,33 +168,33 @@ public class SaveAsSentenceSpreadsheets extends JCasAnnotator_ImplBase {
 			Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_DASHES)
 					.registerTypeAdapterFactory(typeFactory).create();
 
-			Map<String, File> fileHash = ReachUtils.getReachFileHash(id, this.friesDir);
-			FRIES_FrameCollection fc1 = gson.fromJson(new FileReader(fileHash.get("sentences")), FRIES_FrameCollection.class);
-			Map<String, FRIES_Sentence> sentenceMap = new HashMap<String, FRIES_Sentence>();
-			for (FRIES_Frame frame : fc1.getFrames()) {
-				if (frame instanceof FRIES_Sentence) {
-					FRIES_Sentence sn = (FRIES_Sentence) frame;
-					sentenceMap.put(sn.getFrameId(), sn);
+			if( this.friesDir != null ) {
+				Map<String, File> fileHash = ReachUtils.getReachFileHash(id, this.friesDir);
+				FRIES_FrameCollection fc1 = gson.fromJson(new FileReader(fileHash.get("sentences")), FRIES_FrameCollection.class);
+				Map<String, FRIES_Sentence> sentenceMap = new HashMap<String, FRIES_Sentence>();
+				for (FRIES_Frame frame : fc1.getFrames()) {
+					if (frame instanceof FRIES_Sentence) {
+						FRIES_Sentence sn = (FRIES_Sentence) frame;
+						sentenceMap.put(sn.getFrameId(), sn);
+					}
 				}
-			}
-			
-			FRIES_FrameCollection fc2 = gson.fromJson(new FileReader(fileHash.get("events")), FRIES_FrameCollection.class);
-			for (FRIES_Frame frame : fc2.getFrames()) {
-				if (frame instanceof FRIES_EventMention) {
-					FRIES_EventMention em = (FRIES_EventMention) frame;
-					if( !eventMap.containsKey(em.getSentence()) ) {
-						eventMap.put(em.getSentence(), new HashSet<FRIES_EventMention>());
-					} 
-					Set<FRIES_EventMention> eventSet = eventMap.get(em.getSentence());
-					eventSet.add(em);					
+				FRIES_FrameCollection fc2 = gson.fromJson(new FileReader(fileHash.get("events")), FRIES_FrameCollection.class);
+				for (FRIES_Frame frame : fc2.getFrames()) {
+					if (frame instanceof FRIES_EventMention) {
+						FRIES_EventMention em = (FRIES_EventMention) frame;
+						if( !eventMap.containsKey(em.getSentence()) ) {
+							eventMap.put(em.getSentence(), new HashSet<FRIES_EventMention>());
+						} 
+						Set<FRIES_EventMention> eventSet = eventMap.get(em.getSentence());
+						eventSet.add(em);					
+					}
 				}
-			}
-
-			FRIES_FrameCollection fc3 = gson.fromJson(new FileReader(fileHash.get("entities")), FRIES_FrameCollection.class);
-			for (FRIES_Frame frame : fc3.getFrames()) {
-				if (frame instanceof FRIES_EntityMention) {
-					FRIES_EntityMention em = (FRIES_EntityMention) frame;
-					entityMap.put(em.getFrameId(), em);
+				FRIES_FrameCollection fc3 = gson.fromJson(new FileReader(fileHash.get("entities")), FRIES_FrameCollection.class);
+				for (FRIES_Frame frame : fc3.getFrames()) {
+					if (frame instanceof FRIES_EntityMention) {
+						FRIES_EntityMention em = (FRIES_EntityMention) frame;
+						entityMap.put(em.getFrameId(), em);
+					}
 				}
 			}
 			
@@ -225,6 +233,8 @@ public class SaveAsSentenceSpreadsheets extends JCasAnnotator_ImplBase {
 		out.print("\t");
 		out.print("ExperimentValues");
 		out.print("\t");
+		out.print("ExternalRef");
+		out.print("\t");		
 		out.print("Paragraph");
 		out.print("\t");
 		out.print("Headings");
@@ -287,7 +297,8 @@ public class SaveAsSentenceSpreadsheets extends JCasAnnotator_ImplBase {
 		Set<String> inExHeading = new HashSet<String>();
 		String cStr = "";
 		String heading = "";
-		String discourse = "";	
+		String discourse = "";
+		String pmidStr = "";
 		Set<String> figAssignment = new HashSet<String>();	
 		
 		for (UimaBioCAnnotation clause : clauseList) {
@@ -311,6 +322,18 @@ public class SaveAsSentenceSpreadsheets extends JCasAnnotator_ImplBase {
 					cStr += "|";
 				cStr += c;	
 			}
+			
+			Set<String> pmidSet = new HashSet<String>();
+			for (UimaBioCAnnotation a : JCasUtil.selectCovered(UimaBioCAnnotation.class, clause)) {
+				Map<String, String> inf = UimaBioCUtils.convertInfons(a.getInfons());
+				if( inf.containsKey("pmid") ) 
+					pmidSet.add(inf.get("pmid"));
+			}
+			List<String> pmidList = new ArrayList<String>(pmidSet);
+			Collections.sort(pmidList);
+			for(String pmid : pmidList) {
+				pmidStr += "["+pmid+"]";
+			}			
 			
 			heading = UimaBioCUtils.readHeadingString(jCas, clause, "");
 			
@@ -346,6 +369,8 @@ public class SaveAsSentenceSpreadsheets extends JCasAnnotator_ImplBase {
 		out.print("\t");
 		out.print(cStr);
 		out.print("\t");	
+		out.print(pmidStr);
+		out.print("\t");
 		out.print(paragraphId);
 		out.print("\t");
 		out.print(heading);

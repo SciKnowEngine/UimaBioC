@@ -1,6 +1,5 @@
 package edu.isi.bmkeg.uimaBioC.bin.dev;
 
-import java.io.File;
 import java.util.List;
 import java.util.Map;
 
@@ -16,9 +15,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.stereotype.Component;
 
-import bioc.esViews.BioCDocumentView.BioCDocumentView__BioCDocument;
-import edu.isi.bmkeg.uimaBioC.PubMedESIndex;
-import edu.isi.bmkeg.uimaBioC.elasticSearch.BioCRepository;
+import bioc.esViews.BioCDocument.BioCDocument__BioCDocument;
+import edu.isi.bmkeg.uimaBioC.elasticSearch.BioCDocumentRepository;
 import edu.isi.bmkeg.uimaBioC.elasticSearch.EntityMentionRepository;
 import edu.isi.bmkeg.uimaBioC.elasticSearch.EventMentionRepository;
 import edu.isi.bmkeg.uimaBioC.elasticSearch.SentenceRepository;
@@ -36,7 +34,7 @@ public class S10_compileEventsFromEsIndex {
 	SentenceRepository sentRepo;
 
 	@Autowired
-	BioCRepository biocRepo;
+	BioCDocumentRepository biocRepo;
 	
 	public static class Options {
 
@@ -76,7 +74,7 @@ public class S10_compileEventsFromEsIndex {
 		// Use annotated beans from the specified package
 		ApplicationContext ctx = new AnnotationConfigApplicationContext("edu.isi.bmkeg.uimaBioC");
 
-		PubMedESIndex pmES = new PubMedESIndex("temp");
+		/*PubMedESIndex pmES = new PubMedESIndex("temp");
 		
 		Map<String,Object> nxmlMap = null;
 		if( options.docId.startsWith("PMC") )
@@ -84,7 +82,11 @@ public class S10_compileEventsFromEsIndex {
 		else 
 			nxmlMap = pmES.getMapFromTerm("pmid", options.docId, "nxml");
 		String pmcId = (String) nxmlMap.get("pmcId");
-		String pmid = (String) nxmlMap.get("pmid");
+		String pmid = (String) nxmlMap.get("pmid");*/
+		
+		// TODO - THERE ARE MUCH BETTER WAYS OF OBTAINING PMID + PMCID VALUES THAN USING LOCAL ES STORE
+		String pmcId = "";
+		String pmid = "";
 		
 		S10_compileEventsFromEsIndex main = ctx.getBean(S10_compileEventsFromEsIndex.class);
 
@@ -92,7 +94,7 @@ public class S10_compileEventsFromEsIndex {
 		List<FRIES_EventMentionView__FRIES_EventMention> events = main.eventMentionRepo.findByFrameIdLike("*-" + pmcId + "-*");
 		List<FRIES_SentenceView__FRIES_Sentence> sentences = main.sentRepo.findByFrameIdLike("*-" + pmcId + "-*");
 		
-		BioCDocumentView__BioCDocument biocd = main.biocRepo.findOne(pmid);
+		BioCDocument__BioCDocument biocd = main.biocRepo.findOne(pmid);
 		
 		int pause = 1;
 		

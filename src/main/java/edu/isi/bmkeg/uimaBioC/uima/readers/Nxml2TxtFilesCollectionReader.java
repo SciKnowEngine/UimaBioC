@@ -3,8 +3,10 @@ package edu.isi.bmkeg.uimaBioC.uima.readers;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -25,6 +27,9 @@ import org.uimafit.component.JCasCollectionReader_ImplBase;
 import org.uimafit.descriptor.ConfigurationParameter;
 import org.uimafit.factory.ConfigurationParameterFactory;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
 import bioc.type.UimaBioCAnnotation;
 import bioc.type.UimaBioCDocument;
 import bioc.type.UimaBioCLocation;
@@ -41,6 +46,14 @@ import edu.isi.bmkeg.uimaBioC.UimaBioCUtils;
  */
 public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase {
 	
+	private class Ref {
+		private String author;
+		private String pmid;
+		private String ref;
+		private String source;
+		private String title;
+	}
+	
 	private Iterator<File> txtFileIt; 
 	private File txtFile;
 	private File soFile;
@@ -56,7 +69,37 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 					"inputDirectory");
 	@ConfigurationParameter(mandatory = true, description = "Input Directory for Nxml2Txt Files")
 	protected String inputDirectory;
+
+	public static final String PARAM_OUTPUT_DIRECTORY = ConfigurationParameterFactory
+			.createConfigurationParameterName(Nxml2TxtFilesCollectionReader.class,
+					"outputDirectory");
+	@ConfigurationParameter(mandatory = false, description = "Output Directory for Nxml2Txt Files")
+	protected String outputDirectory;
 	
+	public static final String PARAM_OUTPUT_TYPE = ConfigurationParameterFactory
+			.createConfigurationParameterName(Nxml2TxtFilesCollectionReader.class,
+					"outputType");
+	@ConfigurationParameter(mandatory = false, description = "Output File Suffix")
+	protected String outputType;
+	
+	/**
+	 * These files are generated from the robot_biocurator python library and have records like this:
+	 *    "bib1": {
+     * 	        "author": "Baltensperger K, Kozma LM, Cherniack AD, Klarlund JK, Chawla A, Banerjee U, Czech MP", 
+     *          "pmid": "8391166", 
+     *          "ref": "bib1", 
+     *          "source": "Science. 1993 Jun 25; 260(5116):1950-2.", 
+     *          "title": "Binding of the Ras activator son of sevenless to insulin receptor substrate-1 signaling complexes."
+     *    }, 
+	 * 
+	 *  We read this and attach this information to any external references read by the model.
+	 */
+	public static final String PARAM_REF_DIRECTORY = ConfigurationParameterFactory
+			.createConfigurationParameterName(Nxml2TxtFilesCollectionReader.class,
+					"referenceFileDirectory");
+	@ConfigurationParameter(mandatory = false, description = "Input Directory for .ref.json Files")
+	protected String referenceFileDirectory = "";
+
 	private Pattern firstLinePatt = Pattern.compile("^(.*)\\n");
 	
 	@Override
@@ -85,7 +128,7 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 	public void getNext(JCas jcas) throws IOException, CollectionException {
 
 		try {
-			
+						
 			UimaBioCAnnotation articleTitle = null;
 
 			String txt = FileUtils.readFileToString(txtFile);
@@ -93,6 +136,18 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			UimaBioCDocument uiD = new UimaBioCDocument(jcas);
+
+			String fileStem = this.txtFile.getName().substring(0,this.txtFile.getName().lastIndexOf("."));
+
+			Map<String,Ref> refLookup = null;
+			if( this.referenceFileDirectory.length() > 0 ) {
+				File referenceFile = new File(this.referenceFileDirectory + "/" + fileStem + ".refs.json");
+				if( referenceFile.exists() ) {
+					Gson gson = new Gson();
+					Type collectionType = new TypeToken<Map<String,Ref>>(){}.getType();
+					refLookup = gson.fromJson(new FileReader(referenceFile), collectionType);
+				}
+			}
 			
 			Map<String,String> infons = new HashMap<String,String>();
 			infons.put("relative-source-path", txtFile.getPath().replaceAll(inputDirectory + "/", ""));
@@ -101,7 +156,6 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 			uiD.setBegin(0);
 			uiD.setEnd(txt.length());
 						
-			String fileStem = this.txtFile.getName().substring(0,this.txtFile.getName().lastIndexOf("."));
 			
 			Matcher m = this.patt.matcher(this.txtFile.getName());
 			if(m.find())
@@ -234,7 +288,8 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 				// labels and captions from within them.
 				//
 				if( type.equals("fig") ||
-						type.equals("supplementary-material") ){					
+						type.equals("supplementary-material") || 
+						type.equals("table-wrap") ){					
 					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 					UimaBioCAnnotation uiA = new UimaBioCAnnotation(jcas);
 					uiA.setBegin(begin);
@@ -263,7 +318,6 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 					uiL.setLength(end - begin);
 					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 				}
-
 
 				// Section Headings
 				if( type.equals("sec") ){					
@@ -341,7 +395,7 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 					//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 				
 				}
-				
+				 
 				// X-REF Columns
 				// format: ref-type="bibr" rid="B7"
 				if( type.equals("xref") ){		
@@ -354,6 +408,8 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 						if( lc.length > 1 )
 							refId = lc[1].substring(lc[1].indexOf("=")+2, lc[1].length()-1);					
 					} catch (ArrayIndexOutOfBoundsException e) {
+						System.err.println("XREF not formatted correctly (" + codes + "), skipping XREF annotation");
+					} catch (java.lang.StringIndexOutOfBoundsException e) {
 						System.err.println("XREF not formatted correctly (" + codes + "), skipping XREF annotation");
 					}
 					
@@ -370,6 +426,12 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 						infons2.put("value", type);
 						infons2.put("refType", refType);
 						infons2.put("refId", refId);
+						
+						if(refLookup!= null && refLookup.containsKey(refId)) {
+							Ref ref = refLookup.get(refId);
+							infons2.put("pmid", ref.pmid);							
+						}
+						
 						uiA.setInfons(UimaBioCUtils.convertInfons(infons2, jcas));
 						uiA.addToIndexes();
 						
@@ -391,12 +453,7 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 				uiD.setId("skip");
 			
 			uiD.addToIndexes();
-			
-			pos++;
-		    if( (pos % 1000) == 0) {
-		    	System.out.println("Processing " + pos + "th document.");
-		    }
-		    
+					    
 		} catch (Exception e) {
 			
 			System.err.print(this.pos + "/" + this.count);
@@ -435,20 +492,44 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 		if( !txtFileIt.hasNext() )
 			return false;
 		
-		this.txtFile = txtFileIt.next();
+		this.txtFile = moveFileIteratorForwardOneStep();
 		this.soFile = new File(txtFile.getPath().replaceAll("\\.txt$", ".so"));
+		
+		if( this.outputDirectory != null && this.outputType != null ){	
+			String newPath = soFile.getPath().replaceAll(
+					this.inputDirectory,
+					this.outputDirectory);
+			File targetFile = new File(newPath.replaceAll("\\.so$",  "."+this.outputType));
+			while( targetFile.exists()  ) {
+				if(!txtFileIt.hasNext()) 
+					return false;
+				pos++;
+				txtFile = moveFileIteratorForwardOneStep();
+				soFile = new File(txtFile.getPath().replaceAll("\\.txt$", ".so"));
+				targetFile = new File(txtFile.getPath().replaceAll("\\.txt$", "."+this.outputType));
+			}
 
+		}			
+				
 		while( !txtFile.exists() || !soFile.exists() ) {
-
 			if(!txtFileIt.hasNext()) 
 				return false;
-			txtFile = txtFileIt.next();
+			pos++;
+			txtFile = moveFileIteratorForwardOneStep();
 			soFile = new File(txtFile.getPath().replaceAll("\\.txt$", ".so"));
 		
 		}
 		
 		return true;
 				
+	}
+
+	private File moveFileIteratorForwardOneStep() {
+		pos++;
+		if( (pos % 1000) == 0) {
+	    	System.out.println("Processing " + pos + "th document.");
+	    }
+		return txtFileIt.next();
 	}
 
 }

@@ -40,6 +40,9 @@ public class UIMABIOC_01_Nxml2txt_to_BioC {
 		@Option(name = "-outDir", usage = "Output Directory", required = true, metaVar = "OUT-DIRECTORY")
 		public File outDir;
 
+		@Option(name = "-refDir", usage = "Reference Directory", required = false, metaVar = "REFERENCE-FILES-DIRECTORY")
+		public File refDir;
+
 		@Option(name = "-outFormat", usage = "Output Format", required = true, metaVar = "XML/JSON")
 		public String outFormat;
 
@@ -82,6 +85,11 @@ public class UIMABIOC_01_Nxml2txt_to_BioC {
 		CollectionReader cr = CollectionReaderFactory.createCollectionReader(
 				Nxml2TxtFilesCollectionReader.class, typeSystem,
 				Nxml2TxtFilesCollectionReader.PARAM_INPUT_DIRECTORY, options.inDir);
+		if( options.refDir != null ) 
+			cr = CollectionReaderFactory.createCollectionReader(
+					Nxml2TxtFilesCollectionReader.class, typeSystem,
+					Nxml2TxtFilesCollectionReader.PARAM_INPUT_DIRECTORY, options.inDir,
+					Nxml2TxtFilesCollectionReader.PARAM_REF_DIRECTORY, options.refDir);
 
 		AggregateBuilder builder = new AggregateBuilder();
 

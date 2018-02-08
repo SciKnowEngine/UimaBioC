@@ -43,7 +43,7 @@ public class TagPassagesAnnotator extends JCasAnnotator_ImplBase {
 	String pythonExecPath;*/
 	
 	public final static String PARAM_OUT_DIR_PATH = ConfigurationParameterFactory
-			.createConfigurationParameterName(TagPassagesAnnotator.class, "outDirPath");
+			.createConfigurationParameterName(TagPassagesAnnotator.class, "outFilePath");
 	@ConfigurationParameter(mandatory = true, description = "The place to put the output files")
 	String outDirPath;
 	

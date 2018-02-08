@@ -13,9 +13,9 @@ import org.apache.uima.util.ProgressImpl;
 import org.uimafit.component.JCasCollectionReader_ImplBase;
 
 import bioc.BioCDocument;
-import bioc.esViews.BioCDocumentView.BioCDocumentView__BioCDocument;
+import bioc.esViews.BioCDocument.BioCDocument__BioCDocument;
 import edu.isi.bmkeg.uimaBioC.UimaBioCUtils;
-import edu.isi.bmkeg.uimaBioC.elasticSearch.BioCRepository;
+import edu.isi.bmkeg.uimaBioC.elasticSearch.BioCDocumentRepository;
 import edu.isi.bmkeg.utils.ViewConverter;
 
 /**
@@ -33,9 +33,9 @@ public class BioCDocumentElasticSearchReader extends JCasCollectionReader_ImplBa
 	public final static String BIOC_ES_REPO = "bioCRepository";
 	
 	@org.uimafit.descriptor.ExternalResource(key = BIOC_ES_REPO)
-	BioCRepository biocRepo;
+	BioCDocumentRepository biocRepo;
 	
-	private Iterator<BioCDocumentView__BioCDocument> biocDocIt;
+	private Iterator<BioCDocument__BioCDocument> biocDocIt;
 	
 	private long pos = 0;
 	private long count = 0;
@@ -46,7 +46,7 @@ public class BioCDocumentElasticSearchReader extends JCasCollectionReader_ImplBa
 		try {
 						
 			this.count = this.biocRepo.count();
-			Iterator<BioCDocumentView__BioCDocument> biocDocIt = this.biocRepo.findAll().iterator();
+			Iterator<BioCDocument__BioCDocument> biocDocIt = this.biocRepo.findAll().iterator();
 			
 		} catch (Exception e) {
 
@@ -67,7 +67,7 @@ public class BioCDocumentElasticSearchReader extends JCasCollectionReader_ImplBa
 			if(!biocDocIt.hasNext()) 
 				return;
 			
-			BioCDocumentView__BioCDocument bioCDocView = biocDocIt.next();
+			BioCDocument__BioCDocument bioCDocView = biocDocIt.next();
 			BioCDocument bioCDoc = new BioCDocument();
 			
 			ViewConverter vc = new ViewConverter(bioCDocView);

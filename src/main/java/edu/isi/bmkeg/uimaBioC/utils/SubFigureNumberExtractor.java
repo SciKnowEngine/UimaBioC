@@ -98,8 +98,11 @@ public class SubFigureNumberExtractor {
 		List<Token> f = JCasUtil.selectFollowing(jCas, Token.class, s, 10);
 		List<Token> p = JCasUtil.selectPreceding(jCas, Token.class, s, offset);
 
+		if(p.size()==0 || f.size()<10)
+			return "-";
 		Token start = p.get(0);
 		Token end = f.get(9);
+		
 		String figFrag = jCas.getDocumentText().substring(start.getBegin(), end.getEnd());
 		int newlineCheck = figFrag.indexOf("\n");
 		if( newlineCheck != -1 )
