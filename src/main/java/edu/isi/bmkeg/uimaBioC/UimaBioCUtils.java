@@ -842,6 +842,7 @@ public class UimaBioCUtils {
 		Set<String> pmids = new HashSet<String>();
 		for (UimaBioCAnnotation a : JCasUtil.selectCovered(UimaBioCAnnotation.class, clause)) {
 			Map<String, String> infons = UimaBioCUtils.convertInfons(a.getInfons());
+			logger.debug(infons.toString());
 			if (infons.containsKey("refType") && infons.get("refType").startsWith("bib") && 
 					infons.containsKey("pmid")) {
 				pmids.add(infons.get("pmid"));
@@ -849,8 +850,7 @@ public class UimaBioCUtils {
 		}
 		return pmids;
 	}
-	
-	
+
 	public static String readExptCodes(JCas jCas, UimaBioCAnnotation s) {
 
 		String exptCode = s.getCoveredText();

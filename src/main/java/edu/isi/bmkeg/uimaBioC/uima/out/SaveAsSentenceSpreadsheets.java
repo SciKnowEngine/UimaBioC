@@ -48,7 +48,6 @@ import bioc.BioCCollection;
 import bioc.type.UimaBioCAnnotation;
 import bioc.type.UimaBioCDocument;
 import bioc.type.UimaBioCSentence;
-import edu.isi.bmkeg.uimaBioC.ReachUtils;
 import edu.isi.bmkeg.uimaBioC.UimaBioCUtils;
 import edu.isi.bmkeg.uimaBioC.utils.SubFigureNumberExtractor;
 
@@ -168,35 +167,6 @@ public class SaveAsSentenceSpreadsheets extends JCasAnnotator_ImplBase {
 			Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_DASHES)
 					.registerTypeAdapterFactory(typeFactory).create();
 
-			if( this.friesDir != null ) {
-				Map<String, File> fileHash = ReachUtils.getReachFileHash(id, this.friesDir);
-				FRIES_FrameCollection fc1 = gson.fromJson(new FileReader(fileHash.get("sentences")), FRIES_FrameCollection.class);
-				Map<String, FRIES_Sentence> sentenceMap = new HashMap<String, FRIES_Sentence>();
-				for (FRIES_Frame frame : fc1.getFrames()) {
-					if (frame instanceof FRIES_Sentence) {
-						FRIES_Sentence sn = (FRIES_Sentence) frame;
-						sentenceMap.put(sn.getFrameId(), sn);
-					}
-				}
-				FRIES_FrameCollection fc2 = gson.fromJson(new FileReader(fileHash.get("events")), FRIES_FrameCollection.class);
-				for (FRIES_Frame frame : fc2.getFrames()) {
-					if (frame instanceof FRIES_EventMention) {
-						FRIES_EventMention em = (FRIES_EventMention) frame;
-						if( !eventMap.containsKey(em.getSentence()) ) {
-							eventMap.put(em.getSentence(), new HashSet<FRIES_EventMention>());
-						} 
-						Set<FRIES_EventMention> eventSet = eventMap.get(em.getSentence());
-						eventSet.add(em);					
-					}
-				}
-				FRIES_FrameCollection fc3 = gson.fromJson(new FileReader(fileHash.get("entities")), FRIES_FrameCollection.class);
-				for (FRIES_Frame frame : fc3.getFrames()) {
-					if (frame instanceof FRIES_EntityMention) {
-						FRIES_EntityMention em = (FRIES_EntityMention) frame;
-						entityMap.put(em.getFrameId(), em);
-					}
-				}
-			}
 			
 			this.dumpSectionToFile(jCas, out, uiD.getBegin(), uiD.getEnd());
 
@@ -425,7 +395,6 @@ public class SaveAsSentenceSpreadsheets extends JCasAnnotator_ImplBase {
 							p += ",";
 						p += pp;
 					}
-					e += ReachUtils.getEventSummary(ev) + "(" + p + ")";
 				}
 			}
 			out.print(e);

@@ -1,4 +1,4 @@
-package edu.isi.bmkeg.uimaBioC.rubicon;
+package edu.isi.bmkeg.uimaBioC.uima.ae.nlp;
 
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -25,7 +25,6 @@ import bioc.type.UimaBioCDocument;
 import bioc.type.UimaBioCLocation;
 import bioc.type.UimaBioCPassage;
 import edu.isi.bmkeg.uimaBioC.UimaBioCUtils;
-import edu.isi.bmkeg.uimaBioC.bin.rubicon.RUBICON_01_preprocessToBioC;
 import edu.stanford.nlp.parser.lexparser.Options;
 import edu.stanford.nlp.parser.lexparser.ParseFiles;
 import edu.stanford.nlp.process.PTBEscapingProcessor;

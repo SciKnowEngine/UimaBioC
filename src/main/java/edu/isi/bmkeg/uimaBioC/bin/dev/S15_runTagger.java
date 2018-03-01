@@ -22,8 +22,8 @@ import org.uimafit.pipeline.SimplePipeline;
 
 import edu.isi.bmkeg.uimaBioC.elasticSearch.BioCDocumentRepository;
 import edu.isi.bmkeg.uimaBioC.rubicon.RemoveSentencesNotInTitleAbstractBody;
-import edu.isi.bmkeg.uimaBioC.rubicon.StanfordTag;
 import edu.isi.bmkeg.uimaBioC.uima.ae.core.FixSentencesFromHeadings;
+import edu.isi.bmkeg.uimaBioC.uima.ae.nlp.StanfordTag;
 import edu.isi.bmkeg.uimaBioC.uima.readers.BioCCollectionReader;
 
 

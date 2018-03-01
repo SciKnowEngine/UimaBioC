@@ -18,13 +18,12 @@ import org.uimafit.factory.CpeBuilder;
 import org.uimafit.factory.TypeSystemDescriptionFactory;
 
 import edu.isi.bmkeg.uimaBioC.refactoredCleartk.SentenceAnnotator;
-import edu.isi.bmkeg.uimaBioC.rubicon.MatchReachAndNxmlText;
 import edu.isi.bmkeg.uimaBioC.rubicon.RemoveSentencesNotInTitleAbstractBody;
-import edu.isi.bmkeg.uimaBioC.rubicon.SeparateClauses;
-import edu.isi.bmkeg.uimaBioC.rubicon.StanfordParse;
 import edu.isi.bmkeg.uimaBioC.uima.ae.core.AddFeaturesToClauses;
 import edu.isi.bmkeg.uimaBioC.uima.ae.core.FixSentencesFromHeadings;
 import edu.isi.bmkeg.uimaBioC.uima.ae.core.RemoveRepeatedBioCAnnotations;
+import edu.isi.bmkeg.uimaBioC.uima.ae.nlp.SeparateClauses;
+import edu.isi.bmkeg.uimaBioC.uima.ae.nlp.StanfordParse;
 import edu.isi.bmkeg.uimaBioC.uima.out.SaveAsBioCDocuments;
 import edu.isi.bmkeg.uimaBioC.uima.readers.BioCCollectionReader;
 import edu.isi.bmkeg.uimaBioC.utils.StatusCallbackListenerImpl;

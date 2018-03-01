@@ -18,7 +18,6 @@ import org.uimafit.factory.CpeBuilder;
 import org.uimafit.factory.TypeSystemDescriptionFactory;
 
 import edu.isi.bmkeg.uimaBioC.refactoredCleartk.SentenceAnnotator;
-import edu.isi.bmkeg.uimaBioC.rubicon.MatchReachAndNxmlText;
 import edu.isi.bmkeg.uimaBioC.rubicon.RemoveSentencesNotInTitleAbstractBody;
 import edu.isi.bmkeg.uimaBioC.uima.ae.core.AddBioCDirectory;
 import edu.isi.bmkeg.uimaBioC.uima.ae.core.FixSentencesFromHeadings;

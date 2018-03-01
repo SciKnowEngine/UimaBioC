@@ -29,9 +29,7 @@ import org.uimafit.util.JCasUtil;
 import bioc.BioCCollection;
 import bioc.type.UimaBioCAnnotation;
 import bioc.type.UimaBioCDocument;
-import bioc.type.UimaBioCPassage;
 import edu.isi.bmkeg.uimaBioC.UimaBioCUtils;
-import edu.isi.bmkeg.uimaBioC.rubicon.MatchReachAndNxmlText;
 
 public class SaveLinksBetweenFiguresAndParagraphs extends JCasAnnotator_ImplBase {
 

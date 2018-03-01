@@ -48,7 +48,6 @@ import bioc.BioCCollection;
 import bioc.type.UimaBioCAnnotation;
 import bioc.type.UimaBioCDocument;
 import bioc.type.UimaBioCSentence;
-import edu.isi.bmkeg.uimaBioC.ReachUtils;
 import edu.isi.bmkeg.uimaBioC.UimaBioCUtils;
 import edu.isi.bmkeg.uimaBioC.utils.SubFigureNumberExtractor;
 

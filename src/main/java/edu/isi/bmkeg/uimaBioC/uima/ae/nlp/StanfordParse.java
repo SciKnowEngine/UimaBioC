@@ -1,4 +1,4 @@
-package edu.isi.bmkeg.uimaBioC.rubicon;
+package edu.isi.bmkeg.uimaBioC.uima.ae.nlp;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
