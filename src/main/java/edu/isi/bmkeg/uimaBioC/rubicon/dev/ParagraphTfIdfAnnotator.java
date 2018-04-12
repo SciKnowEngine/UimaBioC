@@ -1,31 +1,12 @@
 package edu.isi.bmkeg.uimaBioC.rubicon.dev;
 
-import java.io.File;
-import java.io.FileReader;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.apache.uima.UimaContext;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
 import org.apache.uima.jcas.JCas;
 import org.apache.uima.resource.ResourceInitializationException;
-import org.bigmech.fries.FRIES_Argument;
-import org.bigmech.fries.FRIES_EntityMention;
-import org.bigmech.fries.FRIES_EventMention;
-import org.bigmech.fries.FRIES_Frame;
-import org.bigmech.fries.FRIES_FrameCollection;
-import org.bigmech.fries.FRIES_Passage;
-import org.bigmech.fries.FRIES_Sentence;
-import org.bigmech.fries.FRIES_XRef;
 import org.cleartk.ml.CleartkAnnotator;
 import org.cleartk.ml.CleartkProcessingException;
 import org.cleartk.ml.Feature;
@@ -34,20 +15,11 @@ import org.cleartk.ml.feature.extractor.CleartkExtractor;
 import org.cleartk.ml.feature.extractor.CleartkExtractorException;
 import org.cleartk.ml.feature.extractor.CoveredTextExtractor;
 import org.cleartk.ml.feature.transform.extractor.TfidfExtractor;
-import org.cleartk.token.type.Sentence;
 import org.cleartk.token.type.Token;
-import org.uimafit.descriptor.ConfigurationParameter;
-import org.uimafit.factory.ConfigurationParameterFactory;
 import org.uimafit.util.JCasUtil;
-
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.typeadapters.RuntimeTypeAdapterFactory;
 
 import bioc.type.UimaBioCAnnotation;
 import bioc.type.UimaBioCDocument;
-import bioc.type.UimaBioCPassage;
 import edu.isi.bmkeg.uimaBioC.UimaBioCUtils;
 
 public class ParagraphTfIdfAnnotator extends CleartkAnnotator<String> {

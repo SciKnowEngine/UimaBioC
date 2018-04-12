@@ -17,9 +17,7 @@ package edu.isi.bmkeg.uimaBioC.elasticSearch;
 
 import java.util.List;
 
-import org.bigmech.fries.esViews.FRIES_EntityMentionView.FRIES_EntityMentionView__FRIES_EntityMention;
 import org.bigmech.fries.esViews.FRIES_EventMentionView.FRIES_EventMentionView__FRIES_EventMention;
-import org.bigmech.fries.esViews.FRIES_EventMentionView.FRIES_EventMentionView__FRIES_Meta;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 
 /**

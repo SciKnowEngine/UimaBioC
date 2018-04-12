@@ -1,9 +1,7 @@
 package edu.isi.bmkeg.uimaBioC;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -15,11 +13,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.xml.stream.XMLStreamException;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
 import org.apache.uima.jcas.JCas;
 import org.apache.uima.jcas.cas.FSArray;
 import org.apache.uima.jcas.tcas.Annotation;
@@ -842,7 +837,6 @@ public class UimaBioCUtils {
 		Set<String> pmids = new HashSet<String>();
 		for (UimaBioCAnnotation a : JCasUtil.selectCovered(UimaBioCAnnotation.class, clause)) {
 			Map<String, String> infons = UimaBioCUtils.convertInfons(a.getInfons());
-			logger.debug(infons.toString());
 			if (infons.containsKey("refType") && infons.get("refType").startsWith("bib") && 
 					infons.containsKey("pmid")) {
 				pmids.add(infons.get("pmid"));

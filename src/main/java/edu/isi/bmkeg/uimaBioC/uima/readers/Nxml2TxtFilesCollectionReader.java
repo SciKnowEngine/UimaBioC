@@ -146,7 +146,7 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 					Gson gson = new Gson();
 					Type collectionType = new TypeToken<Map<String,Ref>>(){}.getType();
 					refLookup = gson.fromJson(new FileReader(referenceFile), collectionType);
-				}
+				} 
 			}
 			
 			Map<String,String> infons = new HashMap<String,String>();
@@ -430,7 +430,7 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 						if(refLookup!= null && refLookup.containsKey(refId)) {
 							Ref ref = refLookup.get(refId);
 							infons2.put("pmid", ref.pmid);							
-						}
+						} 
 						
 						uiA.setInfons(UimaBioCUtils.convertInfons(infons2, jcas));
 						uiA.addToIndexes();

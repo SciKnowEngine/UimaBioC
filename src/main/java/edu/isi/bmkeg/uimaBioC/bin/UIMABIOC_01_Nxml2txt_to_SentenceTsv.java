@@ -102,25 +102,26 @@ public class UIMABIOC_01_Nxml2txt_to_SentenceTsv {
 
 		boolean refsSpecified = (options.refDir != null);
 		boolean outSpecified = (options.outDir != null && options.outType != null);
-		if( refsSpecified && !outSpecified ) 
+		
+		if( refsSpecified && !outSpecified ) {			
 			cr = CollectionReaderFactory.createDescription(
 					Nxml2TxtFilesCollectionReader.class, typeSystem,
 					Nxml2TxtFilesCollectionReader.PARAM_INPUT_DIRECTORY, options.inDir,
 					Nxml2TxtFilesCollectionReader.PARAM_REF_DIRECTORY, options.refDir);
-		else if( !refsSpecified && outSpecified ) 
+		} else if( !refsSpecified && outSpecified ) {	
 			cr = CollectionReaderFactory.createDescription(
 					Nxml2TxtFilesCollectionReader.class, typeSystem,
 					Nxml2TxtFilesCollectionReader.PARAM_INPUT_DIRECTORY, options.inDir,
 					Nxml2TxtFilesCollectionReader.PARAM_OUTPUT_DIRECTORY, options.outDir,
 					Nxml2TxtFilesCollectionReader.PARAM_OUTPUT_TYPE, options.outType);
-		else if( refsSpecified && !outSpecified ) 
+		} else if( refsSpecified && outSpecified ) {
 			cr = CollectionReaderFactory.createDescription(
 					Nxml2TxtFilesCollectionReader.class, typeSystem,
 					Nxml2TxtFilesCollectionReader.PARAM_INPUT_DIRECTORY, options.inDir,
 					Nxml2TxtFilesCollectionReader.PARAM_REF_DIRECTORY, options.refDir,
 					Nxml2TxtFilesCollectionReader.PARAM_OUTPUT_DIRECTORY, options.outDir,
 					Nxml2TxtFilesCollectionReader.PARAM_OUTPUT_TYPE, options.outType);
-					
+		}					
 
 		CpeBuilder cpeBuilder = new CpeBuilder();
 		cpeBuilder.setReader(cr);
