@@ -689,6 +689,31 @@ public class UimaBioCUtils {
 
 	}
 
+	public static String readUntokenizedText(JCas jCas, Annotation a) {
+		
+		String txt = a.getCoveredText();
+
+		//
+		// Look for exLinks and remove the text associated with them.
+		//
+		List<UimaBioCAnnotation> bibRefs = new ArrayList<UimaBioCAnnotation>();
+		for (UimaBioCAnnotation a1 : JCasUtil.selectCovered(jCas, UimaBioCAnnotation.class, a.getBegin(), a.getEnd())) {
+			Map<String, String> infons = UimaBioCUtils.convertInfons(a1.getInfons());
+			if (infons.containsKey("refType") && infons.get("refType").startsWith("bib")) {
+				String pre = txt.substring(0, a1.getBegin()-a.getBegin());
+				String filler = StringUtils.leftPad("", a1.getCoveredText().length(), ' '); 
+				String post = txt.substring(a1.getEnd()-a.getBegin(), txt.length());
+				txt = pre+filler+post;
+				int i = 1;
+				i++;
+			}
+		}
+
+		return txt;
+
+	}
+	
+	
 	public static String readTokenizedText(JCas jCas, Annotation a) {
 		String txt = "";
 
@@ -950,7 +975,6 @@ public class UimaBioCUtils {
 		return heading;
 
 	}
-	
 	
 	public static String readTokenizedText(JCas jCas, Sentence s) {
 		String txt = "";

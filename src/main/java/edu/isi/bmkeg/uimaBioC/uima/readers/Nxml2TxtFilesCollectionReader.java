@@ -7,12 +7,15 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.Type;
-import java.util.Collection;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
@@ -54,9 +57,9 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 		private String title;
 	}
 	
-	private Iterator<File> txtFileIt; 
-	private File txtFile;
-	private File soFile;
+	private Iterator<Path> txtFileIt; 
+	private Path txtFileP;
+	private Path soFileP;
 	private Pattern patt;
 	
 	private int pos = 0;
@@ -106,12 +109,10 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 	public void initialize(UimaContext context) throws ResourceInitializationException {
 
 		try {
-
-			String[] fileTypes = {"txt"};
-			
-			Collection<File> l = (Collection<File>) FileUtils.listFiles(new File(inputDirectory), fileTypes, true);
-			this.txtFileIt = l.iterator();
-			this.count = l.size();
+			Path inputDirectoryP = Paths.get(inputDirectory);
+			Stream<Path> stream = Files.walk(inputDirectoryP).filter(p -> p.toString().endsWith(".txt"));
+			txtFileIt = stream.iterator();
+		    
 			this.patt = Pattern.compile("(\\d+)\\.txt");
 			
 		} catch (Exception e) {
@@ -128,16 +129,16 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 	public void getNext(JCas jcas) throws IOException, CollectionException {
 
 		try {
-						
+			
 			UimaBioCAnnotation articleTitle = null;
 
-			String txt = FileUtils.readFileToString(txtFile);
+			String txt = FileUtils.readFileToString(txtFileP.toFile());
 			jcas.setDocumentText( txt );
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			UimaBioCDocument uiD = new UimaBioCDocument(jcas);
 
-			String fileStem = this.txtFile.getName().substring(0,this.txtFile.getName().lastIndexOf("."));
+			String fileStem = txtFileP.toFile().getName().substring(0,txtFileP.toFile().getName().lastIndexOf("."));
 
 			Map<String,Ref> refLookup = null;
 			if( this.referenceFileDirectory.length() > 0 ) {
@@ -150,17 +151,18 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 			}
 			
 			Map<String,String> infons = new HashMap<String,String>();
-			infons.put("relative-source-path", txtFile.getPath().replaceAll(inputDirectory + "/", ""));
+			infons.put("relative-source-path", txtFileP.toString().replaceAll(inputDirectory + "/", ""));
 			uiD.setInfons(UimaBioCUtils.convertInfons(infons, jcas));
 			
 			uiD.setBegin(0);
 			uiD.setEnd(txt.length());
 						
 			
-			Matcher m = this.patt.matcher(this.txtFile.getName());
-			if(m.find())
+			Matcher m = this.patt.matcher(txtFileP.toFile().getName());
+			if(m.find()) {
 				uiD.setId(m.group(1));
-			
+				System.err.println(uiD.getId());
+			}
 			int passageCount = 0;
 			int nSkip = 0;
 			
@@ -185,7 +187,7 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			
 			BufferedReader in = new BufferedReader(new InputStreamReader(
-					new FileInputStream(soFile)));
+					new FileInputStream(soFileP.toFile())));
 			String line;
 			while ((line = in.readLine()) != null) {
 			
@@ -492,44 +494,49 @@ public class Nxml2TxtFilesCollectionReader extends JCasCollectionReader_ImplBase
 		if( !txtFileIt.hasNext() )
 			return false;
 		
-		this.txtFile = moveFileIteratorForwardOneStep();
-		this.soFile = new File(txtFile.getPath().replaceAll("\\.txt$", ".so"));
+		this.txtFileP = moveFileIteratorForwardOneStep();
+		this.soFileP = Paths.get(txtFileP.toString().replaceAll("\\.txt$", ".so"));
+		File targetFile = null;
 		
 		if( this.outputDirectory != null && this.outputType != null ){	
-			String newPath = soFile.getPath().replaceAll(
+			String newPath = soFileP.toString().replaceAll(
 					this.inputDirectory,
 					this.outputDirectory);
-			File targetFile = new File(newPath.replaceAll("\\.so$",  "."+this.outputType));
+			targetFile = new File(newPath.replaceAll("\\.so$",  "."+this.outputType));
 			while( targetFile.exists()  ) {
 				if(!txtFileIt.hasNext()) 
 					return false;
-				pos++;
-				txtFile = moveFileIteratorForwardOneStep();
-				soFile = new File(txtFile.getPath().replaceAll("\\.txt$", ".so"));
-				targetFile = new File(txtFile.getPath().replaceAll("\\.txt$", "."+this.outputType));
+				txtFileP = moveFileIteratorForwardOneStep();
+				soFileP = Paths.get(txtFileP.toString().replaceAll("\\.txt$", ".so"));
+				newPath = soFileP.toString().replaceAll(this.inputDirectory, this.outputDirectory);
+				targetFile = new File(newPath.replaceAll("\\.so$",  "."+this.outputType));
 			}
 
 		}			
 				
-		while( !txtFile.exists() || !soFile.exists() ) {
+		while( !txtFileP.toFile().exists() || !soFileP.toFile().exists() ) {
 			if(!txtFileIt.hasNext()) 
 				return false;
-			pos++;
-			txtFile = moveFileIteratorForwardOneStep();
-			soFile = new File(txtFile.getPath().replaceAll("\\.txt$", ".so"));
-		
+			txtFileP = moveFileIteratorForwardOneStep();
+			soFileP = Paths.get(txtFileP.toString().replaceAll("\\.txt$", ".so"));
+			String newPath = soFileP.toString().replaceAll(this.inputDirectory, this.outputDirectory);
+			targetFile = new File(newPath.replaceAll("\\.so$",  "."+this.outputType));			
 		}
+		
+		// Write an empty file to the target to prevent anyone else from writing to that file. 
+		boolean blnCreated = targetFile.createNewFile();
 		
 		return true;
 				
 	}
 
-	private File moveFileIteratorForwardOneStep() {
+	private Path moveFileIteratorForwardOneStep() {
 		pos++;
 		if( (pos % 1000) == 0) {
-	    	System.out.println("Processing " + pos + "th document.");
+			System.out.println("\nProcessing " + pos + "th document.\n");
 	    }
-		return txtFileIt.next();
+		Path p = txtFileIt.next();
+		return p;
 	}
 
 }

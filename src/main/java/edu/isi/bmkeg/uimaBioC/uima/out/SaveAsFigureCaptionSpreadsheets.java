@@ -1,7 +1,5 @@
 package edu.isi.bmkeg.uimaBioC.uima.out;
 
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.forwardedUrl;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -11,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -23,7 +22,6 @@ import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
 import org.apache.uima.jcas.JCas;
 import org.apache.uima.resource.ResourceInitializationException;
 import org.cleartk.token.type.Sentence;
-import org.cleartk.token.type.Token;
 import org.uimafit.component.JCasAnnotator_ImplBase;
 import org.uimafit.descriptor.ConfigurationParameter;
 import org.uimafit.factory.ConfigurationParameterFactory;
@@ -53,14 +51,15 @@ public class SaveAsFigureCaptionSpreadsheets extends JCasAnnotator_ImplBase {
 	private File outDir;
 	private BioCCollection collection;
 	
-	private Pattern figurePattern = Pattern.compile("^\\s*Figure\\s*(\\d+)");
+	private Pattern figurePattern = Pattern.compile("^\\s*fig(.|ure)[\\s\\(]*(\\d+)");
+	private Pattern justNumberFigurePattern = Pattern.compile("^\\s*(\\d+)");
 
 	// (A)
 	private Pattern subFigurePattern1 = Pattern.compile(
 			"[\\(\\[]\\s+([A-Za-z])\\s+[\\)\\]]");
-	// (A and B), (A & B)
+	// (A and B), (A & B), (A , B)
 	private Pattern subFigurePattern2 = Pattern.compile(
-			"[\\(\\[]\\s+([A-Za-z])\\s+(and|&)\\s+([A-Za-z])\\s+[\\)\\]]");
+			"[\\(\\[]\\s+([A-Za-z])\\s+(and|&|,)\\s+([A-Za-z])\\s+[\\)\\]]");
 	// (A, B, and C), (A,B and C)
 	private Pattern subFigurePattern3 = Pattern.compile(
 			"[\\(\\[]\\s+([A-Za-z])\\s+,\\s+([A-Za-z])[\\s+,](and|&)\\s([A-Za-z])\\s+[\\)\\]]");
@@ -69,6 +68,9 @@ public class SaveAsFigureCaptionSpreadsheets extends JCasAnnotator_ImplBase {
 	// (A - F)
 	private Pattern subFigurePattern5 = Pattern.compile(
 			"[\\(\\[]\\s+([A-Za-z])\\s+\\-\\s+([A-Za-z])\\s+[\\)\\]]");
+	// (A , top), (A middle)
+	private Pattern subFigurePattern6 = Pattern.compile(
+			"[\\(\\[]\\s+([A-Za-z])[\\s\\,]*(bottom|middle|top|left|right|center)\\s+[\\)\\]]");
 
 	private SubFigureNumberExtractor figExtractor;
 
@@ -97,6 +99,7 @@ public class SaveAsFigureCaptionSpreadsheets extends JCasAnnotator_ImplBase {
 	public void process(JCas jCas) throws AnalysisEngineProcessException {
 
 		try {
+			
 			UimaBioCDocument uiD = JCasUtil.selectSingle(jCas, UimaBioCDocument.class);
 			if (uiD.getId().equals("skip"))
 				return;
@@ -111,22 +114,25 @@ public class SaveAsFigureCaptionSpreadsheets extends JCasAnnotator_ImplBase {
 				pmcID = infons.get("accession");
 
 			Map<String, String> inf = UimaBioCUtils.convertInfons(uiD.getInfons());
-			String relPath = inf.get("relative-source-path").replaceAll("\\.txt", "") + ".tsv";
+			String relPath = inf.get("relative-source-path").replaceAll("\\.txt", "") + "_captions.tsv";
 			File outFile = new File(outDirPath + "/" + relPath);
 			if( !outFile.getParentFile().exists() ) {
 				outFile.getParentFile().mkdirs();
 			}
-	
-			PrintWriter out;
-			try {
-				out = new PrintWriter(new BufferedWriter(new FileWriter(outFile, true)));
-			} catch (IOException e) {
-				throw (new AnalysisEngineProcessException(e));
-			}
-						
-			this.dumpSectionToFile(jCas, out, uiD.getBegin(), uiD.getEnd());
 
-			out.close();
+			String tsv = this.generateCaptionTsv(jCas, uiD.getBegin(), uiD.getEnd());
+			if( tsv != null ) {
+				PrintWriter out;
+				try {
+					out = new PrintWriter(new BufferedWriter(new FileWriter(outFile, true)));
+				} catch (IOException e) {
+					throw (new AnalysisEngineProcessException(e));
+				}
+				out.print(tsv);
+				out.close();
+			} else {
+				logger.error("No Caption TSV generated for " + id);
+			}
 
 		} catch (Exception e) {
 			
@@ -136,43 +142,102 @@ public class SaveAsFigureCaptionSpreadsheets extends JCasAnnotator_ImplBase {
 
 	}
 
-	private void dumpSectionToFile(JCas jCas, PrintWriter out, int start, int end) throws Exception {
+	private String generateCaptionTsv(JCas jCas, int start, int end) throws Exception {
 
-		List<UimaBioCAnnotation> floats_and_parags = new ArrayList<UimaBioCAnnotation>();
+		UimaBioCDocument uiD = JCasUtil.selectSingle(jCas, UimaBioCDocument.class);
+		String id = uiD.getId();
+		id += "";
+
+		List<UimaBioCAnnotation> figs = new ArrayList<UimaBioCAnnotation>();
 		for (UimaBioCAnnotation a : JCasUtil.selectCovered(jCas, UimaBioCAnnotation.class, start, end)) {
 			Map<String, String> infons = UimaBioCUtils.convertInfons(a.getInfons());
-			if (infons.containsKey("position") && infons.get("position").equals("float")) {
-				floats_and_parags.add(a);
-			} else if (infons.containsKey("value")
-					&& (infons.get("value").equals("p") || infons.get("value").equals("title"))) {
-				floats_and_parags.add(a);
+			if (infons.containsKey("value") && infons.get("value").equals("fig")) {
+				figs.add(a);
 			}
 		}
 
 		// Column Headings
-		out.print("DocId");
-		out.print("\t");
-		out.print("Figure");
-		out.print("\t");
-		out.print("SubFigure");
-		out.print("\t");
-		out.print("Caption");
-		out.print("\t");
-		out.print("Offset_Begin");
-		out.print("\t");
-		out.print("Offset_End");
-		out.print("\n");
+		String tsvText = "DocId";
+		tsvText += "\t";
+		tsvText += "Figure";
+		tsvText += "\t";
+		tsvText += "SubFigure";
+		tsvText += "\t";
+		tsvText += "Caption";
+		tsvText += "\t";
+		tsvText += "Offset_Begin";
+		tsvText += "\t";
+		tsvText += "Offset_End";
+		tsvText += "\n";
 
-		CAPTION_LOOP: for (UimaBioCAnnotation p : floats_and_parags) {
-			Matcher m = figurePattern.matcher(UimaBioCUtils.readTokenizedText(jCas, p));
-			if( m.find() ) {
-				printOutCaption(jCas, out, p, m.group(1));
+		boolean dataPresent = false;
+		
+		CAPTION_LOOP: for (UimaBioCAnnotation p : figs) {
+			
+			List<Sentence> sList = JCasUtil.selectCovered(jCas, Sentence.class, p.getBegin(), p.getEnd());
+			if( sList.size() == 0 )
+				continue;
+			// figure box only contains 1 sentence...
+			else if( sList.size() == 1 ) {
+				String s = UimaBioCUtils.readTokenizedText(jCas, sList.get(0)).toLowerCase();
+				Matcher m1 = figurePattern.matcher(s);
+				Matcher m2 = justNumberFigurePattern.matcher(s);
+				if( m1.find() ) {
+					tsvText += printOutCaption(jCas, p, m1.group(2));
+					dataPresent = true;
+				} else if(m2.find()) {
+					tsvText += printOutCaption(jCas, p, m2.group(1));
+					dataPresent = true;
+				}
 			}
+			// figure box only contains 2 sentences...
+			else {
+				String s = UimaBioCUtils.readTokenizedText(jCas, sList.get(0)).toLowerCase();
+				Matcher m1 = figurePattern.matcher(s);
+				Matcher m2 = justNumberFigurePattern.matcher(s);
+				if( m1.find() ) {
+					tsvText += printOutCaption(jCas, p, m1.group(2));
+					dataPresent = true;
+				} else if(m2.find()) {
+					tsvText += printOutCaption(jCas, p, m2.group(1));
+					dataPresent = true;
+				} else {
+					s = UimaBioCUtils.readTokenizedText(jCas, sList.get(1)).toLowerCase();
+					m1 = figurePattern.matcher(s);
+					m2 = justNumberFigurePattern.matcher(s);
+					if( m1.find() ) {
+						tsvText += printOutCaption(jCas, p, m1.group(2));
+						dataPresent = true;
+					} else if(m2.find()) {
+						tsvText += printOutCaption(jCas, p, m2.group(1));
+						dataPresent = true;
+					}
+				}
+			}
+			//Matcher mm = doiFigurePattern.matcher(UimaBioCUtils.readTokenizedText(jCas, p));
+			//if( mm.find() ) {
+			//	tsvText += printOutCaption(jCas, p, mm.group(1));
+			//	dataPresent = true;
+			//}
 		}
 		
+		if( !dataPresent )
+			return null;
+			
+		return tsvText;
+		
+	}
+	
+	private String checkFigure(JCas jCas, UimaBioCAnnotation p, String s, Pattern patt, int groupNumber) throws StackOverflowError, Exception {
+		String out = "";
+		Matcher m = patt.matcher(s);
+		if( m.find() ) {
+			out += printOutCaption(jCas, p, m.group(groupNumber));
+		} 
+		return out;
 	}
 
-	private void printOutCaption(JCas jCas, PrintWriter out, UimaBioCAnnotation a, String fignumber)
+	private String printOutCaption(JCas jCas, UimaBioCAnnotation a, String fignumber)
 			throws Exception, StackOverflowError {
 
 		UimaBioCDocument uiD = JCasUtil.selectSingle(jCas, UimaBioCDocument.class);
@@ -182,7 +247,8 @@ public class SaveAsFigureCaptionSpreadsheets extends JCasAnnotator_ImplBase {
 		int startPos = a.getBegin();
 		String lastCode = "";
 		String lastText = "";
-		
+		String tsvText = "";
+			
 		for (Sentence s : JCasUtil.selectCovered(jCas, Sentence.class, a.getBegin(), a.getEnd())) {
 		
 			String sentenceText = UimaBioCUtils.readTokenizedText(jCas, s);
@@ -195,24 +261,26 @@ public class SaveAsFigureCaptionSpreadsheets extends JCasAnnotator_ImplBase {
 			if(subfigCodes.size()>0) {	
 				Set<String> toRemove = new HashSet<String>();
 				for( int i=0; i<subfigCodes.size(); i++) {
-					if(!subfigCodes.contains(alphabet[codeCount+i]+"")) {
+					if(!subfigCodeList.get(i).equals(alphabet[codeCount+i]+"")) {
 						String errorCode = subfigCodeList.get(i);			
 						toRemove.add(errorCode);	 // remove all out-of-sequence hits.
 					}
 				}
 				subfigCodes.removeAll(toRemove);
+				subfigCodeList = new ArrayList<String>(subfigCodes);
+				Collections.sort(subfigCodeList);
 			}
 			
 			//
 			// This sentence denotes a new subfigure, so print out the last subfigure notation.
 			//
 			if(subfigCodes.size()>0 && lastText.length()>0) {	
-				out.print(uiD.getId()+"\t");		// 1 - document id
-				out.print(fignumber+"\t"); 		// 2 - figure number
-				out.print(lastCode+"\t");		// 3 - subfigure codes
-				out.print(lastText+"\t");		// 4 - caption text
-				out.print(startPos+"\t");		// 5 - offset begin
-				out.print((s.getBegin()-1)+"\n");// 6 - offset end
+				tsvText += uiD.getId()+"\t";		// 1 - document id
+				tsvText += fignumber+"\t"; 		// 2 - figure number
+				tsvText += lastCode+"\t";		// 3 - subfigure codes
+				tsvText += lastText+"\t";		// 4 - caption text
+				tsvText += startPos+"\t";		// 5 - offset begin
+				tsvText += (s.getBegin()-1)+"\n";// 6 - offset end
 				lastText = ""; 
 			}
 			if(subfigCodes.size()>0) {
@@ -223,12 +291,14 @@ public class SaveAsFigureCaptionSpreadsheets extends JCasAnnotator_ImplBase {
 			lastText += " " + sentenceText;
 		
 		}
-		out.print(uiD.getId()+"\t");	// 1 - document id
-		out.print(fignumber+"\t"); 	// 2 - figure number
-		out.print(lastCode+"\t");	// 3 - subfigure codes
-		out.print(lastText+"\t");	// 4 - caption text
-		out.print(startPos+"\t");	// 5 - offset begin
-		out.print(a.getEnd()+"\n");	// 6 - offset end
+		tsvText += uiD.getId()+"\t";	// 1 - document id
+		tsvText += fignumber+"\t"; 	// 2 - figure number
+		tsvText += lastCode+"\t";	// 3 - subfigure codes
+		tsvText += lastText+"\t";	// 4 - caption text
+		tsvText += startPos+"\t";	// 5 - offset begin
+		tsvText += a.getEnd()+"\n";	// 6 - offset end
+		
+		return tsvText;
 	
 	}
 
@@ -273,6 +343,12 @@ public class SaveAsFigureCaptionSpreadsheets extends JCasAnnotator_ImplBase {
 			for( char c=first; c<=last; c++) {
 				subfigCodes.add(c+"");
 			}
+		}
+
+		// SEARCH FOR CAPTIONS FORMATTED LIKE THIS : "(A middle)"  
+		m = subFigurePattern6.matcher(sentenceText.toLowerCase());
+		while(m.find()) {
+			subfigCodes.add(m.group(1).toUpperCase());
 		}
 		
 		return subfigCodes;

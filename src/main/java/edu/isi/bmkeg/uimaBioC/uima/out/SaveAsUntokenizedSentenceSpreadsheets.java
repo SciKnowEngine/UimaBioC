@@ -31,12 +31,12 @@ import bioc.type.UimaBioCDocument;
 import edu.isi.bmkeg.uimaBioC.UimaBioCUtils;
 import edu.isi.bmkeg.uimaBioC.utils.SubFigureNumberExtractor;
 
-public class SaveAsSimpleSentenceSpreadsheets extends JCasAnnotator_ImplBase {
+public class SaveAsUntokenizedSentenceSpreadsheets extends JCasAnnotator_ImplBase {
 
 	private static Logger logger = Logger.getLogger(SaveAsSentenceSpreadsheets.class);
 
 	public final static String PARAM_DIR_PATH = ConfigurationParameterFactory
-			.createConfigurationParameterName(SaveAsSimpleSentenceSpreadsheets.class, "outDirPath");
+			.createConfigurationParameterName(SaveAsUntokenizedSentenceSpreadsheets.class, "outDirPath");
 	@ConfigurationParameter(mandatory = true, description = "The path to the output directory.")
 	String outDirPath;
 
@@ -170,7 +170,7 @@ public class SaveAsSimpleSentenceSpreadsheets extends JCasAnnotator_ImplBase {
 				
 		out.print(key);
 		out.print("\t");
-		out.print(UimaBioCUtils.readTokenizedText(jCas, (Annotation) s));
+		out.print(UimaBioCUtils.readUntokenizedText(jCas, (Annotation) s));
 		out.print("\t");
 		
 		String newCodeStr = "";

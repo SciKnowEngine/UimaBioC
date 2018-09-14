@@ -3,7 +3,9 @@ package edu.isi.bmkeg.uimaBioC.bin;
 import java.io.File;
 
 import org.apache.log4j.Logger;
-import org.apache.uima.collection.CollectionReader;
+import org.apache.uima.collection.CollectionProcessingEngine;
+import org.apache.uima.collection.CollectionReaderDescription;
+import org.apache.uima.collection.StatusCallbackListener;
 import org.apache.uima.resource.metadata.TypeSystemDescription;
 import org.cleartk.opennlp.tools.SentenceAnnotator;
 import org.cleartk.token.tokenizer.TokenAnnotator;
@@ -13,14 +15,15 @@ import org.kohsuke.args4j.Option;
 import org.uimafit.factory.AggregateBuilder;
 import org.uimafit.factory.AnalysisEngineFactory;
 import org.uimafit.factory.CollectionReaderFactory;
+import org.uimafit.factory.CpeBuilder;
 import org.uimafit.factory.TypeSystemDescriptionFactory;
 import org.uimafit.pipeline.SimplePipeline;
 
 import edu.isi.bmkeg.uimaBioC.uima.ae.core.AddAnnotationsFromNxmlFormatting;
-import edu.isi.bmkeg.uimaBioC.uima.ae.core.AddFeaturesToClauses;
 import edu.isi.bmkeg.uimaBioC.uima.ae.core.FixSentencesFromHeadings;
-import edu.isi.bmkeg.uimaBioC.uima.out.SaveAsBioCDocuments;
+import edu.isi.bmkeg.uimaBioC.uima.out.SaveAsUntokenizedSentenceSpreadsheets;
 import edu.isi.bmkeg.uimaBioC.uima.readers.Nxml2TxtFilesCollectionReader;
+import edu.isi.bmkeg.uimaBioC.utils.StatusCallbackListenerImpl;
 
 /**
  * This script provides a simple demonstration of loading BioC data from 
@@ -30,32 +33,34 @@ import edu.isi.bmkeg.uimaBioC.uima.readers.Nxml2TxtFilesCollectionReader;
  * @author Gully
  * 
  */
-public class UIMABIOC_01_Nxml2txt_to_BioC {
+public class UIMABIOC_01_Nxml2txt_to_UntokenizedSentenceTsv {
 
 	public static class Options {
 
 		@Option(name = "-inDir", usage = "Input Directory", required = true, metaVar = "IN-DIRECTORY")
 		public File inDir;
 
-		@Option(name = "-outDir", usage = "Output Directory", required = true, metaVar = "OUT-DIRECTORY")
+		@Option(name = "-outDir", usage = "Output Directory", required = false, metaVar = "OUT-DIRECTORY")
 		public File outDir;
 
 		@Option(name = "-refDir", usage = "Reference Directory", required = false, metaVar = "REFERENCE-FILES-DIRECTORY")
 		public File refDir;
-
-		@Option(name = "-outFormat", usage = "Output Format", required = true, metaVar = "XML/JSON")
-		public String outFormat;
+		
+		@Option(name = "-nThreads", usage = "Number of threads", required = true, metaVar = "IN-DIRECTORY")
+		public int nThreads;
 
 	}
 
 	private static Logger logger = Logger
-			.getLogger(UIMABIOC_01_Nxml2txt_to_BioC.class);
+			.getLogger(UIMABIOC_01_Nxml2txt_to_UntokenizedSentenceTsv.class);
 
 	/**
 	 * @param args
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
+
+		long startTime = System.currentTimeMillis();
 
 		Options options = new Options();
 
@@ -76,24 +81,38 @@ public class UIMABIOC_01_Nxml2txt_to_BioC {
 
 		}
 
+		if (options.outDir == null )
+			options.outDir = options.inDir;
+
 		if (!options.outDir.getParentFile().exists())
 			options.outDir.getParentFile().mkdirs();
 
 		TypeSystemDescription typeSystem = TypeSystemDescriptionFactory
 				.createTypeSystemDescription("bioc.TypeSystem");
 
-		CollectionReader cr = CollectionReaderFactory.createCollectionReader(
+		CollectionReaderDescription cr = CollectionReaderFactory.createDescription(
 				Nxml2TxtFilesCollectionReader.class, typeSystem,
-				Nxml2TxtFilesCollectionReader.PARAM_INPUT_DIRECTORY, options.inDir,
-				Nxml2TxtFilesCollectionReader.PARAM_OUTPUT_DIRECTORY, options.outDir,
-				Nxml2TxtFilesCollectionReader.PARAM_OUTPUT_TYPE, options.outFormat);
-		if( options.refDir != null ) 
-			cr = CollectionReaderFactory.createCollectionReader(
+				Nxml2TxtFilesCollectionReader.PARAM_INPUT_DIRECTORY, options.inDir);
+
+		boolean refsSpecified = (options.refDir != null);
+		
+		if( refsSpecified ) {			
+			cr = CollectionReaderFactory.createDescription(
+					Nxml2TxtFilesCollectionReader.class, typeSystem,
+					Nxml2TxtFilesCollectionReader.PARAM_INPUT_DIRECTORY, options.inDir,
+					Nxml2TxtFilesCollectionReader.PARAM_REF_DIRECTORY, options.refDir,
+					Nxml2TxtFilesCollectionReader.PARAM_OUTPUT_DIRECTORY, options.outDir,
+					Nxml2TxtFilesCollectionReader.PARAM_OUTPUT_TYPE, "tsv");
+		} else {	
+			cr = CollectionReaderFactory.createDescription(
 					Nxml2TxtFilesCollectionReader.class, typeSystem,
 					Nxml2TxtFilesCollectionReader.PARAM_INPUT_DIRECTORY, options.inDir,
 					Nxml2TxtFilesCollectionReader.PARAM_OUTPUT_DIRECTORY, options.outDir,
-					Nxml2TxtFilesCollectionReader.PARAM_OUTPUT_TYPE, options.outFormat,
-					Nxml2TxtFilesCollectionReader.PARAM_REF_DIRECTORY, options.refDir);
+					Nxml2TxtFilesCollectionReader.PARAM_OUTPUT_TYPE, "tsv");
+		} 
+		
+		CpeBuilder cpeBuilder = new CpeBuilder();
+		cpeBuilder.setReader(cr);
 
 		AggregateBuilder builder = new AggregateBuilder();
 
@@ -109,22 +128,38 @@ public class UIMABIOC_01_Nxml2txt_to_BioC {
 		// Some sentences include headers that don't end in periods
 		//
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(FixSentencesFromHeadings.class));
+
+		builder.add(AnalysisEngineFactory.createPrimitiveDescription(SaveAsUntokenizedSentenceSpreadsheets.class,
+				SaveAsUntokenizedSentenceSpreadsheets.PARAM_DIR_PATH, options.outDir.getPath())
+				);
+
 		
-		String outFormat = null;
-		if( options.outFormat.toLowerCase().equals("xml") ) 
-			outFormat = SaveAsBioCDocuments.XML;
-		else if( options.outFormat.toLowerCase().equals("json") ) 
-			outFormat = SaveAsBioCDocuments.JSON;
-		else 
-			throw new Exception("Output format " + options.outFormat + " not recognized");
+		cpeBuilder.setAnalysisEngine(builder.createAggregateDescription());
 
-		builder.add(AnalysisEngineFactory.createPrimitiveDescription(
-				SaveAsBioCDocuments.class, 
-				SaveAsBioCDocuments.PARAM_FILE_PATH,
-				options.outDir.getPath(),
-				SaveAsBioCDocuments.PARAM_FORMAT,
-				outFormat));
+		cpeBuilder.setMaxProcessingUnitThreatCount(options.nThreads);
+		StatusCallbackListener callback = new StatusCallbackListenerImpl();
+		CollectionProcessingEngine cpe = cpeBuilder.createCpe(callback);
+		System.out.println("Running CPE");
+		cpe.process();
 
+		try {
+			Thread.sleep(500);
+		} catch (InterruptedException e) {
+		}
+
+		while (cpe.isProcessing())
+			try {
+				Thread.sleep(200);
+			} catch (InterruptedException e) {
+			}
+
+		System.out.println("\n\n ------------------ PERFORMANCE REPORT ------------------\n");
+		System.out.println(cpe.getPerformanceReport().toString());
+
+		long endTime = System.currentTimeMillis();
+		float duration = (float) (endTime - startTime);
+		System.out.format("\n\nTOTAL EXECUTION TIME: %.3f s", duration / 1000);
+		
 		SimplePipeline.runPipeline(cr, builder.createAggregateDescription());
 		
 	}
