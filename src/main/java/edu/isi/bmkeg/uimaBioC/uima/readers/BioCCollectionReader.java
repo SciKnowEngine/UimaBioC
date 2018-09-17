@@ -1,22 +1,15 @@
 package edu.isi.bmkeg.uimaBioC.uima.readers;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Set;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.xml.stream.XMLStreamException;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.apache.uima.UimaContext;
-import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
 import org.apache.uima.collection.CollectionException;
 import org.apache.uima.jcas.JCas;
 import org.apache.uima.resource.ResourceInitializationException;
@@ -26,11 +19,7 @@ import org.uimafit.component.JCasCollectionReader_ImplBase;
 import org.uimafit.descriptor.ConfigurationParameter;
 import org.uimafit.factory.ConfigurationParameterFactory;
 
-import com.google.gson.Gson;
-
 import bioc.BioCDocument;
-import bioc.io.BioCDocumentReader;
-import bioc.io.BioCFactory;
 import edu.isi.bmkeg.uimaBioC.UimaBioCUtils;
 
 /**
@@ -68,7 +57,6 @@ public class BioCCollectionReader extends JCasCollectionReader_ImplBase {
 					"outputDirectory");
 	@ConfigurationParameter(mandatory = false, description = "Output Directory for BioC Files")
 	protected String outputDirectory;
-	protected Set<String> existingFiles;
 	
 	public static String XML = "xml";
 	public static String JSON = "json";
@@ -89,19 +77,10 @@ public class BioCCollectionReader extends JCasCollectionReader_ImplBase {
 			Collection<File> l = (Collection<File>) FileUtils.listFiles(
 					new File(inputDirectory), fileTypes, true);
 			
-			this.existingFiles = new HashSet<String>();
 			if( outputDirectory != null ) {
 				File outDir = new File(outputDirectory);
 				if(!outDir.exists())
 					outDir.mkdirs();
-				for(Object o : FileUtils.listFiles(
-						new File(outputDirectory), fileTypes, true)) {
-					String fName = ((File) o).getName();
-					Matcher m = patt.matcher(fName);
-					if( m.find() ) {
-						this.existingFiles.add(m.group(1));
-					}
-				}
 			}
 			
 			this.bioCFileIt = l.iterator();
@@ -170,14 +149,18 @@ public class BioCCollectionReader extends JCasCollectionReader_ImplBase {
 			this.bioCFile = bioCFileIt.next();
 			this.bioD = UimaBioCUtils.readBioCFile(bioCFile);
 			
-			while( this.existingFiles.contains(bioD.getID())) {
-				logger.debug("output file for " + bioCFile.getName() + " exists, skipping." );
-				
-				if( !bioCFileIt.hasNext() )
-					return false;
-				
-				bioCFile = bioCFileIt.next();
-				bioD = UimaBioCUtils.readBioCFile(bioCFile);
+			if( outputDirectory != null ) {
+				File outFile = new File(outputDirectory + "/" + bioCFile.getName());
+				while( outFile.exists() ) {		
+					logger.debug("output file for " + bioCFile.getName() + " exists, skipping." );
+					if( !bioCFileIt.hasNext() )
+						return false;
+					bioCFile = bioCFileIt.next();
+					outFile = new File(outputDirectory + "/" + bioCFile.getName());
+					bioD = UimaBioCUtils.readBioCFile(bioCFile);
+				}
+				// 'touch' the file. 
+				new FileOutputStream(outFile).close(); 
 			}
 			
 			return true;

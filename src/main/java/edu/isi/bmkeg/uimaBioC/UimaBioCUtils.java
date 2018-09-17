@@ -881,9 +881,16 @@ public class UimaBioCUtils {
 		List<Token> l = JCasUtil.selectCovered(Token.class, s);
 		List<Token> f = JCasUtil.selectFollowing(jCas, Token.class, s, 10);
 		List<Token> p = JCasUtil.selectPreceding(jCas, Token.class, s, offset);
-
-		Token start = p.get(0);
-		Token end = f.get(9);
+		
+		Token start;
+		Token end;
+		try {
+			start = p.get(0);
+			end = f.get(9);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return "";
+		}
 		String figFrag = jCas.getDocumentText().substring(start.getBegin(), end.getEnd());
 
 		FigurePatternList fpl = FigurePatternList.getInstance();
