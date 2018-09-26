@@ -40,6 +40,9 @@ public class UIMABIOC_03_BioCToSentenceTsv {
 		@Option(name = "-outDir", usage = "Output Directory", required = true, metaVar = "OUT-FILE")
 		public File outDir;
 		
+		@Option(name = "-outFormat", usage = "Output format: e.g., ID.json, ID.tsv etc.", required = true, metaVar = "NXML SUFFIX")
+		public String outFormat = "ID.json";
+		
 		@Option(name = "-pmcFileNames", usage = "Use PMC-encoded Filenames?", required = false, metaVar = "PMC")
 		public Boolean pmcFileNames = false;
 

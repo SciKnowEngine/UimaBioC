@@ -38,7 +38,7 @@ public class UIMABIOC_00_SimpleRunNxml2Txt {
 
 		@Option(name = "-suffix", usage = "Altered suffix of *.nxml files", required = false, metaVar = "NXML SUFFIX")
 		public String suffix = "nxml";
-		
+
 	}
 
 	private static Logger logger = Logger

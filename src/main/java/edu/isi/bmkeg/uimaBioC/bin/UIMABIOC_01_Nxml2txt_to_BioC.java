@@ -111,9 +111,9 @@ public class UIMABIOC_01_Nxml2txt_to_BioC {
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(FixSentencesFromHeadings.class));
 		
 		String outFormat = null;
-		if( options.outFormat.toLowerCase().equals("xml") ) 
+		if( options.outFormat.toLowerCase().endsWith("xml") )
 			outFormat = SaveAsBioCDocuments.XML;
-		else if( options.outFormat.toLowerCase().equals("json") ) 
+		else if( options.outFormat.toLowerCase().endsWith("json") ) 
 			outFormat = SaveAsBioCDocuments.JSON;
 		else 
 			throw new Exception("Output format " + options.outFormat + " not recognized");

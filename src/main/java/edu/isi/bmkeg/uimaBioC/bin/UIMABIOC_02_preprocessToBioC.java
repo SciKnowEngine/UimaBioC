@@ -43,9 +43,9 @@ public class UIMABIOC_02_preprocessToBioC {
 
 		@Option(name = "-outDir", usage = "Output Directory", required = true, metaVar = "OUT-FILE")
 		public File outDir;
-
-		@Option(name = "-outFormat", usage = "Output Format", required = true, metaVar = "OUT-FORMAT")
-		public String outFormat;
+		
+		@Option(name = "-outFormat", usage = "Output format: e.g., ID.json, ID.tsv etc.", required = true, metaVar = "NXML SUFFIX")
+		public String outFormat = "ID.json";
 		
 	}
 
@@ -82,8 +82,8 @@ public class UIMABIOC_02_preprocessToBioC {
 
 		CollectionReaderDescription crDesc = CollectionReaderFactory.createDescription(BioCCollectionReader.class,
 				typeSystem, BioCCollectionReader.INPUT_DIRECTORY, options.biocDir.getPath(),
-				BioCCollectionReader.OUTPUT_DIRECTORY, options.outDir.getPath(), BioCCollectionReader.PARAM_FORMAT,
-				BioCCollectionReader.JSON);
+				BioCCollectionReader.OUTPUT_DIRECTORY, options.outDir.getPath(), 
+				BioCCollectionReader.PARAM_FORMAT, BioCCollectionReader.JSON);
 
 		CpeBuilder cpeBuilder = new CpeBuilder();
 		cpeBuilder.setReader(crDesc);
@@ -114,9 +114,9 @@ public class UIMABIOC_02_preprocessToBioC {
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(RemoveRepeatedBioCAnnotations.class));
 
 		String outFormat = null;
-		if( options.outFormat.toLowerCase().equals("xml") ) 
+		if( options.outFormat.toLowerCase().endsWith("xml") ) 
 			outFormat = SaveAsBioCDocuments.XML;
-		else if( options.outFormat.toLowerCase().equals("json") ) 
+		else if( options.outFormat.toLowerCase().endsWith("json") ) 
 			outFormat = SaveAsBioCDocuments.JSON;
 		else 
 			throw new Exception("Output format " + options.outFormat + " not recognized");

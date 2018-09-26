@@ -36,6 +36,9 @@ public class UIMABIOC_03_BioCToClauseTsv {
 
 		@Option(name = "-outDir", usage = "Output Directory", required = true, metaVar = "OUT-FILE")
 		public File outDir;
+
+		@Option(name = "-outFormat", usage = "Output format.", required = true, metaVar = "NXML SUFFIX")
+		public String outFormat = "json";
 		
 		@Option(name = "-pmcFileNames", usage = "Use PMC-encoded Filenames?", required = false, metaVar = "PMC")
 		public Boolean pmcFileNames = false;
@@ -74,9 +77,11 @@ public class UIMABIOC_03_BioCToClauseTsv {
 		TypeSystemDescription typeSystem = TypeSystemDescriptionFactory.createTypeSystemDescription("bioc.TypeSystem");
 
 		CollectionReaderDescription crDesc = CollectionReaderFactory.createDescription(BioCCollectionReader.class,
-				typeSystem, BioCCollectionReader.INPUT_DIRECTORY, options.biocDir.getPath(),
-				BioCCollectionReader.OUTPUT_DIRECTORY, options.outDir.getPath(), BioCCollectionReader.PARAM_FORMAT,
-				BioCCollectionReader.JSON);
+				typeSystem, 
+				BioCCollectionReader.INPUT_DIRECTORY, options.biocDir.getPath(),
+				BioCCollectionReader.OUTPUT_DIRECTORY, options.outDir.getPath(), 
+				BioCCollectionReader.OUTPUT_FORMAT, options.outFormat, 
+				BioCCollectionReader.PARAM_FORMAT, BioCCollectionReader.JSON);
 
 		CpeBuilder cpeBuilder = new CpeBuilder();
 		cpeBuilder.setReader(crDesc);
