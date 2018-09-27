@@ -3,10 +3,6 @@ package bioc.esViews.BioCAnnotation;
 import bioc.esViews.BioCAnnotation.BioCAnnotation__BioCDocument;
 
 import java.util.*;
-import org.springframework.data.annotation.*;
-import org.springframework.data.elasticsearch.annotations.*;
-import static org.springframework.data.elasticsearch.annotations.FieldIndex.*;
-
 import lombok.Data;
 
 /**
@@ -28,9 +24,7 @@ public class BioCAnnotation__BioCPassage {
 
 	private Map<String, String>  infons;
 
-	@Field(type = FieldType.Nested)
 	private BioCAnnotation__BioCDocument document;
-
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -1,11 +1,6 @@
 package bioc.esViews.BioCAnnotation;
 
 
-import java.util.*;
-import org.springframework.data.annotation.*;
-import org.springframework.data.elasticsearch.annotations.*;
-import static org.springframework.data.elasticsearch.annotations.FieldIndex.*;
-
 import lombok.Data;
 
 /**

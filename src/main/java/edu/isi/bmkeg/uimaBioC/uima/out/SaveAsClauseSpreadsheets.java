@@ -38,12 +38,6 @@ public class SaveAsClauseSpreadsheets extends JCasAnnotator_ImplBase {
 			.createConfigurationParameterName(SaveAsClauseSpreadsheets.class, "outDirPath");
 	@ConfigurationParameter(mandatory = true, description = "The path to the output directory.")
 	String outDirPath;
-
-	public final static String PARAM_ADD_FRIES_CODES = ConfigurationParameterFactory
-			.createConfigurationParameterName(SaveAsClauseSpreadsheets.class, "addFriesStr");
-	@ConfigurationParameter(mandatory = false, description = "Should we add FRIES output?")
-	String addFriesStr;
-	Boolean addFries = false;
 	
 	public final static String PARAM_PMC_FILE_NAMES = ConfigurationParameterFactory
 			.createConfigurationParameterName(SaveAsClauseSpreadsheets.class, "pmcFileNamesStr");
@@ -68,12 +62,6 @@ public class SaveAsClauseSpreadsheets extends JCasAnnotator_ImplBase {
 		if (!this.outDir.exists())
 			this.outDir.mkdirs();
 
-		if (this.addFriesStr != null && this.addFriesStr.toLowerCase().equals("true")) {
-			addFries = true;
-		} else {
-			addFries = false;
-		}
-		
 		if (this.pmcFileNamesStr != null && this.pmcFileNamesStr.toLowerCase().equals("false")) {
 			pmcFileNames = false;
 		} else {
@@ -169,17 +157,6 @@ public class SaveAsClauseSpreadsheets extends JCasAnnotator_ImplBase {
 		out.print("\t");
 		out.print("Offset_End");
 
-		if (addFries) {
-			out.print("\t");
-			out.print("friesSentenceId");
-			out.print("\t");
-			out.print("friesEventsIds");
-			out.print("\t");
-			out.print("friesEventsDetails");
-			out.print("\t");
-			out.print("friesEventText");
-
-		}
 		out.print("\n");
 
 		List<Sentence> sentences = JCasUtil.selectCovered(jCas, Sentence.class, start, end);
@@ -270,46 +247,6 @@ public class SaveAsClauseSpreadsheets extends JCasAnnotator_ImplBase {
 			out.print("\t");
 			out.print(clause.getEnd());
 			
-			if (addFries) {
-
-				String friesSentenceId = "";
-				String friesEventsIds = "";
-				String friesEventsDetails = "";
-				String friesEventText = "";
-
-				for (UimaBioCAnnotation fa : JCasUtil.selectCovered(jCas, UimaBioCAnnotation.class, clause)) {
-					Map<String, String> inf = UimaBioCUtils.convertInfons(fa.getInfons());
-					if (inf.get("type").equals("FRIES_EventMention")) {
-
-						if (friesSentenceId.length() == 0)
-							friesSentenceId += inf.get("sentId") + ":" + inf.get("score");
-
-						if (friesEventsIds.length() > 0)
-							friesEventsIds += ",";
-						friesEventsIds += inf.get("eventId");
-
-						if (friesEventsDetails.length() > 0)
-							friesEventsDetails += ",";
-						friesEventsDetails += inf.get("fType")
-								+ (inf.containsKey("fSubType") ? "." + inf.get("fSubType") : "") + inf.get("value");
-
-						if (friesEventText.length() > 0)
-							friesEventText += ",";
-						friesEventText += inf.get("friesText");
-
-					}
-				}
-
-				out.print("\t");
-				out.print(friesSentenceId.length() > 0 ? friesSentenceId : "-");
-				out.print("\t");
-				out.print(friesEventsIds.length() > 0 ? friesEventsIds : "-");
-				out.print("\t");
-				out.print(friesEventsDetails.length() > 0 ? friesEventsDetails : "-");
-				out.print("\t");
-				out.print(friesEventText.length() > 0 ? friesEventText : "-");
-
-			}
 			out.print("\n");
 
 		}

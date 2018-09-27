@@ -3,10 +3,6 @@ package bioc.esViews.BioCPassage;
 import bioc.esViews.BioCPassage.BioCPassage__BioCLocation;
 
 import java.util.*;
-import org.springframework.data.annotation.*;
-import org.springframework.data.elasticsearch.annotations.*;
-import static org.springframework.data.elasticsearch.annotations.FieldIndex.*;
-
 import lombok.Data;
 
 /**
@@ -26,7 +22,6 @@ public class BioCPassage__BioCAnnotation {
 
 	private Map<String, String>  infons;
 
-	@Field(type = FieldType.Nested)
 	private List<BioCPassage__BioCLocation> locations = new ArrayList<BioCPassage__BioCLocation>();
 
 

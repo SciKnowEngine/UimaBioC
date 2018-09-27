@@ -4,9 +4,6 @@ import bioc.esViews.BioCAnnotation.BioCAnnotation__BioCPassage;
 import bioc.esViews.BioCAnnotation.BioCAnnotation__BioCLocation;
 
 import java.util.*;
-import org.springframework.data.annotation.*;
-import org.springframework.data.elasticsearch.annotations.*;
-import static org.springframework.data.elasticsearch.annotations.FieldIndex.*;
 
 import lombok.Data;
 
@@ -14,7 +11,6 @@ import lombok.Data;
  * Stand off annotation. The connection to the original text can be made through the {@code location} and the {@code text} fields.
 */
 @Data
-@Document(indexName = "biocannotation-index", type = "biocannotation", shards = 1, replicas = 0, refreshInterval = "-1")
 public class BioCAnnotation__BioCAnnotation {
 	/**
 	 * Id used to identify this annotation in a {@link Relation}.
@@ -28,10 +24,8 @@ public class BioCAnnotation__BioCAnnotation {
 
 	private Map<String, String> infons;
 
-	@Field(type = FieldType.Nested)
 	private List<BioCAnnotation__BioCLocation> locations = new ArrayList<BioCAnnotation__BioCLocation>();
 
-	@Field(type = FieldType.Nested)
 	private BioCAnnotation__BioCPassage passage;
 
 

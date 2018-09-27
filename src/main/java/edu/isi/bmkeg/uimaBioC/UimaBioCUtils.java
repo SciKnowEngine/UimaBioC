@@ -18,10 +18,6 @@ import org.apache.log4j.Logger;
 import org.apache.uima.jcas.JCas;
 import org.apache.uima.jcas.cas.FSArray;
 import org.apache.uima.jcas.tcas.Annotation;
-import org.bigmech.fries.FRIES_Frame;
-import org.bigmech.fries.FRIES_FrameCollection;
-import org.bigmech.fries.FRIES_Passage;
-import org.bigmech.fries.FRIES_Sentence;
 import org.cleartk.token.type.Sentence;
 import org.cleartk.token.type.Token;
 import org.uimafit.util.JCasUtil;
@@ -249,76 +245,6 @@ public class UimaBioCUtils {
 
 	}
 
-	public static void addFriesFrameCollectionToUimaCas(FRIES_FrameCollection fc, JCas jcas) {
-
-		UimaBioCDocument uiD = new UimaBioCDocument(jcas);
-		UimaBioCPassage uiP = null;
-		int sCount = 0;
-
-		FSArray passages = new FSArray(jcas, 1);
-		uiD.setPassages(passages);
-
-		uiD.setId(fc.getObjectMeta().getDocId());
-
-		Map<String, FRIES_Passage> psgLookup = new HashMap<String, FRIES_Passage>();
-
-		for (FRIES_Frame f : fc.getFrames()) {
-			if (f instanceof FRIES_Passage) {
-				FRIES_Passage p = (FRIES_Passage) f;
-				psgLookup.put(f.getFrameId(), p);
-
-				uiD.setBegin(0);
-				uiD.setEnd(p.getText().length());
-				jcas.setDocumentText(p.getText());
-
-				uiP = new UimaBioCPassage(jcas);
-				passages.set(0, uiP);
-				Map<String, String> inf = new HashMap<String, String>();
-				inf.put("type", "document");
-				inf.put("value", "document");
-				uiP.setInfons(convertInfons(inf, jcas));
-				uiP.setOffset(uiD.getBegin());
-				uiP.setText(p.getText());
-
-				uiP.setBegin(0);
-				uiP.setEnd(p.getText().length());
-
-				uiP.addToIndexes();
-				break;
-			} else if (f instanceof FRIES_Sentence) {
-				sCount++;
-			}
-		}
-
-		FSArray sentences = new FSArray(jcas, sCount);
-		uiP.setSentences(sentences);
-
-		int i = 0;
-		for (FRIES_Frame f : fc.getFrames()) {
-
-			if (f instanceof FRIES_Sentence) {
-				FRIES_Sentence s = (FRIES_Sentence) f;
-				FRIES_Passage p = psgLookup.get(s.getPassage());
-
-				UimaBioCSentence uiS = new UimaBioCSentence(jcas);
-				Map<String, String> inf = new HashMap<String, String>();
-				inf.put("type", "frame");
-				inf.put("value", "sentence");
-				uiS.setInfons(convertInfons(inf, jcas));
-				uiS.setBegin(s.getStartPos().getOffset());
-				uiS.setEnd(s.getEndPos().getOffset());
-				sentences.set(i, uiS);
-				i++;
-
-				uiS.addToIndexes();
-
-			}
-		}
-
-		uiD.addToIndexes();
-
-	}
-
 	public static UimaBioCPassage convertBioCPassage(BioCPassage p, JCas jcas) {
 
 		UimaBioCPassage uiP = new UimaBioCPassage(jcas);
@@ -534,33 +460,6 @@ public class UimaBioCUtils {
 		}
 
 		return parags;
-
-	}
-
-	public static String friesifySentence(JCas jCas, Sentence s) {
-
-		String text = s.getCoveredText();
-
-		UimaBioCDocument uiD = JCasUtil.selectSingle(jCas, UimaBioCDocument.class);
-		for (UimaBioCAnnotation a : JCasUtil.selectCovered(jCas, UimaBioCAnnotation.class, s)) {
-			Map<String, String> infons = UimaBioCUtils.convertInfons(a.getInfons());
-			if (infons.containsKey("refType") && infons.containsKey("value") && infons.get("value").equals("xref")) {
-				if (infons.get("refType").equals("fig") || infons.get("refType").startsWith("bib")) {
-
-					// Can we find enclosing brackets for Figures?
-					String s1 = text.substring(0, a.getBegin() - s.getBegin());
-					String s2 = text.substring(a.getEnd() - s.getBegin(), text.length());
-					text = s1 + StringUtils.leftPad("", a.getEnd() - a.getBegin(), ' ') + s2;
-
-				}
-			}
-		}
-
-		text = text.replaceAll("(Figure|Fig.)", "");
-		text = text.replaceAll("\\([,;\\s]*\\)", "");
-		text = text.replaceAll("\\s{2,}", "  ");
-
-		return text;
 
 	}
 

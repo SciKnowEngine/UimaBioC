@@ -3,9 +3,6 @@ package bioc.esViews.BioCDocument;
 import bioc.esViews.BioCDocument.BioCDocument__BioCAnnotation;
 
 import java.util.*;
-import org.springframework.data.annotation.*;
-import org.springframework.data.elasticsearch.annotations.*;
-import static org.springframework.data.elasticsearch.annotations.FieldIndex.*;
 
 import lombok.Data;
 
@@ -31,7 +28,6 @@ public class BioCDocument__BioCPassage {
 	/**
 	 * Annotations on the text of the passage.
 	*/
-	@Field(type = FieldType.Nested)
 	private List<BioCDocument__BioCAnnotation> annotations = new ArrayList<BioCDocument__BioCAnnotation>();
 
 

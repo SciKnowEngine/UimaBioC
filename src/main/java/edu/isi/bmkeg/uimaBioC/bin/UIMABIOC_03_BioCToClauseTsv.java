@@ -100,7 +100,6 @@ public class UIMABIOC_03_BioCToClauseTsv {
 		
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(SaveAsClauseSpreadsheets.class,
 					SaveAsClauseSpreadsheets.PARAM_DIR_PATH, options.outDir.getPath(),
-					SaveAsClauseSpreadsheets.PARAM_ADD_FRIES_CODES, "false",
 					SaveAsClauseSpreadsheets.PARAM_PMC_FILE_NAMES, options.pmcFileNames.toString().toLowerCase()));
 
 		cpeBuilder.setAnalysisEngine(builder.createAggregateDescription());

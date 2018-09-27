@@ -1,11 +1,8 @@
 package bioc.esViews.BioCDocument;
 
-import bioc.esViews.BioCDocument.BioCDocument__BioCLocation;
-
-import java.util.*;
-import org.springframework.data.annotation.*;
-import org.springframework.data.elasticsearch.annotations.*;
-import static org.springframework.data.elasticsearch.annotations.FieldIndex.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import lombok.Data;
 
@@ -26,7 +23,6 @@ public class BioCDocument__BioCAnnotation {
 
 	private Map<String, String>  infons;
 
-	@Field(type = FieldType.Nested)
 	private List<BioCDocument__BioCLocation> locations = new ArrayList<BioCDocument__BioCLocation>();
 
 

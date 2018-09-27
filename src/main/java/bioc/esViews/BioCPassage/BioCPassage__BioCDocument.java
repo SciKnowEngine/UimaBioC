@@ -1,11 +1,11 @@
 package bioc.esViews.BioCPassage;
 
 
-import java.util.*;
-import org.springframework.data.annotation.*;
-import org.springframework.data.elasticsearch.annotations.*;
-import static org.springframework.data.elasticsearch.annotations.FieldIndex.*;
+import java.util.Map;
 
+import bioc.BioCCollection;
+import bioc.BioCPassage;
+import bioc.BioCRelation;
 import lombok.Data;
 
 /**

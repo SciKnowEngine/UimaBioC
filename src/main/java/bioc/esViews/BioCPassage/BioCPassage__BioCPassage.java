@@ -4,9 +4,6 @@ import bioc.esViews.BioCPassage.BioCPassage__BioCDocument;
 import bioc.esViews.BioCPassage.BioCPassage__BioCAnnotation;
 
 import java.util.*;
-import org.springframework.data.annotation.*;
-import org.springframework.data.elasticsearch.annotations.*;
-import static org.springframework.data.elasticsearch.annotations.FieldIndex.*;
 
 import lombok.Data;
 
@@ -14,7 +11,6 @@ import lombok.Data;
  * One passage in a {@link Document}. This might be the {@code text} in the passage and possibly {@link Annotation}s over that text. It could be the {@link Sentence}s in the passage. In either case it might include {@link Relation}s over annotations on the passage.
 */
 @Data
-@Document(indexName = "biocpassage-index", type = "biocpassage", shards = 1, replicas = 0, refreshInterval = "-1")
 public class BioCPassage__BioCPassage {
 	private String id;
 
@@ -33,10 +29,8 @@ public class BioCPassage__BioCPassage {
 	/**
 	 * Annotations on the text of the passage.
 	*/
-	@Field(type = FieldType.Nested)
 	private List<BioCPassage__BioCAnnotation> annotations = new ArrayList<BioCPassage__BioCAnnotation>();
 
-	@Field(type = FieldType.Nested)
 	private BioCPassage__BioCDocument document;
 
 

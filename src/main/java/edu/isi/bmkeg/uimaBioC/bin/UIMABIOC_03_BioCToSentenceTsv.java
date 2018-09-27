@@ -33,9 +33,6 @@ public class UIMABIOC_03_BioCToSentenceTsv {
 
 		@Option(name = "-biocDir", usage = "Input Directory", required = true, metaVar = "IN-DIRECTORY")
 		public File biocDir;
-
-		@Option(name = "-friesDir", usage = "FRIES Data Directory", required = false, metaVar = "FRIES-DIRECTORY")
-		public File friesDir;
 		
 		@Option(name = "-outDir", usage = "Output Directory", required = true, metaVar = "OUT-FILE")
 		public File outDir;
@@ -101,7 +98,6 @@ public class UIMABIOC_03_BioCToSentenceTsv {
 		
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(SaveAsSentenceSpreadsheets.class,
 				SaveAsSentenceSpreadsheets.PARAM_DIR_PATH, options.outDir.getPath(),
-				SaveAsSentenceSpreadsheets.PARAM_FRIES_DIR, options.friesDir,
 				SaveAsSentenceSpreadsheets.PARAM_PMC_FILE_NAMES, options.pmcFileNames.toString().toLowerCase()));
 
 		cpeBuilder.setAnalysisEngine(builder.createAggregateDescription());
