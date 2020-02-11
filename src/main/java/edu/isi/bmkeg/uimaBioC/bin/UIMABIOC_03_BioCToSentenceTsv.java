@@ -101,7 +101,6 @@ public class UIMABIOC_03_BioCToSentenceTsv {
 		
 		builder.add(AnalysisEngineFactory.createPrimitiveDescription(SaveAsSentenceSpreadsheets.class,
 				SaveAsSentenceSpreadsheets.PARAM_DIR_PATH, options.outDir.getPath(),
-				SaveAsSentenceSpreadsheets.PARAM_FRIES_DIR, options.friesDir,
 				SaveAsSentenceSpreadsheets.PARAM_PMC_FILE_NAMES, options.pmcFileNames.toString().toLowerCase()));
 
 		cpeBuilder.setAnalysisEngine(builder.createAggregateDescription());

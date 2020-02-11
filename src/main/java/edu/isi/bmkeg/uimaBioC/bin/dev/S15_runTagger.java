@@ -20,7 +20,6 @@ import org.uimafit.factory.AnalysisEngineFactory;
 import org.uimafit.factory.TypeSystemDescriptionFactory;
 import org.uimafit.pipeline.SimplePipeline;
 
-import edu.isi.bmkeg.uimaBioC.elasticSearch.BioCDocumentRepository;
 import edu.isi.bmkeg.uimaBioC.rubicon.RemoveSentencesNotInTitleAbstractBody;
 import edu.isi.bmkeg.uimaBioC.uima.ae.core.FixSentencesFromHeadings;
 import edu.isi.bmkeg.uimaBioC.uima.ae.nlp.StanfordTag;
@@ -29,9 +28,6 @@ import edu.isi.bmkeg.uimaBioC.uima.readers.BioCCollectionReader;
 
 @Component
 public class S15_runTagger {
-
-	@Autowired
-	BioCDocumentRepository biocRepo;
 
 	public static class Options {
 		

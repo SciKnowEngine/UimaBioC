@@ -22,15 +22,6 @@ import org.apache.uima.UimaContext;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
 import org.apache.uima.jcas.JCas;
 import org.apache.uima.resource.ResourceInitializationException;
-import org.bigmech.fries.FRIES_Argument;
-import org.bigmech.fries.FRIES_Context;
-import org.bigmech.fries.FRIES_EntityMention;
-import org.bigmech.fries.FRIES_EventMention;
-import org.bigmech.fries.FRIES_Frame;
-import org.bigmech.fries.FRIES_FrameCollection;
-import org.bigmech.fries.FRIES_Passage;
-import org.bigmech.fries.FRIES_Sentence;
-import org.bigmech.fries.FRIES_XRef;
 import org.cleartk.token.type.Sentence;
 import org.uimafit.component.JCasAnnotator_ImplBase;
 import org.uimafit.descriptor.ConfigurationParameter;
@@ -42,7 +33,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
-import com.google.gson.typeadapters.RuntimeTypeAdapterFactory;
 
 import bioc.BioCCollection;
 import bioc.type.UimaBioCAnnotation;
@@ -60,10 +50,6 @@ public class SaveAsSentenceSpreadsheets extends JCasAnnotator_ImplBase {
 	@ConfigurationParameter(mandatory = true, description = "The path to the output directory.")
 	String outDirPath;
 
-	public final static String PARAM_FRIES_DIR = ConfigurationParameterFactory
-			.createConfigurationParameterName(SaveAsSentenceSpreadsheets.class, "friesDirPath");
-	@ConfigurationParameter(mandatory = false, description = "FRIES data location?")
-	String friesDirPath;
 	
 	public final static String PARAM_PMC_FILE_NAMES = ConfigurationParameterFactory
 			.createConfigurationParameterName(SaveAsSentenceSpreadsheets.class, "pmcFileNamesStr");
@@ -72,20 +58,12 @@ public class SaveAsSentenceSpreadsheets extends JCasAnnotator_ImplBase {
 	Boolean pmcFileNames = true;
 
 	private File outDir;
-	private File friesDir;
 	private BioCCollection collection;
 	
 	private SubFigureNumberExtractor figExtractor;
 
 	Map<String, Map<String, Integer>> table = new HashMap<String, Map<String, Integer>>();
 
-	private HashMap<String, FRIES_Sentence> sentenceMap;
-
-	private HashMap<String, Set<FRIES_EventMention>> eventMap;
-
-	private HashMap<String, FRIES_EntityMention> entityMap;
-	
-	private RuntimeTypeAdapterFactory<FRIES_Frame> typeFactory;
 	
 	public void initialize(UimaContext context) throws ResourceInitializationException {
 
@@ -97,11 +75,6 @@ public class SaveAsSentenceSpreadsheets extends JCasAnnotator_ImplBase {
 		if (!this.outDir.exists())
 			this.outDir.mkdirs();
 
-		this.friesDirPath = (String) context.getConfigParameterValue(PARAM_FRIES_DIR);
-		if( this.friesDirPath != null) {	
-			this.friesDir = new File(this.friesDirPath);
-			
-		}
 		
 		if (this.pmcFileNamesStr != null && this.pmcFileNamesStr.toLowerCase().equals("false")) {
 			pmcFileNames = false;
@@ -116,12 +89,7 @@ public class SaveAsSentenceSpreadsheets extends JCasAnnotator_ImplBase {
 		} catch (Exception e) {
 			throw new ResourceInitializationException(e);
 		}
-
-		this.typeFactory = RuntimeTypeAdapterFactory
-				.of(FRIES_Frame.class, "frame-type").registerSubtype(FRIES_EntityMention.class, "entity-mention")
-				.registerSubtype(FRIES_Sentence.class, "sentence").registerSubtype(FRIES_Passage.class, "passage")
-				.registerSubtype(FRIES_EventMention.class, "event-mention").registerSubtype(FRIES_Context.class, "context");		
-		
+	
 	}
 
 	public void process(JCas jCas) throws AnalysisEngineProcessException {
@@ -132,10 +100,6 @@ public class SaveAsSentenceSpreadsheets extends JCasAnnotator_ImplBase {
 				return;
 
 			String id = uiD.getId();
-
-			if( this.friesDir != null ) {
-				this.loadFriesData(friesDir, uiD);
-			}
 			
 			
 			Map<String, String> infons = UimaBioCUtils.convertInfons(uiD.getInfons());
@@ -164,9 +128,6 @@ public class SaveAsSentenceSpreadsheets extends JCasAnnotator_ImplBase {
 				throw (new AnalysisEngineProcessException(e));
 			}
 			
-			Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_DASHES)
-					.registerTypeAdapterFactory(typeFactory).create();
-
 			
 			this.dumpSectionToFile(jCas, out, uiD.getBegin(), uiD.getEnd());
 
@@ -219,14 +180,6 @@ public class SaveAsSentenceSpreadsheets extends JCasAnnotator_ImplBase {
 		out.print("\t");
 		out.print("Figure Assignment");
 
-		if (this.friesDirPath != null) {
-			out.print("\t");
-			out.print("friesSentenceId");
-			out.print("\t");
-			out.print("friesEventsTypes");			
-		}
-		out.print("\n");
-
 		List<Sentence> sentences = JCasUtil.selectCovered(jCas, Sentence.class, start, end);
 		List<Sentence> floatingSentences = new ArrayList<Sentence>();
 		SENTENCE_LOOP: for (Sentence s : sentences) {
@@ -249,13 +202,10 @@ public class SaveAsSentenceSpreadsheets extends JCasAnnotator_ImplBase {
 			throws Exception, StackOverflowError {
 		
 		List<UimaBioCAnnotation> clauseList = new ArrayList<UimaBioCAnnotation>();
-		List<UimaBioCAnnotation> friesSentenceList = new ArrayList<UimaBioCAnnotation>();
 		for (UimaBioCAnnotation a : JCasUtil.selectCovered(jCas, UimaBioCAnnotation.class, s)) {
 			Map<String, String> infons = UimaBioCUtils.convertInfons(a.getInfons());
 			if (infons.get("type").equals("rubicon") && infons.get("value").equals("clause"))
 				clauseList.add(a);
-			if (infons.get("type").equals("fries_sentence") )
-				friesSentenceList.add(a);
 		}
 
 		if (clauseList.size() == 0) {
@@ -321,13 +271,7 @@ public class SaveAsSentenceSpreadsheets extends JCasAnnotator_ImplBase {
 			}
 
 		}
-		
-		String fries_sentence = "";
-		for (UimaBioCAnnotation fs : friesSentenceList) {
-			Map<String, String> infons = UimaBioCUtils.convertInfons(fs.getInfons());
-			fries_sentence += infons.get("value");
-		}
-		
+				
 		if(inExHeading.contains("")) 
 			inExHeading.remove("");
 		
@@ -363,126 +307,8 @@ public class SaveAsSentenceSpreadsheets extends JCasAnnotator_ImplBase {
 		}
 		out.print(fa_text);			
 
-		if (this.friesDirPath != null) {
-			out.print("\t");
-			out.print(fries_sentence);
-			
-			// We want to list out the FRIES events for this sentence.
-			// We only expect to see one sentence per line. 
-			out.print("\t");
-			String e = ""; 
-			for( UimaBioCAnnotation fs : friesSentenceList) {
-				Map<String, String> infons = UimaBioCUtils.convertInfons(fs.getInfons());
-				String fs_id = infons.get("value");
-				for( FRIES_EventMention ev : eventMap.get(fs_id) ) {
-					Set<String> pset = new HashSet<String>();
-					for( FRIES_Argument arg : ev.getArguments() ) {
-						if( arg.getArgumentType().equals("entity") ) {
-							String entityId = arg.getArg();
-							FRIES_EntityMention entityMention = entityMap.get(entityId);
-							if( entityMention.getType().equals("protein") ) {
-								for (FRIES_XRef xref : entityMention.getXrefs() ) {
-									pset.add(xref.getNamespace() + ":" + xref.getId());
-								}
-							}
-						}
-					}
-					if(e.length()>0)
-						e += ";";
-					String p = ""; 
-					for(String pp:pset) {
-						if(p.length()>0)
-							p += ",";
-						p += pp;
-					}
-				}
-			}
-			out.print(e);
-		
-		}
 		out.print("\n");
 		
 	}
 	
-	private void loadFriesData(File friesDir, UimaBioCDocument uiD ) 
-			throws JsonSyntaxException, JsonIOException, FileNotFoundException {
-		
-		Map<String, String> infons = UimaBioCUtils.convertInfons(uiD.getInfons());
-		String pmcID = "PMC" + infons.get("pmc");
-		if (infons.containsKey("pmcid"))
-			pmcID = infons.get("pmcid");
-		if (infons.containsKey("accession"))
-			pmcID = infons.get("accession");
-		
-		String[] fileTypes = { "json" };
-		Collection<File> files = (Collection<File>) FileUtils.listFiles(this.friesDir, fileTypes, true);
-		File sentenceFrames = null;
-		File eventFrames = null;
-		File entityFrames = null;
-		for (File f : files) {
-			if (f.getName().startsWith(pmcID + ".uaz.sentences") || 
-					f.getName().startsWith(uiD.getId() + ".uaz.sentences") ) {
-				sentenceFrames = f;
-				break;
-			}
-		}
-		for (File f : files) {
-			if (f.getName().startsWith(pmcID + ".uaz.events") || 
-					f.getName().startsWith(uiD.getId() + ".uaz.events") ) {
-				eventFrames = f;
-				break;
-			}
-		}
-		for (File f : files) {
-			if (f.getName().startsWith(pmcID + ".uaz.entities") || 
-					f.getName().startsWith(uiD.getId() + ".uaz.entities") ) {
-				entityFrames = f;
-				break;
-			}
-		}
-
-		if (eventFrames == null || sentenceFrames == null)
-			return;
-
-		final RuntimeTypeAdapterFactory<FRIES_Frame> typeFactory = RuntimeTypeAdapterFactory
-				.of(FRIES_Frame.class, "frame-type").registerSubtype(FRIES_EntityMention.class, "entity-mention")
-				.registerSubtype(FRIES_Sentence.class, "sentence").registerSubtype(FRIES_Passage.class, "passage")
-				.registerSubtype(FRIES_EventMention.class, "event-mention").registerSubtype(FRIES_Context.class, "context");
-
-		Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_DASHES)
-				.registerTypeAdapterFactory(typeFactory).create();
-
-		FRIES_FrameCollection fc = gson.fromJson(new FileReader(entityFrames), FRIES_FrameCollection.class);
-		this.sentenceMap = new HashMap<String, FRIES_Sentence>();
-		for (FRIES_Frame frame : fc.getFrames()) {
-			if (frame instanceof FRIES_Sentence) {
-				FRIES_Sentence sn = (FRIES_Sentence) frame;
-				this.sentenceMap.put(sn.getFrameId(), sn);
-			}
-		}
-
-		FRIES_FrameCollection fc1 = gson.fromJson(new FileReader(eventFrames), FRIES_FrameCollection.class);
-		this.eventMap = new HashMap<String, Set<FRIES_EventMention>>();
-		for (FRIES_Frame frame : fc1.getFrames()) {
-			if (frame instanceof FRIES_EventMention) {
-				FRIES_EventMention em = (FRIES_EventMention) frame;
-				String sn = em.getSentence();
-				if (!eventMap.containsKey(sn))
-					eventMap.put(sn, new HashSet<FRIES_EventMention>());
-				eventMap.get(sn).add(em);
-			}
-		}
-
-		FRIES_FrameCollection fc2 = gson.fromJson(new FileReader(entityFrames), FRIES_FrameCollection.class);
-
-		entityMap = new HashMap<String, FRIES_EntityMention>();
-		for (FRIES_Frame frame : fc2.getFrames()) {
-			if (frame instanceof FRIES_EntityMention) {
-				FRIES_EntityMention em = (FRIES_EntityMention) frame;
-				entityMap.put(em.getFrameId(), em);
-			}
-		}
-		
-	}
-
 }
